@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="terminal_bg">#FF0B1A0B</color>
+    <color name="terminal_fg">#FF7CFF7C</color>
+    <color name="black">#FF000000</color>
+</resources>
