@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -45,16 +45,43 @@ jobs:
       - name: Build release APK
         run: ./gradlew :app:assembleRelease --stacktrace
 
-      - name: Upload debug APK
+      - name: Read the app version
+        id: version
+        run: |
+          VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "App version: $VERSION"
+
+      - name: Stage the release APK
+        run: cp app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/oregon-trail.apk
+
+      - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: oregon-trail-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-      - name: Upload release APK
+      - name: Upload release APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: oregon-trail-release
-          path: app/build/outputs/apk/release/app-release.apk
+          path: app/build/outputs/apk/release/oregon-trail.apk
           if-no-files-found: error
+
+      - name: Publish the APK on GitHub Releases
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.name }}
+          name: The Oregon Trail - ASCII Edition v${{ steps.version.outputs.name }}
+          body: |
+            Automatically built and published from `${{ github.sha }}`.
+
+            Download **oregon-trail.apk** below and install it on Android 7.0+
+            with `adb install oregon-trail.apk`, or by opening the file on your
+            device.
+          files: |
+            app/build/outputs/apk/release/oregon-trail.apk
+          make_latest: true
+          fail_on_unmatched_files: true

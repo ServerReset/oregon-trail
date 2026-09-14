@@ -33,11 +33,13 @@ cues, saved games, and a persistent Oregon Top Ten.
 
 ## Download
 
-The signed APK is on the **[latest release](../../releases/latest)** page as
-`oregon-trail.apk`. Minimum Android version: **7.0 (API 24)**. Install with
-`adb install oregon-trail.apk` or by opening the APK on the device.
+Every push to `master` builds, tests and **publishes the signed APK to GitHub
+Releases** automatically (see `.github/workflows/android.yml`). Grab
+`oregon-trail.apk` from the newest release. Minimum Android version:
+**7.0 (API 24)**. Install with `adb install oregon-trail.apk` or by opening the
+APK on the device.
 
-Each push also builds debug and release APKs as CI artifacts.
+Debug and release APKs are also attached to each CI run as artifacts.
 
 ## Features
 
