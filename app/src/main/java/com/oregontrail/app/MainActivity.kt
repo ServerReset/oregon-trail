@@ -166,7 +166,6 @@ class MainActivity : AppCompatActivity() {
             Sound.GOOD -> ToneGenerator.TONE_PROP_ACK to 120
             Sound.BAD -> ToneGenerator.TONE_PROP_NACK to 180
             Sound.SHOOT -> ToneGenerator.TONE_CDMA_PIP to 60
-            Sound.HIT -> ToneGenerator.TONE_PROP_ACK to 90
             Sound.DEATH -> ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD to 500
             Sound.ARRIVAL -> ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE to 400
         }

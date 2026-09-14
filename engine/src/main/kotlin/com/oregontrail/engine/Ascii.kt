@@ -147,23 +147,6 @@ object Ascii {
         "     ||"
     )
 
-    val campfire: List<String> = listOf(
-        "        (",
-        "       ) )",
-        "      ( ( )",
-        "       \\|/",
-        "       /|\\",
-        "      //|\\\\",
-        "   __/__|__\\__"
-    )
-
-    val oxen: List<String> = listOf(
-        "   \\   /\\",
-        "    \\_/  \\___",
-        "    (o)_______)",
-        "     ||    ||"
-    )
-
     val grave: List<String> = listOf(
         "     __________",
         "    /          \\",
@@ -175,39 +158,10 @@ object Ascii {
         "  /|____________|\\"
     )
 
-    val skull: List<String> = listOf(
-        "    _____",
-        "   /     \\",
-        "  |  o o  |",
-        "  |   ^   |",
-        "   \\_____/",
-        "   | | | |"
-    )
-
-    val telegraph: List<String> = listOf(
-        "        |",
-        "        |",
-        "   -----+-----",
-        "        |",
-        "        |",
-        "       _|_",
-        "      |___|"
-    )
-
     // ------------------------------------------------------------------
     // Hunting field props (roguelike style)
     // ------------------------------------------------------------------
 
     const val TREE_A: Char = '^'
     const val TREE_B: Char = 'f'
-    const val ROCK_PROP: Char = 'o'
-
-    /** Tiny compass rose used on the map. */
-    val compass: List<String> = listOf(
-        "   N",
-        "   |",
-        "W--+--E",
-        "   |",
-        "   S"
-    )
 }

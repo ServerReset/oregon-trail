@@ -90,12 +90,13 @@ The project is deliberately split so the rules are portable and testable:
 ```
 :engine   Pure Kotlin/JVM library — no Android dependencies.
           Rng, Model, Data (trail/items), Terminal (screen + tap targets),
-          Ascii (art + block font), Hunting, Game (state machine), Scoring.
+          Ascii (art + block font), Hunting, Rafting, Persistence,
+          Game (rules/state machine) and GameRender (all screen drawing).
 :app      Android front-end.
           TerminalView  — adaptive monospace canvas that recomputes its grid
                           for any screen size/orientation and maps taps to
                           engine hotspots.
-          MainActivity  — immersive fullscreen, sound, name dialog, hunt
+          MainActivity  — immersive fullscreen, sound, name dialog, minigame
                           ticker, SharedPreferences persistence.
 ```
 

@@ -9,8 +9,8 @@ class RaftField(
     val width: Int,
     val height: Int,
     private val rng: Rng,
-    private val totalProgress: Int = 55,
-    private val maxHits: Int = 6
+    val totalProgress: Int = 55,
+    val maxHits: Int = 6
 ) {
 
     /** Left column of the three-cell raft "[=]". */

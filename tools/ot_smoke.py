@@ -93,6 +93,22 @@ class Driver:
             time.sleep(0.5)
         raise RuntimeError("no screen dump found - is this a debug build and is the app running?")
 
+    def wait_stable(self, timeout=20.0):
+        """Waits until the view has done its first layout and the grid stops
+        changing, so tap coordinates are computed from real metrics."""
+        prev = None
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            s = self.last_screen()
+            if s and s["cw"] > 0:
+                key = (s["cols"], s["rows"], round(s["cw"], 2), round(s["lh"], 2),
+                       s["phase"], s["ox"], s["oy"])
+                if key == prev:
+                    return s
+                prev = key
+            time.sleep(0.5)
+        return self.last_screen()
+
     def tap_cell(self, row, col, screen=None):
         s = screen or self.last_screen()
         x = int(s["ox"] + s["mx"] + (col + 0.5) * s["cw"])
@@ -111,7 +127,7 @@ class Driver:
     def tap_text(self, text, required=True):
         for _ in range(6):
             s = self.last_screen()
-            if s:
+            if s and s["cw"] > 0:
                 hit = self.find(text, s)
                 if hit:
                     r, c, s = hit
@@ -151,9 +167,12 @@ def run(serial=None, max_steps=400, verbose=True):
     d.sh("shell", "am", "force-stop", PKG, check=False)
     d.sh("shell", "pm", "clear", PKG, check=False)
     d.sh("logcat", "-c", check=False)
+    # Don't let the "swipe up to exit fullscreen" prompt eat our first tap.
+    d.sh("shell", "settings", "put", "secure", "immersive_mode_confirmations", "confirmed", check=False)
     d.sh("shell", "am", "start", "-n", PKG + "/.MainActivity")
     time.sleep(4)
     d.wait_screen()
+    d.wait_stable()
     d.capture("title")
 
     # Set up a fresh journey.

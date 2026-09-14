@@ -184,8 +184,6 @@ class Screen(val width: Int, val height: Int) {
         return h
     }
 
-    fun hotspotOnText(id: String, x: Int, y: Int, s: String): Hotspot? = hotspot(id, x, y, s.length)
-
     /** Returns the tappable region id at (x,y), if any. */
     fun hotspotAt(x: Int, y: Int): String? {
         for (i in hotspots.indices.reversed()) {
@@ -207,40 +205,4 @@ class Screen(val width: Int, val height: Int) {
 
     /** All non-blank text rows joined by newlines. Handy for logging and tests. */
     fun toText(): String = toLines().joinToString("\n").trimEnd('\n')
-
-    /** Renders a compact ANSI representation, useful for terminal debugging. */
-    fun toAnsi(): String {
-        val sb = StringBuilder()
-        for (y in 0 until height) {
-            var current: Palette? = null
-            for (x in 0 until width) {
-                val c = cells[y][x]
-                if (c.fg != current) {
-                    current = c.fg
-                    sb.append(ansiFor(c.fg))
-                }
-                sb.append(c.ch)
-            }
-            sb.append("\u001B[0m\n")
-        }
-        return sb.toString()
-    }
-
-    private fun ansiFor(p: Palette): String = when (p) {
-        Palette.DEFAULT -> "\u001B[0m"
-        Palette.BLACK -> "\u001B[30m"
-        Palette.DIM -> "\u001B[2m"
-        Palette.RED -> "\u001B[31m"
-        Palette.GREEN -> "\u001B[32m"
-        Palette.YELLOW -> "\u001B[33m"
-        Palette.BLUE -> "\u001B[34m"
-        Palette.MAGENTA -> "\u001B[35m"
-        Palette.CYAN -> "\u001B[36m"
-        Palette.WHITE -> "\u001B[37m"
-        Palette.GRAY -> "\u001B[90m"
-        Palette.BRIGHT_GREEN -> "\u001B[92m"
-        Palette.BRIGHT_YELLOW -> "\u001B[93m"
-        Palette.BRIGHT_WHITE -> "\u001B[97m"
-        Palette.BROWN -> "\u001B[33m"
-    }
 }
