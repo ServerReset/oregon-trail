@@ -185,4 +185,12 @@ class HuntField(
 
     /** Ends the hunt, returning the meat actually carried back. */
     fun finish(): Int = meat.coerceAtMost(carryLimit)
+
+    // ----- test hooks (visible to the same module) ----------------------
+
+    internal fun debugPlaceAnimal(x: Int, y: Int, kind: AnimalKind) {
+        animals.add(HuntAnimal(x, y, kind))
+    }
+
+    internal fun debugAnimalCount(): Int = animals.size
 }

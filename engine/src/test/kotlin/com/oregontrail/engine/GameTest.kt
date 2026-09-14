@@ -226,6 +226,22 @@ class GameTest {
     }
 
     @Test
+    fun hunting_shooting_an_aligned_animal_scores_a_hit() {
+        // 0.99 keeps animals still and prevents new spawns, so the shot is deterministic.
+        val rng = ScriptedRng.of(*DoubleArray(200) { 0.99 })
+        val field = HuntField(20, 10, rng, listOf(AnimalKind.RABBIT))
+        val startMeat = field.meat
+        field.debugPlaceAnimal(field.hunterX + 3, field.hunterY, AnimalKind.RABBIT)
+        assertTrue(field.debugAnimalCount() >= 1)
+        field.move(1, 0)          // aim right
+        assertTrue(field.shoot(), "shot should be able to leave the hunter")
+        field.tick()
+        assertTrue(field.lastShotHit, "bullet should have struck the aligned animal")
+        assertTrue(field.meat > startMeat, "meat should increase after a hit")
+        assertEquals(AnimalKind.RABBIT, field.lastKill)
+    }
+
+    @Test
     fun save_and_restore_round_trip() {
         val game = newGame(11L)
         game.doIntro()
