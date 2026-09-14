@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [1.3.0] - 2026-09-14
+
+### Added
+- **Watch input**: the rotary bezel/crown and D-pad move a highlighted
+  selection cursor; the centre/side button or a tap anywhere activates it.
+  Enabled automatically on watches and round displays (a debug override lets
+  it be tested on a phone).
+- **CRT vignette** for a more authentic phosphor look.
+- **Map wagon**: the current position is drawn as a little wagon on the map.
+- An in-progress **hunt or rafting run now survives a form-factor change**:
+  folding, unfolding or resizing rebuilds the field at the new size while
+  keeping meat, shots, kills, progress and hits.
+- Compact management menu for watch-sized screens.
+
+### Fixed
+- Density and configuration changes now recompute the character grid even
+  when the view size itself does not change (display settings, accessibility,
+  emulator overrides).
+- Tapping a hotspot also moves the selection cursor to it.
+
 ## [1.2.0] - 2026-09-14
 
 ### Added

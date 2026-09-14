@@ -70,6 +70,54 @@ class FeaturesTest {
     }
 
     @Test
+    fun minigames_survive_a_form_factor_change() {
+        val g = newGame(6L)
+        g.intro()
+        g.inventory.ammo = 100
+        g.onTap("travel:hunt")
+        assertEquals(Phase.HUNTING, g.phase)
+        g.onTap("hunt:shoot")
+        repeat(4) { g.huntTick() }
+        val shots = g.huntField!!.shotsFired
+        // Fold the phone closed mid-hunt.
+        g.setViewport(16, 10)
+        assertEquals(Phase.HUNTING, g.phase)
+        assertEquals(shots, g.huntField!!.shotsFired, "hunt progress should survive a resize")
+        assertTrue(g.huntField!!.width <= 16)
+        // Unfold again.
+        g.setViewport(80, 40)
+        assertEquals(Phase.HUNTING, g.phase)
+        assertEquals(shots, g.huntField!!.shotsFired)
+        g.onTap("hunt:leave")
+    }
+
+    @Test
+    fun rafting_survives_a_form_factor_change() {
+        val save = buildString {
+            append("v=1\nocc=BANKER\nmonth=MAY\ndate=1848,8,1\nweather=CLEAR,72\n")
+            append("miles=2040\nlandmark=16\npace=STEADY\nrations=FILLING\n")
+            append("storeAtFort=false\nsound=true\ncash=100.0\noxen=6\nfood=600\n")
+            append("clothing=5\nammo=120\nwheels=1\naxles=1\ntongues=1\nphase=LANDMARK\n")
+            for (i in 0..4) append("p$i=Person$i,100,true,\n")
+        }
+        val g = newGame()
+        assertTrue(g.load(save))
+        g.onTap("dalles:raft")
+        assertEquals(Phase.RAFTING, g.phase)
+        repeat(5) { g.raftTick() }
+        val progress = g.raftField!!.progress
+        g.setViewport(18, 10)
+        assertEquals(Phase.RAFTING, g.phase)
+        assertEquals(progress, g.raftField!!.progress, "raft progress should survive a resize")
+        g.setViewport(100, 40)
+        assertEquals(Phase.RAFTING, g.phase)
+        assertEquals(progress, g.raftField!!.progress)
+        var guard = 0
+        while (g.phase == Phase.RAFTING && guard++ < 500) g.raftTick()
+        assertTrue(g.phase == Phase.NOTICE || g.phase == Phase.ARRIVED)
+    }
+
+    @Test
     fun graves_from_previous_runs_appear_at_landmarks() {
         val store = InMemoryScoreStore()
         store.addGrave(Grave("Old Jed", "cholera", "kansas", "Here lies Old Jed, died of cholera."))

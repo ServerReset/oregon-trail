@@ -120,6 +120,21 @@ internal fun Game.renderAbout(screen: Screen) {
 }
 
 internal fun Game.renderManagement(screen: Screen) {
+    if (ultraCompact) {
+        val short = ArrayList<Pair<String, String>>()
+        short.add("Top Ten" to "manage:topten")
+        short.add("New leader" to "manage:newleader")
+        short.add("Diff ${difficulty.displayName.take(4)}" to "manage:difficulty")
+        short.add("Sound ${onOff(soundEnabled)}" to "manage:sound")
+        uiSettings?.let { ui ->
+            short.add("Text ${textScaleName(ui.textScaleIndex).take(1)}" to "manage:textsize")
+            short.add("Contr ${onOff(ui.highContrast)}" to "manage:contrast")
+            short.add("Scan ${onOff(ui.scanlines)}" to "manage:scanlines")
+        }
+        short.add("Back" to "manage:back")
+        renderMenuColumns(screen, 1, short)
+        return
+    }
     screen.center(1, "MANAGEMENT OPTIONS", Palette.BRIGHT_GREEN, bold = true)
     val options = ArrayList<Pair<String, String>>()
     options.add("See the Oregon Top Ten" to "manage:topten")
@@ -721,16 +736,16 @@ internal fun Game.renderMap(screen: Screen) {
         val lm = all[i]
         val marker = when {
             i < landmarkIndex -> "x"
-            i == landmarkIndex -> "*"
+            i == landmarkIndex -> if (contentW >= 34) "[_]" else ">"
             else -> "o"
         }
-        val color = when (marker) {
-            "x" -> Palette.GRAY
-            "*" -> Palette.BRIGHT_YELLOW
+        val color = when {
+            i < landmarkIndex -> Palette.GRAY
+            i == landmarkIndex -> Palette.BRIGHT_YELLOW
             else -> Palette.GREEN
         }
-        val name = mapShortName(lm.id)
-        screen.text(marginX + 1, y, " $marker $name", color, bold = marker == "*")
+        val name = if (contentW >= 44) mapShortName(lm.id) else shortLandmarkName(lm)
+        screen.text(marginX + 1, y, " $marker $name", color, bold = i == landmarkIndex)
         y++
     }
     screen.text(marginX + 1, y, "  Mile $miles of ${Data.TOTAL_MILES}", Palette.WHITE)

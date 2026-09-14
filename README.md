@@ -80,11 +80,16 @@ or by opening the APK on the device.
 | Phone / tablet portrait        | Wide terminal, artwork, full menus                     |
 | Landscape / unfolded foldable  | Extra columns for extra rows, everything stays on screen |
 | Folded cover screen (e.g. 260×512) | Ultra-compact layout, short labels, tappable store rows |
-| Round watch                    | Content inset to a centred square, one-row controls    |
+| Round watch                    | Content inset to a centred square, one-row controls, rotary/crown selection cursor |
 | Multi-window / split screen    | Re-lays out live without losing the run                |
 
 Open or close the phone mid-journey and play continues where it left off
 (the activity handles configuration changes and the run is saved on pause).
+Even a hunt or river-rafting run in progress is resized and preserved.
+
+On round watches the game uses the rotary bezel or crown: rotating moves a
+highlighted target and pressing the centre button (or tapping the screen)
+activates it.
 
 ## Controls
 

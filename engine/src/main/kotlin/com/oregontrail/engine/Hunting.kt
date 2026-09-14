@@ -33,7 +33,10 @@ class HuntField(
     val height: Int,
     private val rng: Rng,
     animalsPool: List<AnimalKind>,
-    val carryLimit: Int = 100
+    val carryLimit: Int = 100,
+    initialMeat: Int = 0,
+    initialKills: Int = 0,
+    initialShots: Int = 0
 ) {
 
     private val blocked = BooleanArray(width * height)
@@ -50,11 +53,11 @@ class HuntField(
     var aimY: Int = 0
         private set
 
-    var meat: Int = 0
+    var meat: Int = initialMeat
         private set
-    var shotsFired: Int = 0
+    var shotsFired: Int = initialShots
         private set
-    var kills: Int = 0
+    var kills: Int = initialKills
         private set
 
     private val pool = animalsPool

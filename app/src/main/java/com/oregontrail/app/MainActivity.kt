@@ -1,5 +1,6 @@
 package com.oregontrail.app
 
+import android.content.res.Configuration
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Bundle
@@ -50,6 +51,7 @@ class MainActivity : AppCompatActivity() {
         terminal = TerminalView(this)
         val root = FrameLayout(this).apply { addView(terminal) }
         setContentView(root)
+        terminal.requestFocus()
 
         game = Game(DefaultRng(), PrefsScoreStore(this).also { store = it })
         ui = AppUiSettings(this)
@@ -73,6 +75,24 @@ class MainActivity : AppCompatActivity() {
         terminal.tapListener = { id -> onHotspot(id) }
 
         hideSystemBars()
+        terminal.selectionEnabled = isWatchLike()
+        applyUi()
+        render()
+    }
+
+    /** Watches and round displays get the rotary-driven selection cursor. */
+    private fun isWatchLike(): Boolean {
+        val uiMode = resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
+        if (uiMode == Configuration.UI_MODE_TYPE_WATCH || resources.configuration.isScreenRound) return true
+        // Debug builds can force watch mode for testing on a phone emulator.
+        return BuildConfig.DEBUG &&
+            android.provider.Settings.Global.getInt(contentResolver, "oregon_force_watch", 0) == 1
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        terminal.selectionEnabled = isWatchLike()
+        terminal.refreshGrid()
         applyUi()
         render()
     }

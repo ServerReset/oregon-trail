@@ -48,8 +48,39 @@ class Game(
     var rows: Int = 30
 
     fun setViewport(cols: Int, rows: Int) {
-        this.cols = cols.coerceAtLeast(16)
-        this.rows = rows.coerceAtLeast(10)
+        val c = cols.coerceAtLeast(16)
+        val r = rows.coerceAtLeast(10)
+        val changed = c != this.cols || r != this.rows
+        this.cols = c
+        this.rows = r
+        if (changed) resizeActiveFields()
+    }
+
+    /** Field dimensions for the hunting minigame at the current viewport. */
+    private fun huntSize(): Pair<Int, Int> =
+        min(cols, 64).coerceIn(10, 64) to min(rows - 8, 16).coerceIn(4, 16)
+
+    /** Field dimensions for the rafting finale at the current viewport. */
+    private fun raftSize(): Pair<Int, Int> =
+        min(contentW, 40).coerceIn(10, 40) to min(rows - 5, 16).coerceIn(4, 16)
+
+    /**
+     * Keeps an in-progress minigame usable when the form factor changes
+     * (folding, unfolding, split-screen, watch size). Progress is preserved.
+     */
+    private fun resizeActiveFields() {
+        huntField?.let { old ->
+            val (w, h) = huntSize()
+            if (w != old.width || h != old.height) {
+                huntField = HuntField(w, h, rng, huntPool(), old.carryLimit, old.meat, old.kills, old.shotsFired)
+            }
+        }
+        raftField?.let { old ->
+            val (w, h) = raftSize()
+            if (w != old.width || h != old.height) {
+                raftField = RaftField(w, h, rng, old.totalProgress, old.maxHits, old.progress, old.hits)
+            }
+        }
     }
 
     // ----- persistent settings -----------------------------------------
@@ -1104,11 +1135,8 @@ class Game(
     }
 
     private fun startRaft() {
-        raftField = RaftField(
-            min(contentW, 40).coerceIn(10, 40),
-            min(rows - 5, 16).coerceIn(4, 16),
-            rng
-        )
+        val (w, h) = raftSize()
+        raftField = RaftField(w, h, rng)
         phase = Phase.RAFTING
     }
 
@@ -1201,8 +1229,7 @@ class Game(
             pendingSound = Sound.BAD
             return
         }
-        val fieldW = min(cols, 64).coerceIn(10, 64)
-        val fieldH = min(rows - 8, 16).coerceIn(4, 16)
+        val (fieldW, fieldH) = huntSize()
         huntField = HuntField(fieldW, fieldH, rng, huntPool())
         huntReturn = returnPhase
         huntDays = 1
@@ -1536,7 +1563,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "1.2.0"
+        const val VERSION = "1.3.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400

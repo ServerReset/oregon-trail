@@ -10,7 +10,9 @@ class RaftField(
     val height: Int,
     private val rng: Rng,
     val totalProgress: Int = 55,
-    val maxHits: Int = 6
+    val maxHits: Int = 6,
+    initialProgress: Int = 0,
+    initialHits: Int = 0
 ) {
 
     /** Left column of the three-cell raft "[=]". */
@@ -19,9 +21,9 @@ class RaftField(
 
     private val rocks = ArrayList<Pair<Int, Int>>()
 
-    var progress: Int = 0
+    var progress: Int = initialProgress
         private set
-    var hits: Int = 0
+    var hits: Int = initialHits
         private set
     var done: Boolean = false
         private set
