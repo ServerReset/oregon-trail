@@ -19,6 +19,24 @@ class AnimationTest {
     }
 
     @Test
+    fun weather_particles_are_coloured() {
+        val g = newGame()
+        g.weather = Weather(WeatherKind.SNOW, -5)
+        val s = g.render()
+        var found = false
+        for (y in 0 until s.height) {
+            for (x in 0 until s.width) {
+                val c = s.cell(x, y) ?: continue
+                if (c.ch == '*') {
+                    assertEquals(Palette.BRIGHT_WHITE, c.fg, "snow should be bright")
+                    found = true
+                }
+            }
+        }
+        assertTrue(found, "snow should be on screen")
+    }
+
+    @Test
     fun the_frame_clock_and_blink_advance() {
         val g = newGame()
         val start = g.frame

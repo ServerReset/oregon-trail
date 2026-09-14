@@ -133,6 +133,13 @@ class TerminalView @JvmOverloads constructor(
             invalidate()
         }
 
+    /** The active colour scheme: retro green or Material You. */
+    var colors: ThemeColors = RetroPalette
+        set(value) {
+            field = value
+            invalidate()
+        }
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         if (w == 0 || h == 0) return
@@ -202,13 +209,16 @@ class TerminalView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         val s = screen
-        canvas.drawColor(
-            if (s != null) RetroPalette.bg(s.ambient, highContrast) else RetroPalette.BACKGROUND
-        )
+        val bg = if (s != null) colors.ambientBackground(s.ambient, highContrast) else colors.defaultBackground
+        canvas.drawColor(bg)
         if (s == null) return
 
         val highlight = if (selectionEnabled) s.hotspots.getOrNull(selectedIndex) else null
         if (highlight != null) {
+            val accent = colors.foreground(com.oregontrail.engine.Palette.BRIGHT_GREEN, false)
+            highlightPaint.color = Color.argb(
+                140, Color.red(accent), Color.green(accent), Color.blue(accent)
+            )
             canvas.drawRect(
                 marginX + highlight.x0 * cellW - 1f,
                 marginY + highlight.y0 * lineH,
@@ -224,8 +234,8 @@ class TerminalView @JvmOverloads constructor(
                 if (cell.ch == ' ') continue
                 val selected = highlight != null && x in highlight.x0..highlight.x1 &&
                     y in highlight.y0..highlight.y1
-                paint.color = if (selected) RetroPalette.BACKGROUND else RetroPalette.fg(cell.fg, highContrast)
-                paint.isFakeBoldText = cell.bold || RetroPalette.isBoldDefault(cell.fg)
+                paint.color = if (selected) bg else colors.foreground(cell.fg, highContrast)
+                paint.isFakeBoldText = cell.bold || colors.isBoldDefault(cell.fg)
                 val px = marginX + x * cellW
                 val py = marginY + y * lineH + baseline
                 canvas.drawText(cell.ch.toString(), px, py, paint)

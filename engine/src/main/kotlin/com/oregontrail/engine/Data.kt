@@ -37,6 +37,11 @@ interface UiSettings {
     var textScaleIndex: Int      // 0 = small, 1 = medium, 2 = large
     var highContrast: Boolean
     var scanlines: Boolean
+
+    /** 0 = Retro green terminal, 1 = Material You dynamic colors. */
+    var themeIndex: Int
+        get() = 0
+        set(_) {}
 }
 
 /** One dated line in the traveler's journal. */

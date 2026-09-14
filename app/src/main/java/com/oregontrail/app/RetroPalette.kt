@@ -1,12 +1,29 @@
 package com.oregontrail.app
 
+import android.content.Context
 import android.graphics.Color
+import android.os.Build
 import com.oregontrail.engine.Palette
 
-/** Maps engine logical colors to the retro phosphor palette used on screen. */
-object RetroPalette {
+/** A colour scheme for the terminal: the retro CRT or a Material You theme. */
+interface ThemeColors {
+    val name: String
+
+    /** The base background colour (also used for the system bars). */
+    val defaultBackground: Int
+
+    fun foreground(p: Palette, highContrast: Boolean): Int
+    fun ambientBackground(ambient: Palette, highContrast: Boolean): Int
+    fun isBoldDefault(p: Palette): Boolean
+}
+
+/** The classic green phosphor terminal. */
+object RetroPalette : ThemeColors {
 
     const val BACKGROUND: Int = 0xFF08130A.toInt()
+
+    override val name: String = "Retro Green"
+    override val defaultBackground: Int = BACKGROUND
 
     fun fg(p: Palette, highContrast: Boolean = false): Int {
         if (highContrast) {
@@ -38,8 +55,6 @@ object RetroPalette {
         }
     }
 
-    fun isBoldDefault(p: Palette): Boolean = p == Palette.BRIGHT_GREEN || p == Palette.BRIGHT_YELLOW || p == Palette.BRIGHT_WHITE
-
     /** Dark background tints used for the ambient mood. */
     fun bg(ambient: Palette, highContrast: Boolean = false): Int {
         if (highContrast) return 0xFF000000.toInt()
@@ -51,5 +66,73 @@ object RetroPalette {
             Palette.RED, Palette.MAGENTA -> 0xFF1A0A0A.toInt()
             else -> BACKGROUND
         }
+    }
+
+    override fun foreground(p: Palette, highContrast: Boolean): Int = fg(p, highContrast)
+    override fun ambientBackground(ambient: Palette, highContrast: Boolean): Int = bg(ambient, highContrast)
+    override fun isBoldDefault(p: Palette): Boolean =
+        p == Palette.BRIGHT_GREEN || p == Palette.BRIGHT_YELLOW || p == Palette.BRIGHT_WHITE
+}
+
+/**
+ * Material You: colours derived from the system wallpaper on Android 12+, with
+ * a Material 3 dark baseline on older devices.
+ */
+class MaterialYouTheme(private val context: Context) : ThemeColors {
+
+    override val name: String = "Material You"
+
+    private fun sys(resId: Int, fallback: Int): Int =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                context.getColor(resId)
+            } catch (_: Exception) {
+                fallback
+            }
+        } else {
+            fallback
+        }
+
+    private val primary = sys(android.R.color.system_accent1_200, 0xFFD0BCFF.toInt())
+    private val primaryBright = sys(android.R.color.system_accent1_100, 0xFFEADDFF.toInt())
+    private val secondary = sys(android.R.color.system_accent2_200, 0xFFCCC2DC.toInt())
+    private val tertiary = sys(android.R.color.system_accent3_200, 0xFFEFB8C8.toInt())
+    private val onBackground = sys(android.R.color.system_neutral1_100, 0xFFE6E1E5.toInt())
+    private val outline = sys(android.R.color.system_neutral2_400, 0xFF938F99.toInt())
+    private val surface = sys(android.R.color.system_neutral1_900, 0xFF1C1B1F.toInt())
+    private val error = 0xFFF2B8B5.toInt()
+
+    override val defaultBackground: Int = surface
+
+    override fun foreground(p: Palette, highContrast: Boolean): Int = when (p) {
+        Palette.DEFAULT, Palette.GREEN, Palette.WHITE, Palette.BRIGHT_WHITE -> onBackground
+        Palette.BRIGHT_GREEN -> primaryBright
+        Palette.BLUE, Palette.CYAN -> secondary
+        Palette.YELLOW, Palette.BROWN, Palette.BRIGHT_YELLOW -> tertiary
+        Palette.RED, Palette.MAGENTA -> error
+        Palette.GRAY, Palette.DIM -> outline
+        Palette.BLACK -> surface
+    }
+
+    override fun ambientBackground(ambient: Palette, highContrast: Boolean): Int {
+        val tint = when (ambient) {
+            Palette.BLUE, Palette.CYAN -> secondary
+            Palette.BROWN, Palette.YELLOW -> tertiary
+            Palette.GREEN, Palette.BRIGHT_GREEN -> primary
+            Palette.RED, Palette.MAGENTA -> error
+            else -> return surface
+        }
+        return blend(surface, tint, 0.12)
+    }
+
+    override fun isBoldDefault(p: Palette): Boolean =
+        p == Palette.BRIGHT_GREEN || p == Palette.BRIGHT_YELLOW || p == Palette.BRIGHT_WHITE
+
+    private fun blend(a: Int, b: Int, f: Double): Int {
+        val rf = f.coerceIn(0.0, 1.0)
+        val r = (Color.red(a) * (1 - rf) + Color.red(b) * rf).toInt()
+        val g = (Color.green(a) * (1 - rf) + Color.green(b) * rf).toInt()
+        val bl = (Color.blue(a) * (1 - rf) + Color.blue(b) * rf).toInt()
+        return Color.rgb(r, g, bl)
     }
 }

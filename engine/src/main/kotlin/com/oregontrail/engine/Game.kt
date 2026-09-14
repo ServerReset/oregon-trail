@@ -301,6 +301,7 @@ class Game(
             id == "manage:textsize" -> uiSettings?.let { it.textScaleIndex = (it.textScaleIndex + 1) % 3 }
             id == "manage:contrast" -> uiSettings?.let { it.highContrast = !it.highContrast }
             id == "manage:scanlines" -> uiSettings?.let { it.scanlines = !it.scanlines }
+            id == "manage:theme" -> uiSettings?.let { it.themeIndex = if (it.themeIndex == 1) 0 else 1 }
             id == "manage:back" -> phase = managementReturn
             id == "pause:open" -> openPause()
             id == "pause:resume" -> phase = pauseReturn
@@ -2044,7 +2045,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "2.0.0"
+        const val VERSION = "2.1.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400

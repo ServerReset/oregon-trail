@@ -84,6 +84,11 @@ Debug and release APKs are also attached to each CI run as artifacts.
 - **Pause menu** — press Back or tap `[||]` for camp-at-night pause with save,
   quick save/load, options and quit.
 - **Trail of the Day** — a date-seeded challenge, the same trail for everyone.
+- **Themes** — the default dark green retro terminal, or a **Material You**
+  theme that borrows the system wallpaper's dynamic colours (Android 12+);
+  switch it on the Management screen.
+- **Coloured animations** — snow, hail, rain and storms each bring their own
+  colour.
 - **Animated ASCII** — drifting rain and snow, flowing rivers, a sun with
   turning rays, drifting clouds and birds, curling campfire smoke, twinkling
   stars, a blinking prompt and a screen-change reveal.

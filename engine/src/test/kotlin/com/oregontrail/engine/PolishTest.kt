@@ -21,6 +21,29 @@ class PolishTest {
     }
 
     @Test
+    fun the_theme_setting_toggles_between_retro_and_material_you() {
+        class Settings : UiSettings {
+            override var textScaleIndex: Int = 1
+            override var highContrast: Boolean = false
+            override var scanlines: Boolean = true
+            override var themeIndex: Int = 0
+        }
+        val settings = Settings()
+        val g = newGame()
+        g.uiSettings = settings
+        g.onTap("title:manage")
+        assertTrue(g.render().toText().contains("Theme:"), "management should offer a theme toggle")
+
+        g.onTap("manage:theme")
+        assertEquals(1, settings.themeIndex)
+        assertTrue(g.render().toText().contains("Material You"))
+
+        g.onTap("manage:theme")
+        assertEquals(0, settings.themeIndex)
+        assertTrue(g.render().toText().contains("Retro Green"))
+    }
+
+    @Test
     fun menu_rows_advertise_that_they_are_tappable() {
         val g = newGame()
         g.intro()

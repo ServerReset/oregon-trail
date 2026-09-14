@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.1.0] - 2026-09-14
+
+### Added
+- **Material You theme toggle** (Management → Theme). On Android 12+ the whole
+  terminal is recoloured from the system wallpaper's dynamic colours; older
+  devices get a Material 3 dark baseline. The default remains the dark green
+  retro terminal, and the choice is remembered.
+- **Coloured animations** — weather particles now carry colour: snow is bright
+  white, blizzards white, hail/rain cyan, heavy rain blue and thunderstorms
+  yellow, and they map onto the active theme.
+- 2 new tests (96 total).
+
 ## [2.0.0] - 2026-09-14
 
 ### Added

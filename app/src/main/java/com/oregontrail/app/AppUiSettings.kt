@@ -26,9 +26,16 @@ class AppUiSettings(context: Context) : UiSettings {
             prefs.edit().putBoolean(KEY_SCANLINES, value).apply()
         }
 
+    override var themeIndex: Int
+        get() = prefs.getInt(KEY_THEME, 0)
+        set(value) {
+            prefs.edit().putInt(KEY_THEME, value.coerceIn(0, 1)).apply()
+        }
+
     companion object {
         private const val KEY_TEXT_SCALE = "text_scale"
         private const val KEY_CONTRAST = "contrast"
         private const val KEY_SCANLINES = "scanlines"
+        private const val KEY_THEME = "theme"
     }
 }

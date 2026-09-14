@@ -160,6 +160,11 @@ class MainActivity : AppCompatActivity() {
         }
         terminal.highContrast = ui.highContrast
         terminal.scanlinesEnabled = ui.scanlines
+        terminal.colors = if (ui.themeIndex == 1) MaterialYouTheme(this) else RetroPalette
+        val bg = terminal.colors.defaultBackground
+        window.statusBarColor = bg
+        window.navigationBarColor = bg
+        window.decorView.setBackgroundColor(bg)
     }
 
     private fun handleNameRequest() {

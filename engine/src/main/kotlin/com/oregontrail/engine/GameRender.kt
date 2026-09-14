@@ -65,13 +65,14 @@ internal fun Game.overlayWeather(screen: Screen, top: Int, bottom: Int) {
     val ch: Char
     val step: Int
     val count: Int
+    val color: Palette
     when (weather.kind) {
-        WeatherKind.SNOW -> { ch = '*'; step = 1; count = 26 }
-        WeatherKind.BLIZZARD -> { ch = '*'; step = 1; count = 46 }
-        WeatherKind.HAIL -> { ch = 'o'; step = 2; count = 22 }
-        WeatherKind.RAIN -> { ch = '/'; step = 2; count = 28 }
-        WeatherKind.HEAVY_RAIN -> { ch = '/'; step = 2; count = 44 }
-        WeatherKind.THUNDERSTORM -> { ch = '/'; step = 3; count = 38 }
+        WeatherKind.SNOW -> { ch = '*'; step = 1; count = 26; color = Palette.BRIGHT_WHITE }
+        WeatherKind.BLIZZARD -> { ch = '*'; step = 1; count = 46; color = Palette.WHITE }
+        WeatherKind.HAIL -> { ch = 'o'; step = 2; count = 22; color = Palette.CYAN }
+        WeatherKind.RAIN -> { ch = '/'; step = 2; count = 28; color = Palette.CYAN }
+        WeatherKind.HEAVY_RAIN -> { ch = '/'; step = 2; count = 44; color = Palette.BLUE }
+        WeatherKind.THUNDERSTORM -> { ch = '/'; step = 3; count = 38; color = Palette.YELLOW }
         else -> return
     }
     if (bottom <= top) return
@@ -80,7 +81,7 @@ internal fun Game.overlayWeather(screen: Screen, top: Int, bottom: Int) {
         val x = (i * 37 + frame / 2) % cols
         val y = top + (i * 53 + frame * step) % bandH
         val cell = screen.cell(x, y) ?: continue
-        if (cell.ch == ' ') screen.put(x, y, ch, Palette.DIM)
+        if (cell.ch == ' ') screen.put(x, y, ch, color)
     }
 }
 
@@ -243,6 +244,7 @@ internal fun Game.renderManagement(screen: Screen) {
         short.add("Sound ${onOff(soundEnabled)}" to "manage:sound")
         uiSettings?.let { ui ->
             short.add("Text ${textScaleName(ui.textScaleIndex).take(1)}" to "manage:textsize")
+            short.add("Theme ${if (ui.themeIndex == 1) "M3" else "Retro"}" to "manage:theme")
             short.add("Contr ${onOff(ui.highContrast)}" to "manage:contrast")
             short.add("Scan ${onOff(ui.scanlines)}" to "manage:scanlines")
         }
@@ -258,6 +260,7 @@ internal fun Game.renderManagement(screen: Screen) {
     options.add("Sound is ${if (soundEnabled) "ON" else "OFF"}" to "manage:sound")
     uiSettings?.let { ui ->
         options.add("Text size: ${textScaleName(ui.textScaleIndex)}" to "manage:textsize")
+        options.add("Theme: ${themeName(ui.themeIndex)}" to "manage:theme")
         options.add("High contrast: ${onOff(ui.highContrast)}" to "manage:contrast")
         options.add("Scanlines: ${onOff(ui.scanlines)}" to "manage:scanlines")
     }
@@ -278,6 +281,8 @@ internal fun Game.textScaleName(index: Int): String = when (index) {
     1 -> "Medium"
     else -> "Large"
 }
+
+internal fun Game.themeName(index: Int): String = if (index == 1) "Material You" else "Retro Green"
 
 internal fun Game.onOff(value: Boolean): String = if (value) "ON" else "OFF"
 
