@@ -64,8 +64,10 @@ class TerminalView @JvmOverloads constructor(
         val contentH = h.toFloat()
 
         // Target a readable character width, then derive the column count.
+        // Very wide (often landscape) screens get more columns, which keeps the
+        // glyphs a comfortable size while still yielding enough rows.
         val desiredCellW = 9f * density
-        var c = (contentW / desiredCellW).roundToInt().coerceIn(28, 82)
+        var c = (contentW / desiredCellW).roundToInt().coerceIn(28, 110)
 
         // Measure the monospace advance ratio for this typeface.
         paint.textSize = 100f
@@ -140,6 +142,6 @@ class TerminalView @JvmOverloads constructor(
     fun metrics(): FloatArray = floatArrayOf(cellW, lineH, marginX, marginY)
 
     companion object {
-        const val DEBUG_TOUCH = true
+        const val DEBUG_TOUCH = false
     }
 }

@@ -31,11 +31,22 @@ class PrefsScoreStore(context: Context) : ScoreStore {
         prefs.edit().putString(KEY_GRAVE, text).apply()
     }
 
+    fun saveState(state: String) {
+        prefs.edit().putString(KEY_STATE, state).apply()
+    }
+
+    fun loadState(): String? = prefs.getString(KEY_STATE, null)
+
+    fun clearState() {
+        prefs.edit().remove(KEY_STATE).apply()
+    }
+
     private fun defaultScores(): MutableList<ScoreEntry> =
         Data.topTenSeed.map { (name, points) -> ScoreEntry(name, points, "Pioneer") }.toMutableList()
 
     companion object {
         private const val KEY_SCORES = "top_ten"
         private const val KEY_GRAVE = "gravestone"
+        private const val KEY_STATE = "saved_game"
     }
 }

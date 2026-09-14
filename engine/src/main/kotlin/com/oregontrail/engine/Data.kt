@@ -190,7 +190,7 @@ object Data {
                 "cabins. Jim Bridger sells supplies and spare parts.",
                 "A cutoff here can save miles but skips a fort."
             ),
-            cutoffId = "soda", cutoffLabel = "Take the Lander cutoff", cutoffMiles = 55
+            cutoffId = "hall", cutoffLabel = "Take the Lander cutoff", cutoffMiles = 35
         ),
         Landmark(
             "soda", "Soda Springs", 1395, LandmarkKind.LANDMARK,
@@ -199,7 +199,7 @@ object Data {
                 "The water tastes of soda and is a welcome change.",
                 "A cutoff west begins here."
             ),
-            cutoffId = "boise", cutoffLabel = "Take the Sublette cutoff", cutoffMiles = 60
+            cutoffId = "snake", cutoffLabel = "Take the Sublette cutoff", cutoffMiles = 50
         ),
         Landmark(
             "hall", "Fort Hall", 1534, LandmarkKind.FORT,

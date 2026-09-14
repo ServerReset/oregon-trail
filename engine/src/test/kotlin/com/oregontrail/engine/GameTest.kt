@@ -226,45 +226,37 @@ class GameTest {
     }
 
     @Test
-    fun debug_journey() {
-        val sb = StringBuilder()
-        for (seed in 1L..6L) {
-            val game = newGame(seed)
-            game.doIntro()
-            game.buyBasics()
-            game.onTap("notice:continue")
-            var guard = 0
-            var lastPhase = game.phase
-            while (guard++ < 3000) {
-                if (game.phase == Phase.TRAVEL && game.inventory.food < 200) game.inventory.food = 800
-                when (game.phase) {
-                    Phase.TRAVEL -> game.onTap("travel:continue")
-                    Phase.NOTICE -> game.onTap("notice:continue")
-                    Phase.CHOICE -> game.onTap("choice:continue")
-                    Phase.RIVER -> {
-                        val lm = Data.landmarkAt(game.landmarkIndex)
-                        val ferry = lm.river?.ferryCost
-                        if (ferry != null && game.inventory.cash >= ferry) game.onTap("river:ferry")
-                        else game.onTap("river:caulk")
-                    }
-                    Phase.LANDMARK -> {
-                        if (Data.landmarkAt(game.landmarkIndex).id == "dalles") {
-                            if (game.inventory.cash >= 5) game.onTap("dalles:barlow")
-                            else game.onTap("dalles:raft")
-                        } else game.onTap("land:continue")
-                    }
-                    Phase.ARRIVED, Phase.DEATH -> break
-                    Phase.STORE -> game.onTap("store:leave")
-                    Phase.HUNTING -> game.onTap("hunt:leave")
-                    else -> break
-                }
-                lastPhase = game.phase
-            }
-            sb.append("seed=$seed final=${game.phase} miles=${game.miles} landmark=${game.landmarkIndex}")
-            sb.append(" date=${game.date} alive=${game.party.count { it.alive }} food=${game.inventory.food}")
-            sb.append(" steps=$guard\n")
+    fun save_and_restore_round_trip() {
+        val game = newGame(11L)
+        game.doIntro()
+        game.buyBasics()
+        game.onTap("notice:continue")
+        // Move a little way down the trail.
+        repeat(5) {
+            if (game.phase == Phase.TRAVEL) game.onTap("travel:continue")
+            if (game.phase == Phase.NOTICE) game.onTap("notice:continue")
         }
-        File("/tmp/ot-journey.txt").writeText(sb.toString())
-        assertTrue(true)
+        val snapshot = game.save()
+        assertTrue(snapshot.contains("v=1"))
+
+        val restored = Game(DefaultRng(999L), InMemoryScoreStore())
+        restored.setViewport(48, 34)
+        assertTrue(restored.load(snapshot))
+        assertEquals(game.miles, restored.miles)
+        assertEquals(game.date.toString(), restored.date.toString())
+        assertEquals(game.inventory.food, restored.inventory.food)
+        assertEquals(game.inventory.cash, restored.inventory.cash, 0.001)
+        assertEquals(game.party.map { it.name }, restored.party.map { it.name })
+        // Restored game must be playable.
+        if (restored.phase == Phase.TRAVEL) {
+            restored.onTap("travel:continue")
+            assertTrue(restored.phase != Phase.TITLE)
+        }
+    }
+
+    @Test
+    fun load_rejects_garbage() {
+        val game = newGame()
+        assertFalse(game.load("not a save file"))
     }
 }

@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var game: Game
     private lateinit var terminal: TerminalView
+    private lateinit var store: PrefsScoreStore
     private val handler = Handler(Looper.getMainLooper())
     private var tone: ToneGenerator? = null
 
@@ -47,7 +48,13 @@ class MainActivity : AppCompatActivity() {
         val root = FrameLayout(this).apply { addView(terminal) }
         setContentView(root)
 
-        game = Game(DefaultRng(), PrefsScoreStore(this))
+        game = Game(DefaultRng(), PrefsScoreStore(this).also { store = it })
+        // Resume an in-progress journey if one was saved.
+        store.loadState()?.let { saved ->
+            if (game.load(saved) && game.phase != Phase.TITLE) {
+                // Resumed.
+            }
+        }
         try {
             tone = ToneGenerator(AudioManager.STREAM_MUSIC, 60)
         } catch (_: Exception) {
@@ -168,6 +175,10 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         handler.removeCallbacks(huntTicker)
+        when (game.phase) {
+            Phase.TITLE, Phase.DEATH, Phase.ARRIVED -> store.clearState()
+            else -> store.saveState(game.save())
+        }
     }
 
     override fun onResume() {
@@ -184,6 +195,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         /** Emits a full screen dump to logcat for automated verification. */
-        const val DEBUG = true
+        const val DEBUG = false
     }
 }

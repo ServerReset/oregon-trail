@@ -13,6 +13,11 @@ local.properties
 captures/
 output-metadata.json
 
+# Signing (never commit keys)
+*.keystore
+*.jks
+keystore.properties
+
 # IDE
 .idea/
 *.iml

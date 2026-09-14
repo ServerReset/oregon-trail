@@ -816,7 +816,28 @@ class Game(
             "buy" -> { storeAtFort = true; phase = Phase.STORE }
             "talk" -> talkToPeople()
             "hunt" -> startHunt(Phase.LANDMARK)
+            "cutoff" -> takeCutoff()
         }
+    }
+
+    private fun takeCutoff() {
+        val lm = Data.landmarkAt(landmarkIndex)
+        val targetId = lm.cutoffId ?: return
+        val targetIdx = Data.indexOf(targetId)
+        if (targetIdx <= landmarkIndex + 1) return
+        val floor = Data.landmarkAt(landmarkIndex).mile
+        miles = (miles - lm.cutoffMiles).coerceAtLeast(floor)
+        landmarkIndex = targetIdx - 1
+        pendingSound = Sound.GOOD
+        showNotice(
+            "Taking the Cutoff",
+            listOf(
+                lm.cutoffLabel ?: "You take a cutoff.",
+                "You leave the main trail and save ${lm.cutoffMiles} miles,",
+                "but you will miss the next fort and its supplies."
+            ),
+            Phase.TRAVEL
+        )
     }
 
     private fun talkToPeople() {
@@ -1002,10 +1023,9 @@ class Game(
     private fun dieOf(cause: String) {
         deathCause = cause
         val leader = party.firstOrNull()?.name ?: "Traveler"
-        lastGravestone = leader
-        scores.saveGravestone(
-            "Here lies $leader, died of $cause on the Oregon Trail."
-        )
+        val epitaph = "Here lies $leader, died of $cause on the Oregon Trail."
+        lastGravestone = epitaph
+        scores.saveGravestone(epitaph)
         pendingSound = Sound.DEATH
         phase = Phase.DEATH
     }
@@ -1233,7 +1253,7 @@ class Game(
 
     private fun renderTitle(screen: Screen) {
         val art = ArrayList<String>()
-        if (contentW >= 36) {
+        if (contentW >= 36 && rows >= 30) {
             art.addAll(Ascii.wagon)
             art.addAll(Ascii.blockWord("OREGON"))
             art.addAll(Ascii.blockWord("TRAIL"))
@@ -1407,24 +1427,28 @@ class Game(
     }
 
     private fun renderTravel(screen: Screen) {
+        val compact = rows < 30
         var y = 0
         screen.center(y, "THE OREGON TRAIL", Palette.BRIGHT_GREEN, bold = true)
         y++
         // Status box, wrapped to fit narrow screens.
-        val boxW = min(contentW, 46).coerceAtLeast(24)
+        val boxW = min(contentW, 56).coerceAtLeast(24)
         val inner = boxW - 4
         val wrapped = ArrayList<String>()
-        for (line in statusLines()) wrapped.addAll(wrapString(line, inner))
+        for (line in if (compact) compactStatusLines() else statusLines()) {
+            wrapped.addAll(wrapString(line, inner))
+        }
         screen.box(marginX, y, boxW, wrapped.size + 2, Palette.GREEN, "Status")
         wrapped.forEachIndexed { i, line ->
             screen.text(marginX + 2, y + 1 + i, line, Palette.GREEN)
         }
         y += wrapped.size + 3
 
-        // Scene art for the current region.
-        val scene = sceneArt()
-        Ascii.draw(screen, (cols - Ascii.width(scene)) / 2, y, scene, Palette.GREEN)
-        y += Ascii.height(scene) + 1
+        if (!compact) {
+            val scene = sceneArt()
+            Ascii.draw(screen, (cols - Ascii.width(scene)) / 2, y, scene, Palette.GREEN)
+            y += Ascii.height(scene) + 1
+        }
 
         val remaining = rows - y - 1
         val options = travelOptions()
@@ -1445,6 +1469,20 @@ class Game(
                 screen.hotspot(id, cx, cy, short.length)
             }
         }
+    }
+
+    private fun compactStatusLines(): List<String> {
+        val next = nextLandmark()
+        val short = if (next != null) mapShortName(next.id) else "Oregon"
+        val toNext = if (next != null) "$short in ${(next.mile - miles).coerceAtLeast(0)} mi" else "Oregon!"
+        return listOf(
+            date.toString(),
+            "Weather: ${weather.kind.displayName}, ${weather.tempF}F",
+            "Pace: ${pace.displayName}  Rations: ${rations.displayName}",
+            "Miles: $miles/${Data.TOTAL_MILES}  Next: $toNext",
+            "Food: ${inventory.food}  Ammo: ${inventory.ammo}  " +
+                "Cash: $${"%.0f".format(inventory.cash)}  Oxen: ${inventory.oxen}"
+        )
     }
 
     private fun statusLines(): List<String> {
@@ -1486,14 +1524,16 @@ class Game(
         val lm = Data.landmarkAt(landmarkIndex)
         screen.center(0, lm.name.uppercase(), Palette.BRIGHT_GREEN, bold = true)
         var y = 2
-        val art = when (lm.kind) {
-            LandmarkKind.FORT -> Ascii.fort
-            LandmarkKind.MOUNTAINS -> Ascii.mountains
-            LandmarkKind.RIVER -> Ascii.river
-            else -> Ascii.rock
+        if (rows >= 26) {
+            val art = when (lm.kind) {
+                LandmarkKind.FORT -> Ascii.fort
+                LandmarkKind.MOUNTAINS -> Ascii.mountains
+                LandmarkKind.RIVER -> Ascii.river
+                else -> Ascii.rock
+            }
+            Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.GREEN)
+            y += Ascii.height(art) + 1
         }
-        Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.GREEN)
-        y += Ascii.height(art) + 1
         y = screen.wrap(marginX + 1, y, contentW - 2, lm.blurb.joinToString(" "), Palette.GREEN)
         y++
         if (lm.id == "dalles") {
@@ -1511,6 +1551,9 @@ class Game(
         if (lm.kind == LandmarkKind.FORT) options.add("1. Buy supplies" to "land:buy")
         var n = if (lm.kind == LandmarkKind.FORT) 2 else 1
         options.add("${n++}. Continue on the trail" to "land:continue")
+        if (lm.cutoffId != null && Data.indexOf(lm.cutoffId) > landmarkIndex + 1) {
+            options.add("${n++}. ${lm.cutoffLabel}" to "land:cutoff")
+        }
         options.add("${n++}. Check supplies" to "land:supplies")
         options.add("${n++}. Look at the map" to "land:map")
         options.add("${n++}. Stop to rest" to "land:rest")
@@ -1528,8 +1571,10 @@ class Game(
         val river = lm.river ?: return
         screen.center(0, lm.name.uppercase(), Palette.BRIGHT_GREEN, bold = true)
         var y = 2
-        Ascii.draw(screen, (cols - Ascii.width(Ascii.river)) / 2, y, Ascii.river, Palette.CYAN)
-        y += Ascii.height(Ascii.river) + 1
+        if (rows >= 26) {
+            Ascii.draw(screen, (cols - Ascii.width(Ascii.river)) / 2, y, Ascii.river, Palette.CYAN)
+            y += Ascii.height(Ascii.river) + 1
+        }
         y = screen.wrap(marginX + 1, y, contentW - 2, lm.blurb.joinToString(" "), Palette.GREEN)
         screen.text(marginX + 1, y, "The river is ${riverState(river)}.", Palette.CYAN); y += 2
         val options = ArrayList<Pair<String, String>>()
@@ -1605,9 +1650,12 @@ class Game(
     private fun renderHunting(screen: Screen) {
         val field = huntField ?: return
         screen.center(0, "HUNTING", Palette.BRIGHT_GREEN, bold = true)
-        screen.text(marginX + 1, 1, "Meat: ${field.meat}/${field.carryLimit} lb".padEnd(24), Palette.BRIGHT_YELLOW)
-        screen.text(marginX + 25, 1, "Ammo: ${inventory.ammo}".padEnd(16), Palette.WHITE)
-        screen.text(marginX + 43, 1, "Kills: ${field.kills}", Palette.GREEN)
+        val hLeft = "Meat ${field.meat}/${field.carryLimit}"
+        val hMid = "Ammo ${inventory.ammo}"
+        val hRight = "Kills ${field.kills}"
+        screen.text(marginX + 1, 1, hLeft, Palette.BRIGHT_YELLOW)
+        screen.text(marginX + (contentW / 2 - hMid.length / 2).coerceAtLeast(marginX + 1 + hLeft.length), 1, hMid, Palette.WHITE)
+        screen.text((marginX + contentW - hRight.length).coerceAtLeast(marginX + 1), 1, hRight, Palette.GREEN)
         val fieldX = marginX + 1
         val fieldY = 3
         screen.box(fieldX - 1, fieldY - 1, field.width + 2, field.height + 2, Palette.GREEN)
@@ -1699,7 +1747,112 @@ class Game(
         screen.menuAt(marginX + 1, y, options)
     }
 
+    // ====================================================================
+    //  Save / restore
+    // ====================================================================
+
+    /** Serializes the whole run to a compact, line-based string. */
+    fun save(): String {
+        val sb = StringBuilder()
+        fun line(k: String, v: Any) {
+            sb.append(k).append('=').append(v.toString().replace('\n', ' ')).append('\n')
+        }
+        line("v", 1)
+        line("occ", occupation.name)
+        line("month", travelMonth.name)
+        line("date", "${date.year},${date.month},${date.day}")
+        line("weather", "${weather.kind.name},${weather.tempF}")
+        line("miles", miles)
+        line("landmark", landmarkIndex)
+        line("pace", pace.name)
+        line("rations", rations.name)
+        line("storeAtFort", storeAtFort)
+        line("sound", soundEnabled)
+        line("cash", inventory.cash)
+        line("oxen", inventory.oxen)
+        line("food", inventory.food)
+        line("clothing", inventory.clothing)
+        line("ammo", inventory.ammo)
+        line("wheels", inventory.wheels)
+        line("axles", inventory.axles)
+        line("tongues", inventory.tongues)
+        line("phase", safePhase().name)
+        party.forEachIndexed { i, m ->
+            line("p$i", "${enc(m.name)},${m.health},${m.alive},${enc(m.condition ?: "")}")
+        }
+        return sb.toString()
+    }
+
+    /** Restores a run from [data]. Returns false if the data is unusable. */
+    fun load(data: String): Boolean {
+        val map = HashMap<String, String>()
+        for (l in data.split('\n')) {
+            val i = l.indexOf('=')
+            if (i > 0) map[l.substring(0, i)] = l.substring(i + 1)
+        }
+        if (map["v"] != "1") return false
+        return try {
+            occupation = Occupation.valueOf(map["occ"] ?: return false)
+            travelMonth = TravelMonth.valueOf(map["month"] ?: return false)
+            val d = (map["date"] ?: return false).split(',')
+            date = GameDate(d[0].toInt(), d[1].toInt(), d[2].toInt())
+            val w = (map["weather"] ?: return false).split(',')
+            weather = Weather(WeatherKind.valueOf(w[0]), w[1].toInt())
+            miles = map["miles"]?.toIntOrNull() ?: 0
+            landmarkIndex = (map["landmark"]?.toIntOrNull() ?: 0).coerceIn(0, Data.landmarks.lastIndex)
+            pace = Pace.valueOf(map["pace"] ?: pace.name)
+            rations = Rations.valueOf(map["rations"] ?: rations.name)
+            storeAtFort = map["storeAtFort"]?.toBooleanStrictOrNull() ?: false
+            soundEnabled = map["sound"]?.toBooleanStrictOrNull() ?: true
+            inventory.cash = map["cash"]?.toDoubleOrNull() ?: 0.0
+            inventory.oxen = map["oxen"]?.toIntOrNull() ?: 0
+            inventory.food = map["food"]?.toIntOrNull() ?: 0
+            inventory.clothing = map["clothing"]?.toIntOrNull() ?: 0
+            inventory.ammo = map["ammo"]?.toIntOrNull() ?: 0
+            inventory.wheels = map["wheels"]?.toIntOrNull() ?: 0
+            inventory.axles = map["axles"]?.toIntOrNull() ?: 0
+            inventory.tongues = map["tongues"]?.toIntOrNull() ?: 0
+            val saved = ArrayList<PartyMember>()
+            for (i in 0 until 5) {
+                val raw = map["p$i"] ?: return false
+                val parts = raw.split(',')
+                saved.add(
+                    PartyMember(
+                        dec(parts[0]),
+                        parts[1].toIntOrNull() ?: 100,
+                        parts[2].toBooleanStrictOrNull() ?: true,
+                        dec(parts.getOrElse(3) { "" }).ifEmpty { null }
+                    )
+                )
+            }
+            party = saved
+            phase = try {
+                Phase.valueOf(map["phase"] ?: "TRAVEL")
+            } catch (_: Exception) {
+                Phase.TRAVEL
+            }
+            if (phase in INVALID_RESUME_PHASES) phase = Phase.TRAVEL
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun safePhase(): Phase = if (phase in INVALID_RESUME_PHASES) Phase.TRAVEL else phase
+
+    private fun enc(s: String): String =
+        s.replace('\\', '/').replace(',', ';').replace('|', '/')
+            .replace('\n', ' ').replace('\r', ' ')
+
+    private fun dec(s: String): String = s
+
     companion object {
+        val INVALID_RESUME_PHASES = setOf(
+            Phase.TITLE, Phase.ABOUT, Phase.MANAGEMENT, Phase.TOP_TEN,
+            Phase.PROFESSION, Phase.MONTH, Phase.NAMES, Phase.DEATH,
+            Phase.ARRIVED, Phase.CHOICE, Phase.HUNTING, Phase.NOTICE
+        )
+
         val ABOUT_PAGES: List<String> = listOf(
             "In 1848, thousands of pioneers set out from Independence, Missouri, bound " +
                 "for the fertile Willamette Valley of Oregon, 2,040 miles to the west.",
