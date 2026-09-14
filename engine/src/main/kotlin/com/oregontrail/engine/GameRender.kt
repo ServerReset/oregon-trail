@@ -135,6 +135,7 @@ internal fun Game.renderProfession(screen: Screen) {
         y++
         if (!compact) {
             y = screen.wrap(marginX + 4, y, contentW - 5, occ.blurb, Palette.GREEN)
+            y = screen.wrap(marginX + 4, y, contentW - 5, occ.perk, Palette.CYAN)
             y++
         }
     }
