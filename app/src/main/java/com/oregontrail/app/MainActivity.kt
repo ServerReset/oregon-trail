@@ -29,13 +29,15 @@ class MainActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private var tone: ToneGenerator? = null
 
-    private val huntTicker = object : Runnable {
+    private val ticker = object : Runnable {
         override fun run() {
-            if (game.phase == Phase.HUNTING) {
-                game.huntTick()
-                render()
-                handler.postDelayed(this, 140L)
+            when (game.phase) {
+                Phase.HUNTING -> game.huntTick()
+                Phase.RAFTING -> game.raftTick()
+                else -> return
             }
+            render()
+            handler.postDelayed(this, 150L)
         }
     }
 
@@ -79,11 +81,11 @@ class MainActivity : AppCompatActivity() {
         game.onTap(id)
         handleNameRequest()
         render()
-        if (game.phase == Phase.HUNTING) {
-            handler.removeCallbacks(huntTicker)
-            handler.post(huntTicker)
+        if (game.phase == Phase.HUNTING || game.phase == Phase.RAFTING) {
+            handler.removeCallbacks(ticker)
+            handler.post(ticker)
         } else {
-            handler.removeCallbacks(huntTicker)
+            handler.removeCallbacks(ticker)
         }
     }
 
@@ -174,7 +176,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        handler.removeCallbacks(huntTicker)
+        handler.removeCallbacks(ticker)
         when (game.phase) {
             Phase.TITLE, Phase.DEATH, Phase.ARRIVED -> store.clearState()
             else -> store.saveState(game.save())

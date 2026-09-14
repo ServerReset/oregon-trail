@@ -54,6 +54,8 @@ or by opening the APK on the device.
   wait for conditions to improve.
 - **ASCII hunting minigame** — a roguelike hunt with wandering animals, trees,
   rocks, a moving hunter and travelling bullets. Carry back up to 100 lb of meat.
+- **Columbia River rafting finale** — steer a raft through the rapids, dodging
+  rocks, or pay the Barlow Road toll instead.
 - **Disease and death** — party members sicken and die; you get a gravestone
   and a full epitaph.
 - **Scoring and the Oregon Top Ten**, persisted between runs.
@@ -69,6 +71,7 @@ Everything is touch. Menu entries and buttons are tappable on the terminal.
 | Store       | Tap `[-]` / `[+]` on an item row                      |
 | Names       | Tap a name to open the keyboard dialog                |
 | Hunting     | On-screen `^ < > v` D-pad to move/aim, `SHOOT`, `Return to trail` |
+| Rafting     | `<< LEFT` / `RIGHT >>` to steer                            |
 | Map         | Tap `[ Back ]`                                        |
 
 ## Architecture

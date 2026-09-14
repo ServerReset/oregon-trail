@@ -31,6 +31,7 @@ class LayoutTest {
         Phase.NOTICE -> "notice:continue"
         Phase.MAP -> "map:back"
         Phase.HUNTING -> "hunt:leave"
+        Phase.RAFTING -> "raft:right"
         Phase.CHOICE -> s.hotspots.firstOrNull {
             it.id.startsWith("riders:") || it.id.startsWith("trade:")
         }?.id ?: "choice:continue"
@@ -38,8 +39,9 @@ class LayoutTest {
         Phase.LANDMARK -> {
             val dalles = s.hotspots.firstOrNull { it.id.startsWith("dalles:") }
             if (dalles != null) {
-                s.hotspots.firstOrNull { it.id == "dalles:barlow" }?.id
-                    ?: s.hotspots.firstOrNull { it.id == "dalles:raft" }?.id
+                // Exercise the rafting finale so it is rendered/validated everywhere.
+                s.hotspots.firstOrNull { it.id == "dalles:raft" }?.id
+                    ?: s.hotspots.firstOrNull { it.id == "dalles:barlow" }?.id
             } else "land:continue"
         }
         Phase.DEATH, Phase.ARRIVED -> null
@@ -58,6 +60,9 @@ class LayoutTest {
                     assertHotspotsInside(s, w, h, "phase=${g.phase} viewport=${w}x$h step=$steps")
                     val action = nextAction(g, s) ?: break
                     g.onTap(action)
+                    // Minigames advance on a timer in the app; drive them here.
+                    if (g.phase == Phase.HUNTING) g.huntTick()
+                    if (g.phase == Phase.RAFTING) g.raftTick()
                     if (g.phase == Phase.DEATH || g.phase == Phase.ARRIVED) {
                         val end = g.render()
                         assertHotspotsInside(end, w, h, "end viewport=${w}x$h")

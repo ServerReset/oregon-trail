@@ -19,6 +19,7 @@ enum class Phase {
     MAP,
     CHOICE,
     HUNTING,
+    RAFTING,
     NOTICE,
     DEATH,
     ARRIVED
@@ -88,6 +89,8 @@ class Game(
     private var huntField: HuntField? = null
     private var huntReturn = Phase.TRAVEL
     private var huntDays = 1
+
+    private var raftField: RaftField? = null
 
     private var deathCause = ""
     private var restingDays = 0
@@ -188,6 +191,8 @@ class Game(
             id == "hunt:right" -> huntField?.move(1, 0)
             id == "hunt:shoot" -> huntShoot()
             id == "hunt:leave" -> endHunt()
+            id == "raft:left" -> raftField?.moveLeft()
+            id == "raft:right" -> raftField?.moveRight()
             id == "death:topten" -> phase = Phase.TOP_TEN
             id == "death:restart" -> { newRun(occupation, travelMonth); phase = Phase.PROFESSION }
             id == "arrived:topten" -> phase = Phase.TOP_TEN
@@ -211,6 +216,14 @@ class Game(
 
     fun huntTick() {
         if (phase == Phase.HUNTING) huntField?.tick()
+    }
+
+    /** Advances the Columbia River rafting finale; called on a timer by the front-end. */
+    fun raftTick() {
+        if (phase != Phase.RAFTING) return
+        val field = raftField ?: return
+        field.tick()
+        if (field.done) finishRaft()
     }
 
     // ====================================================================
@@ -966,16 +979,8 @@ class Game(
                 msgs.add("At last, the Willamette Valley lies below.")
             }
             "raft" -> {
-                date.plusDays(rng.nextInt(2, 5))
-                if (rng.chance(0.35)) {
-                    supplyLoss(msgs, 50, 1)
-                    msgs.add("Your raft strikes a rock in the rapids!")
-                    msgs.add("You lose supplies but survive the run.")
-                    pendingSound = Sound.BAD
-                } else {
-                    msgs.add("You run the Columbia River rapids in a")
-                    msgs.add("borrowed canoe. It is terrifying and quick.")
-                }
+                startRaft()
+                return
             }
             "wait" -> {
                 date.plusDays(1)
@@ -983,6 +988,34 @@ class Game(
                 return
             }
         }
+        arriveOregon(msgs)
+    }
+
+    private fun startRaft() {
+        raftField = RaftField(
+            min(contentW - 2, 40).coerceAtLeast(14),
+            min(rows - 10, 16).coerceIn(6, 16),
+            rng
+        )
+        phase = Phase.RAFTING
+    }
+
+    private fun finishRaft() {
+        val field = raftField ?: return
+        val msgs = ArrayList<String>()
+        if (field.success) {
+            msgs.add("You pilot the raft through the crashing")
+            msgs.add("rapids of the Columbia and reach the shore.")
+            if (field.damage() > 0) {
+                supplyLoss(msgs, field.damage() * 12, 0)
+                msgs.add("The rocks cost you some supplies.")
+            }
+        } else {
+            msgs.add("Your raft is smashed on the rocks!")
+            msgs.add("You struggle ashore, losing supplies.")
+            supplyLoss(msgs, 60, 1)
+        }
+        raftField = null
         arriveOregon(msgs)
     }
 
@@ -1227,6 +1260,7 @@ class Game(
             Phase.MAP -> renderMap(screen)
             Phase.CHOICE -> renderChoice(screen)
             Phase.HUNTING -> renderHunting(screen)
+            Phase.RAFTING -> renderRafting(screen)
             Phase.NOTICE -> renderNotice(screen)
             Phase.DEATH -> renderDeath(screen)
             Phase.ARRIVED -> renderArrived(screen)
@@ -1697,6 +1731,39 @@ class Game(
         screen.hotspot("hunt:leave", cx + 14, cy + 2, leave.length)
     }
 
+    private fun renderRafting(screen: Screen) {
+        val field = raftField ?: return
+        screen.center(0, "COLUMBIA RIVER", Palette.BRIGHT_GREEN, bold = true)
+        val left = "Distance ${field.progress}/${55}"
+        val right = "Raft ${field.integrity}/6"
+        screen.text(marginX + 1, 1, left, Palette.BRIGHT_YELLOW)
+        screen.text((marginX + contentW - right.length).coerceAtLeast(marginX + 1), 1, right, Palette.WHITE)
+        val fieldX = marginX + 1
+        val fieldY = 3
+        screen.box(fieldX - 1, fieldY - 1, field.width + 2, field.height + 2, Palette.CYAN)
+        for (fy in 0 until field.height) {
+            for (fx in 0 until field.width) {
+                val ch: Char
+                val color: Palette
+                when {
+                    field.isRaftAt(fx, fy) -> { ch = "[=]"[fx - field.raftX]; color = Palette.BRIGHT_GREEN }
+                    field.rockAt(fx, fy) -> { ch = 'O'; color = Palette.GRAY }
+                    else -> { ch = if (fy % 2 == 0 && (fx + fy) % 7 == 0) '~' else ' '; color = Palette.DIM }
+                }
+                screen.put(fieldX + fx, fieldY + fy, ch, color)
+            }
+        }
+        var cy = fieldY + field.height + 1
+        if (cy > rows - 2) cy = rows - 2
+        val cx = marginX + 1
+        val leftBtn = "<< LEFT "
+        val rightBtn = " RIGHT >>"
+        screen.text(cx, cy, leftBtn, Palette.BRIGHT_GREEN, bold = true)
+        screen.hotspot("raft:left", cx, cy, leftBtn.length)
+        screen.text(cx + 12, cy, rightBtn, Palette.BRIGHT_GREEN, bold = true)
+        screen.hotspot("raft:right", cx + 12, cy, rightBtn.length)
+    }
+
     private fun renderNotice(screen: Screen) {
         screen.center(0, noticeTitle.uppercase(), Palette.BRIGHT_GREEN, bold = true)
         var y = 2
@@ -1838,7 +1905,11 @@ class Game(
         }
     }
 
-    private fun safePhase(): Phase = if (phase in INVALID_RESUME_PHASES) Phase.TRAVEL else phase
+    private fun safePhase(): Phase = when {
+        phase == Phase.RAFTING -> Phase.LANDMARK
+        phase in INVALID_RESUME_PHASES -> Phase.TRAVEL
+        else -> phase
+    }
 
     private fun enc(s: String): String =
         s.replace('\\', '/').replace(',', ';').replace('|', '/')
@@ -1850,7 +1921,7 @@ class Game(
         val INVALID_RESUME_PHASES = setOf(
             Phase.TITLE, Phase.ABOUT, Phase.MANAGEMENT, Phase.TOP_TEN,
             Phase.PROFESSION, Phase.MONTH, Phase.NAMES, Phase.DEATH,
-            Phase.ARRIVED, Phase.CHOICE, Phase.HUNTING, Phase.NOTICE
+            Phase.ARRIVED, Phase.CHOICE, Phase.HUNTING, Phase.RAFTING, Phase.NOTICE
         )
 
         val ABOUT_PAGES: List<String> = listOf(

@@ -21,17 +21,17 @@ class GameDate(year: Int = 1848, month: Int = 3, day: Int = 1) {
         var remaining = n
         while (remaining > 0) {
             val len = lengthOfMonth(year, month)
-            if (day >= len) {
+            if (day < len) {
+                day++
+            } else {
                 day = 1
                 month++
                 if (month > 12) {
                     month = 1
                     year++
                 }
-            } else {
-                day++
-                remaining--
             }
+            remaining--
         }
     }
 

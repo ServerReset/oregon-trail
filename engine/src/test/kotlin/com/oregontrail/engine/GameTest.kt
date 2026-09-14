@@ -242,6 +242,71 @@ class GameTest {
     }
 
     @Test
+    fun raft_field_completes_and_dodging_avoids_damage() {
+        // 0.99: chance() is always false, so no rocks spawn and the run is clean.
+        val calm = ScriptedRng.of(*DoubleArray(400) { 0.99 })
+        val safe = RaftField(20, 10, calm, totalProgress = 25)
+        var guard = 0
+        while (!safe.done && guard++ < 200) safe.tick()
+        assertTrue(safe.done)
+        assertTrue(safe.success)
+        assertEquals(0, safe.damage())
+
+        // 0.0: rocks spawn constantly; steer the raft into them and take damage.
+        val rough = ScriptedRng.of(*DoubleArray(800) { 0.0 })
+        val dangerous = RaftField(16, 8, rough, totalProgress = 200)
+        guard = 0
+        while (!dangerous.done && guard++ < 400) {
+            dangerous.moveLeft()
+            dangerous.tick()
+        }
+        assertTrue(dangerous.done)
+        assertTrue(dangerous.damage() > 0)
+    }
+
+    @Test
+    fun dates_advance_across_month_and_year_ends() {
+        val d = GameDate(1848, 5, 31)
+        d.plusDays(1)
+        assertEquals(6, d.month)
+        assertEquals(1, d.day)
+
+        val dec = GameDate(1848, 12, 31)
+        dec.plusDays(1)
+        assertEquals(1849, dec.year)
+        assertEquals(1, dec.month)
+        assertEquals(1, dec.day)
+
+        val feb = GameDate(1848, 2, 28) // 1848 is a leap year
+        feb.plusDays(1)
+        assertEquals(29, feb.day)
+        feb.plusDays(1)
+        assertEquals(3, feb.month)
+        assertEquals(1, feb.day)
+    }
+
+    @Test
+    fun rafting_finale_is_reachable_and_completes() {
+        val save = buildString {
+            append("v=1\nocc=BANKER\nmonth=MAY\ndate=1848,8,1\nweather=CLEAR,72\n")
+            append("miles=2040\nlandmark=16\npace=STEADY\nrations=FILLING\n")
+            append("storeAtFort=false\nsound=true\ncash=100.0\noxen=6\nfood=600\n")
+            append("clothing=5\nammo=120\nwheels=1\naxles=1\ntongues=1\nphase=LANDMARK\n")
+            for (i in 0..4) append("p$i=Person$i,100,true,\n")
+        }
+        val g = Game(DefaultRng(5L), InMemoryScoreStore())
+        g.setViewport(40, 30)
+        assertTrue(g.load(save), "save should load")
+        assertEquals(Phase.LANDMARK, g.phase)
+        g.onTap("dalles:raft")
+        assertEquals(Phase.RAFTING, g.phase)
+        var guard = 0
+        while (g.phase == Phase.RAFTING && guard++ < 500) g.raftTick()
+        assertTrue(g.phase == Phase.NOTICE || g.phase == Phase.ARRIVED,
+            "rafting should finish the trail, was ${g.phase}")
+    }
+
+    @Test
     fun save_and_restore_round_trip() {
         val game = newGame(11L)
         game.doIntro()
