@@ -167,7 +167,17 @@ keyAlias=...
 keyPassword=...
 ```
 
-If the file is absent the release build is produced unsigned.
+If the file is absent the release build is produced signed with the debug
+key. CI can sign with your own key if you add these repository secrets:
+
+| Secret | Purpose |
+|--------|---------|
+| `RELEASE_KEYSTORE_BASE64` | `base64 -w0 release.keystore` |
+| `RELEASE_STORE_PASSWORD` | keystore password |
+| `RELEASE_KEY_ALIAS` | key alias |
+| `RELEASE_KEY_PASSWORD` | key password |
+
+Without them, CI still builds and publishes an installable (debug-signed) APK.
 
 ## Testing
 

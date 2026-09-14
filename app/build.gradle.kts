@@ -12,6 +12,10 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// CI provides a base64-decoded keystore at this path plus passwords in env vars.
+val ciKeystore = rootProject.file("ci-release.keystore")
+val hasReleaseSigning = keystorePropertiesFile.exists() || ciKeystore.exists()
+
 android {
     namespace = "com.oregontrail.app"
     compileSdk = 35
@@ -24,13 +28,20 @@ android {
         versionName = "1.6.0"
     }
 
-    if (keystorePropertiesFile.exists()) {
+    if (hasReleaseSigning) {
         signingConfigs {
             create("release") {
-                storeFile = file(keystoreProperties.getProperty("storeFile"))
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
+                if (keystorePropertiesFile.exists()) {
+                    storeFile = file(keystoreProperties.getProperty("storeFile"))
+                    storePassword = keystoreProperties.getProperty("storePassword")
+                    keyAlias = keystoreProperties.getProperty("keyAlias")
+                    keyPassword = keystoreProperties.getProperty("keyPassword")
+                } else {
+                    storeFile = ciKeystore
+                    storePassword = System.getenv("RELEASE_STORE_PASSWORD") ?: ""
+                    keyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: ""
+                    keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: ""
+                }
             }
         }
     }
@@ -44,7 +55,7 @@ android {
             )
             // Use the private release key when available; otherwise fall back to
             // the debug key so CI can still produce an installable APK.
-            signingConfig = if (keystorePropertiesFile.exists()) {
+            signingConfig = if (hasReleaseSigning) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
