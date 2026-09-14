@@ -67,6 +67,10 @@ or by opening the APK on the device.
 - **Difficulty and accessibility** — Easy/Normal/Hard changes how often trouble
   strikes; text size, a high-contrast palette and CRT scanlines can be toggled
   on the Management screen and are remembered.
+- **Save states** — name and keep multiple saved games, load or delete them
+  from the title screen, plus a separate autosave offered as **Continue**.
+- **Achievements and statistics** — twelve milestones to unlock and a
+  lifetime stats screen, both persisted between runs.
 - **Save / resume** — the journey survives rotation, folding and process death.
 - **Runs anywhere** — phones, tablets, foldables and flippable cover screens,
   and even small round watches. The terminal recomputes its character grid on
@@ -105,6 +109,8 @@ Everything is touch. Menu entries and buttons are tappable on the terminal.
 | Journal     | `[< Prev ]` / `[ Next >]` / `[ Back ]`                 |
 | Rest        | Choose 1, 2, 3 or 5 days                               |
 | Death       | Write your own epitaph                                 |
+| Title       | Continue / Load saved games, Awards, Statistics        |
+| Travel      | `10. Save game` writes a named save state             |
 | Map         | Tap `[ Back ]`                                        |
 
 ## Architecture

@@ -114,6 +114,40 @@ class LayoutTest {
     }
 
     @Test
+    fun meta_screens_render_on_every_width() {
+        for (w in widths) {
+            val g = Game(DefaultRng(9L), InMemoryScoreStore())
+            g.setViewport(w, 22)
+            g.saveSlots = listOf(
+                SaveSlot("s1", "Wagon - Mar 1", "Mar 1 1848, 0 mi, Banker", 1L, g.save())
+            )
+            // Title now advertises the save slot.
+            assertTrue(g.render().hotspots.any { it.id == "title:load" }, "title@$w")
+
+            g.onTap("title:ach")
+            assertTrue(g.phase == Phase.ACHIEVEMENTS)
+            assertHotspotsInside(g.render(), w, 22, "achievements@$w")
+            g.onTap("ach:back")
+
+            g.onTap("title:stats")
+            assertTrue(g.phase == Phase.STATS)
+            assertHotspotsInside(g.render(), w, 22, "stats@$w")
+            g.onTap("stats:back")
+
+            g.onTap("title:load")
+            assertTrue(g.phase == Phase.LOAD)
+            val load = g.render()
+            assertTrue(load.hotspots.any { it.id == "slot:load:s1" }, "load@$w")
+            assertHotspotsInside(load, w, 22, "load@$w")
+            g.onTap("slots:back")
+
+            // Also the watch title with a slot.
+            g.setViewport(w, 10)
+            assertTrue(g.render().hotspots.any { it.id == "title:load" }, "watch title@$w")
+        }
+    }
+
+    @Test
     fun store_buttons_fit_at_minimum_width() {
         val g = Game(DefaultRng(5L), InMemoryScoreStore())
         g.setViewport(28, 20)

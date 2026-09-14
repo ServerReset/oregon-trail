@@ -21,6 +21,9 @@ enum class Phase {
     HUNTING,
     RAFTING,
     JOURNAL,
+    LOAD,
+    ACHIEVEMENTS,
+    STATS,
     NOTICE,
     DEATH,
     ARRIVED
@@ -111,6 +114,27 @@ class Game(
     val journal: MutableList<JournalEntry> = ArrayList()
     val graves: MutableList<Grave> = ArrayList()
 
+    // ----- meta progression --------------------------------------------
+    val achievements: MutableSet<String> = LinkedHashSet()
+    var stats: GameStats = GameStats()
+    /** Save states supplied by the front-end for the load screen. */
+    var saveSlots: List<SaveSlot> = emptyList()
+    /** True when the front-end has an autosave to continue. */
+    var autosaveAvailable: Boolean = false
+    /** Set when the player asks to continue the autosave. */
+    var requestedAutosaveLoad: Boolean = false
+        private set
+    /** Set when the player asks to save; the front-end shows a name dialog. */
+    var requestedSave: Boolean = false
+        private set
+    /** Set when the player picks a slot to load or delete. */
+    var requestedLoadId: String? = null
+        private set
+    var requestedDeleteId: String? = null
+        private set
+    /** Name of an achievement just unlocked, for the front-end to toast. */
+    var pendingUnlock: String? = null
+
     /** Presentation settings supplied by the front-end (may be null in tests). */
     var uiSettings: UiSettings? = null
 
@@ -145,6 +169,8 @@ class Game(
         topTen = scores.loadScores()
         lastGravestone = scores.loadGravestone()
         graves.addAll(scores.loadGraves())
+        achievements.addAll(scores.loadAchievements())
+        stats = scores.loadStats()
         newRun(Occupation.BANKER, TravelMonth.MARCH)
         phase = Phase.TITLE
     }
@@ -194,7 +220,16 @@ class Game(
             id == "title:travel" -> { phase = Phase.PROFESSION }
             id == "title:about" -> { aboutPage = 0; phase = Phase.ABOUT }
             id == "title:topten" -> phase = Phase.TOP_TEN
+            id == "title:continue" -> requestedAutosaveLoad = true
+            id == "title:load" -> phase = Phase.LOAD
+            id == "title:ach" -> phase = Phase.ACHIEVEMENTS
+            id == "title:stats" -> phase = Phase.STATS
             id == "title:manage" -> phase = Phase.MANAGEMENT
+            id == "slots:back" -> phase = Phase.TITLE
+            id == "ach:back" -> phase = Phase.TITLE
+            id == "stats:back" -> phase = Phase.TITLE
+            id.startsWith("slot:load:") -> requestedLoadId = id.substringAfter("slot:load:")
+            id.startsWith("slot:del:") -> requestedDeleteId = id.substringAfter("slot:del:")
             id == "title:end" -> { /* handled by front-end by finishing activity */ }
             id == "about:next" -> {
                 aboutPage++
@@ -348,7 +383,18 @@ class Game(
                 Item.TONGUE -> inventory.tongues += 1
             }
         } else {
-            if (displayQty(item) <= 0) return
+            // Selling returns whole steps only, so stock can never go negative.
+            val step = unitsPerTap(item)
+            val have = when (item) {
+                Item.OXEN -> inventory.oxen
+                Item.FOOD -> inventory.food
+                Item.CLOTHING -> inventory.clothing
+                Item.AMMUNITION -> inventory.ammo
+                Item.WHEEL -> inventory.wheels
+                Item.AXLE -> inventory.axles
+                Item.TONGUE -> inventory.tongues
+            }
+            if (have < step) return
             when (item) {
                 Item.OXEN -> { inventory.oxen -= 2; inventory.cash += priceOf(item) }
                 Item.FOOD -> { inventory.food -= 50; inventory.cash += priceOf(item) * 50 }
@@ -377,6 +423,7 @@ class Game(
         if (!storeAtFort) {
             // Leaving Independence: begin the journey.
             phase = Phase.TRAVEL
+            recordStats { it.copy(gamesPlayed = it.gamesPlayed + 1) }
             addJournal("We bought our supplies and left Independence for Oregon.")
             showNotice(
                 "Heading Out",
@@ -404,6 +451,7 @@ class Game(
             "supplies" -> showNotice("Your Supplies", suppliesLines(), Phase.TRAVEL)
             "map" -> phase = Phase.MAP
             "journal" -> { journalPage = 0; phase = Phase.JOURNAL }
+            "save" -> requestedSave = true
             "pace" -> cyclePace()
             "rations" -> cycleRations()
             "rest" -> startRest()
@@ -463,6 +511,38 @@ class Game(
         val dateText = "${date.monthName} ${date.day}"
         journal.add(JournalEntry(dateText, text))
         if (journal.size > JOURNAL_LIMIT) journal.removeAt(0)
+    }
+
+    /** Unlocks an achievement once, saving it and queuing a notice for the front-end. */
+    private fun unlock(id: String) {
+        if (achievements.add(id)) {
+            scores.saveAchievements(achievements)
+            pendingUnlock = Achievements.name(id)
+            addJournal("Achievement: ${Achievements.name(id)}")
+            pendingSound = Sound.GOOD
+        }
+    }
+
+    fun clearLoadRequest() {
+        requestedLoadId = null
+    }
+
+    fun clearDeleteRequest() {
+        requestedDeleteId = null
+    }
+
+    fun clearSaveRequest() {
+        requestedSave = false
+    }
+
+    /** Called by the front-end once it has loaded (or failed to load) the autosave. */
+    fun clearAutosaveRequest() {
+        requestedAutosaveLoad = false
+    }
+
+    private fun recordStats(transform: (GameStats) -> GameStats) {
+        stats = transform(stats)
+        scores.saveStats(stats)
     }
 
     /** The original let you choose how long to rest. */
@@ -729,6 +809,7 @@ class Game(
                 } else if (occupation == Occupation.CARPENTER && rng.chance(0.5)) {
                     msgs.add("A wagon ${part.name.lowercase()} breaks, but your")
                     msgs.add("carpentry skills repair it without a spare part.")
+                    unlock(Achievements.CARPENTER)
                 } else {
                     val delay = rng.nextInt(10, 20)
                     inventory.food = max(0, inventory.food - 8)
@@ -1019,6 +1100,7 @@ class Game(
         val msgs = ArrayList<String>()
         when (action) {
             "ford" -> {
+                unlock(Achievements.RIVERBANK)
                 val risk = 0.25 + if (inventory.oxen < 4) 0.2 else 0.0 + weatherRisk()
                 if (rng.chance(1 - risk)) {
                     msgs.add("You ford the ${lm.name.split(" ").first()} safely.")
@@ -1031,6 +1113,7 @@ class Game(
                 }
             }
             "caulk" -> {
+                unlock(Achievements.RIVERBANK)
                 val days = rng.nextInt(1, 3)
                 date.plusDays(days)
                 val risk = 0.15 + if (inventory.oxen < 4) 0.15 else 0.0
@@ -1054,6 +1137,7 @@ class Game(
                 }
                 inventory.cash -= cost
                 date.plusDays(1)
+                unlock(Achievements.FERRYMAN)
                 msgs.add("You pay $${"%.2f".format(cost)} for the ferry and")
                 msgs.add("cross the river without trouble.")
             }
@@ -1165,6 +1249,19 @@ class Game(
         topTen.add(ScoreEntry(party.firstOrNull()?.name ?: "Traveler", lastScore, occupation.displayName))
         topTen = topTen.sortedByDescending { it.points }.take(10).toMutableList()
         scores.saveScores(topTen)
+        recordStats {
+            it.copy(
+                arrivals = it.arrivals + 1,
+                bestScore = maxOf(it.bestScore, lastScore),
+                totalMiles = it.totalMiles + miles
+            )
+        }
+        unlock(Achievements.REACHED_OREGON)
+        if (aliveCount == 5) unlock(Achievements.ALL_FIVE_ALIVE)
+        if (aliveCount == 1) unlock(Achievements.SURVIVOR)
+        if (inventory.cash >= 500) unlock(Achievements.FRUGAL)
+        if (inventory.cash >= 1000) unlock(Achievements.WEALTHY)
+        if (topTen.any { it.points == lastScore }) unlock(Achievements.TOP_TEN)
         pendingSound = Sound.ARRIVAL
         noticeTitle = "Oregon!"
         noticeLines.clear()
@@ -1206,6 +1303,8 @@ class Game(
         if (graves.size > GRAVE_LIMIT) graves.removeAt(0)
         scores.addGrave(grave)
         scores.saveGravestone(epitaph)
+        recordStats { it.copy(deaths = it.deaths + 1, totalMiles = it.totalMiles + miles) }
+        if (cause.contains("dysentery", ignoreCase = true)) unlock(Achievements.DYSENTERY)
         pendingSound = Sound.DEATH
         phase = Phase.DEATH
     }
@@ -1255,6 +1354,8 @@ class Game(
         date.plusDays(huntDays)
         consumeFood()
         addJournal("Hunted and brought back $meat pounds of meat.")
+        if (meat >= field.carryLimit) unlock(Achievements.BIG_HUNT)
+        if (field.kills >= 3) unlock(Achievements.SHARPSHOOTER)
         val lines = listOf(
             "You return to the wagon with $meat pounds",
             "of meat from ${field.kills} animal(s).",
@@ -1428,6 +1529,9 @@ class Game(
             Phase.RIVER -> renderRiver(screen)
             Phase.MAP -> renderMap(screen)
             Phase.JOURNAL -> renderJournal(screen)
+            Phase.LOAD -> renderLoad(screen)
+            Phase.ACHIEVEMENTS -> renderAchievements(screen)
+            Phase.STATS -> renderStats(screen)
             Phase.CHOICE -> renderChoice(screen)
             Phase.HUNTING -> renderHunting(screen)
             Phase.RAFTING -> renderRafting(screen)
@@ -1563,7 +1667,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "1.3.0"
+        const val VERSION = "1.4.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400
@@ -1573,7 +1677,7 @@ class Game(
             Phase.TITLE, Phase.ABOUT, Phase.MANAGEMENT, Phase.TOP_TEN,
             Phase.PROFESSION, Phase.MONTH, Phase.NAMES, Phase.DEATH,
             Phase.ARRIVED, Phase.CHOICE, Phase.HUNTING, Phase.RAFTING,
-            Phase.JOURNAL, Phase.NOTICE
+            Phase.JOURNAL, Phase.LOAD, Phase.ACHIEVEMENTS, Phase.STATS, Phase.NOTICE
         )
 
         val ABOUT_PAGES: List<String> = listOf(

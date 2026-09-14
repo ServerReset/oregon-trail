@@ -12,6 +12,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
@@ -56,12 +57,9 @@ class MainActivity : AppCompatActivity() {
         game = Game(DefaultRng(), PrefsScoreStore(this).also { store = it })
         ui = AppUiSettings(this)
         game.uiSettings = ui
-        // Resume an in-progress journey if one was saved.
-        store.loadState()?.let { saved ->
-            if (game.load(saved) && game.phase != Phase.TITLE) {
-                // Resumed.
-            }
-        }
+        // The title screen offers Continue (autosave) and Load (named slots).
+        game.saveSlots = store.listSlots()
+        game.autosaveAvailable = store.loadState() != null
         try {
             tone = ToneGenerator(AudioManager.STREAM_MUSIC, 60)
         } catch (_: Exception) {
@@ -105,6 +103,14 @@ class MainActivity : AppCompatActivity() {
         game.onTap(id)
         handleNameRequest()
         handleEpitaphRequest()
+        handleAutosaveRequest()
+        handleSaveRequest()
+        handleLoadRequest()
+        handleDeleteRequest()
+        game.pendingUnlock?.let { name ->
+            Toast.makeText(this, "Achievement unlocked: $name", Toast.LENGTH_LONG).show()
+            game.pendingUnlock = null
+        }
         applyUi()
         render()
         if (game.phase == Phase.HUNTING || game.phase == Phase.RAFTING) {
@@ -184,6 +190,74 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun handleAutosaveRequest() {
+        if (!game.requestedAutosaveLoad) return
+        store.loadState()?.let { data -> game.load(data) }
+        game.clearAutosaveRequest()
+        game.autosaveAvailable = false
+    }
+
+    private fun handleSaveRequest() {
+        if (!game.requestedSave) return
+        val suggestion = "${game.party.firstOrNull()?.name ?: "Wagon"} - " +
+            "${game.date.monthName} ${game.date.day}"
+        val input = EditText(this).apply {
+            setText(suggestion)
+            setSelection(text.length)
+            filters = arrayOf(InputFilter.LengthFilter(24))
+            hint = "Save name"
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Save game")
+            .setView(input)
+            .setPositiveButton("Save") { _, _ ->
+                val detail = "${game.date}, ${game.miles} mi, ${game.occupation.displayName}"
+                store.saveSlot(input.text.toString(), detail, game.save())
+                game.saveSlots = store.listSlots()
+                game.clearSaveRequest()
+                render()
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                game.clearSaveRequest()
+                render()
+            }
+            .setOnCancelListener {
+                game.clearSaveRequest()
+                render()
+            }
+            .show()
+    }
+
+    private fun handleLoadRequest() {
+        val id = game.requestedLoadId ?: return
+        store.loadSlotData(id)?.let { data -> game.load(data) }
+        game.clearLoadRequest()
+        game.saveSlots = store.listSlots()
+    }
+
+    private fun handleDeleteRequest() {
+        val id = game.requestedDeleteId ?: return
+        val slot = store.listSlots().firstOrNull { it.id == id }
+        AlertDialog.Builder(this)
+            .setTitle("Delete saved game")
+            .setMessage(slot?.label ?: "this save")
+            .setPositiveButton("Delete") { _, _ ->
+                store.deleteSlot(id)
+                game.saveSlots = store.listSlots()
+                game.clearDeleteRequest()
+                render()
+            }
+            .setNegativeButton("Keep") { _, _ ->
+                game.clearDeleteRequest()
+                render()
+            }
+            .setOnCancelListener {
+                game.clearDeleteRequest()
+                render()
+            }
+            .show()
+    }
+
     private fun render() {
         val s = game.render()
         terminal.screen = s
@@ -240,7 +314,8 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
         handler.removeCallbacks(ticker)
         when (game.phase) {
-            Phase.TITLE, Phase.DEATH, Phase.ARRIVED -> store.clearState()
+            Phase.DEATH, Phase.ARRIVED -> store.clearState()
+            Phase.TITLE -> { /* keep any existing autosave so Continue still works */ }
             else -> store.saveState(game.save())
         }
     }
@@ -248,6 +323,9 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         hideSystemBars()
+        terminal.selectionEnabled = isWatchLike()
+        game.saveSlots = store.listSlots()
+        game.autosaveAvailable = store.loadState() != null
         applyUi()
         render()
     }

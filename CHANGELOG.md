@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [1.4.0] - 2026-09-14
+
+### Added
+- **Save states**: name and keep multiple saved games, load or delete them from
+  a "Saved games" screen, and a separate autosave offered as **Continue** on the
+  title screen. The title is now always shown at launch, with Continue/Load
+  entries appearing when saves exist.
+- **Achievements**: twelve milestones (Oregon or Bust, Everyone Made It, Trail
+  Legend, Meat on the Wagon, Sharpshooter, Frugal, Well Off, Handy, Ferryman,
+  Forced a Crossing, You Have Died of Dysentery, Sole Survivor) with an
+  Awards screen and a toast when one unlocks.
+- **Statistics**: games played, arrivals, deaths, best score, total miles and
+  achievement count, kept across runs.
+- Journal records achievement unlocks.
+
+### Fixed
+- Selling goods could drive food/ammo/oxen negative when only a partial step
+  remained; selling now returns whole steps only and can never go below zero.
+- Career statistics were not counted when starting a game; they now increment
+  when the journey actually begins.
+
 ## [1.3.0] - 2026-09-14
 
 ### Added

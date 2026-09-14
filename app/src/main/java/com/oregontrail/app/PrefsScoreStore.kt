@@ -1,8 +1,11 @@
 package com.oregontrail.app
 
 import android.content.Context
+import android.util.Base64
 import com.oregontrail.engine.Data
+import com.oregontrail.engine.GameStats
 import com.oregontrail.engine.Grave
+import com.oregontrail.engine.SaveSlot
 import com.oregontrail.engine.ScoreEntry
 import com.oregontrail.engine.ScoreStore
 
@@ -60,6 +63,78 @@ class PrefsScoreStore(context: Context) : ScoreStore {
         prefs.edit().remove(KEY_STATE).apply()
     }
 
+    // ----- statistics & achievements ----------------------------------
+
+    override fun loadStats(): GameStats = GameStats(
+        gamesPlayed = prefs.getInt("st_games", 0),
+        arrivals = prefs.getInt("st_arrivals", 0),
+        deaths = prefs.getInt("st_deaths", 0),
+        bestScore = prefs.getInt("st_best", 0),
+        totalMiles = prefs.getInt("st_miles", 0)
+    )
+
+    override fun saveStats(stats: GameStats) {
+        prefs.edit()
+            .putInt("st_games", stats.gamesPlayed)
+            .putInt("st_arrivals", stats.arrivals)
+            .putInt("st_deaths", stats.deaths)
+            .putInt("st_best", stats.bestScore)
+            .putInt("st_miles", stats.totalMiles)
+            .apply()
+    }
+
+    override fun loadAchievements(): Set<String> {
+        val raw = prefs.getString("achievements", null) ?: return emptySet()
+        return raw.split(',').filter { it.isNotEmpty() }.toSet()
+    }
+
+    override fun saveAchievements(ids: Set<String>) {
+        prefs.edit().putString("achievements", ids.joinToString(",")).apply()
+    }
+
+    // ----- save slots -------------------------------------------------
+
+    fun listSlots(): List<SaveSlot> {
+        val raw = prefs.getString(KEY_SLOTS, null) ?: return emptyList()
+        return raw.split('\n').mapNotNull { line ->
+            val parts = line.split('|')
+            if (parts.size < 5) return@mapNotNull null
+            val data = try {
+                String(Base64.decode(parts[4], Base64.NO_WRAP), Charsets.UTF_8)
+            } catch (_: Exception) {
+                return@mapNotNull null
+            }
+            SaveSlot(parts[0], parts[1], parts[2], parts[3].toLongOrNull() ?: 0L, data)
+        }.sortedByDescending { it.savedAt }
+    }
+
+    fun saveSlot(label: String, detail: String, data: String): SaveSlot {
+        val clean = label.replace('|', '/').replace('\n', ' ').take(24).ifBlank { "Saved game" }
+        val cleanDetail = detail.replace('|', '/').replace('\n', ' ').take(48)
+        val slot = SaveSlot(
+            System.currentTimeMillis().toString(), clean, cleanDetail,
+            System.currentTimeMillis(), data
+        )
+        val slots = listSlots().toMutableList()
+        slots.add(slot)
+        writeSlots(slots)
+        return slot
+    }
+
+    fun deleteSlot(id: String) {
+        writeSlots(listSlots().filterNot { it.id == id })
+    }
+
+    fun loadSlotData(id: String): String? = listSlots().firstOrNull { it.id == id }?.data
+
+    private fun writeSlots(slots: List<SaveSlot>) {
+        val raw = slots.joinToString("\n") { slot ->
+            val encoded = Base64.encodeToString(slot.data.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+            "${slot.id}|${slot.label}|${slot.detail}|${slot.savedAt}|$encoded"
+        }
+        prefs.edit().putString(KEY_SLOTS, raw).apply()
+    }
+
     private fun defaultScores(): MutableList<ScoreEntry> =
         Data.topTenSeed.map { (name, points) -> ScoreEntry(name, points, "Pioneer") }.toMutableList()
 
@@ -68,5 +143,6 @@ class PrefsScoreStore(context: Context) : ScoreStore {
         private const val KEY_GRAVE = "gravestone"
         private const val KEY_GRAVES = "graves"
         private const val KEY_STATE = "saved_game"
+        private const val KEY_SLOTS = "save_slots"
     }
 }

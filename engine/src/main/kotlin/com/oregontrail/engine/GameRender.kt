@@ -56,13 +56,17 @@ internal fun Game.renderTitle(screen: Screen) {
         art.add("")
         art.add("T H E   O R E G O N   T R A I L")
     }
-    val menu = listOf(
-        "1. Travel the trail" to "title:travel",
-        "2. Learn about the trail" to "title:about",
-        "3. See the Oregon Top Ten" to "title:topten",
-        "4. Choose Management Options" to "title:manage",
-        "5. End" to "title:end"
-    )
+    val menu = ArrayList<Pair<String, String>>()
+    var n = 1
+    menu.add("${n++}. Travel the trail" to "title:travel")
+    if (autosaveAvailable) menu.add("${n++}. Continue saved journey" to "title:continue")
+    if (saveSlots.isNotEmpty()) menu.add("${n++}. Load a saved game" to "title:load")
+    menu.add("${n++}. Learn about the trail" to "title:about")
+    menu.add("${n++}. See the Oregon Top Ten" to "title:topten")
+    menu.add("${n++}. Achievements (${achievements.size}/${Achievements.all.size})" to "title:ach")
+    menu.add("${n++}. Statistics" to "title:stats")
+    menu.add("${n++}. Choose Management Options" to "title:manage")
+    menu.add("${n++}. End" to "title:end")
     val totalH = art.size + 2 + menu.size
     var y = ((rows - totalH) / 2).coerceAtLeast(0)
     Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.BRIGHT_GREEN)
@@ -78,26 +82,20 @@ internal fun Game.renderTitle(screen: Screen) {
 
 /** Watch / cover-screen title: no artwork, short labels, everything on screen. */
 private fun Game.renderTitleCompact(screen: Screen) {
-    val menu = listOf(
-        "1. Travel" to "title:travel",
-        "2. About" to "title:about",
-        "3. Top Ten" to "title:topten",
-        "4. Options" to "title:manage",
-        "5. End" to "title:end"
-    )
-    val totalH = 3 + menu.size
-    var y = ((rows - totalH) / 2).coerceAtLeast(0)
-    screen.center(y, "OREGON", Palette.BRIGHT_YELLOW, bold = true)
-    y++
-    screen.center(y, "TRAIL", Palette.BRIGHT_YELLOW, bold = true)
-    y += 2
-    val x = ((cols - menu.maxOf { it.first.length }) / 2).coerceAtLeast(0)
-    for ((label, id) in menu) {
-        if (y >= rows) break
-        screen.text(x, y, label, Palette.GREEN)
-        screen.hotspot(id, x, y, label.length)
-        y++
-    }
+    val menu = ArrayList<Pair<String, String>>()
+    var n = 1
+    menu.add("${n++}. Travel" to "title:travel")
+    if (autosaveAvailable) menu.add("${n++}. Continue" to "title:continue")
+    if (saveSlots.isNotEmpty()) menu.add("${n++}. Load" to "title:load")
+    menu.add("${n++}. About" to "title:about")
+    menu.add("${n++}. Top Ten" to "title:topten")
+    menu.add("${n++}. Awards" to "title:ach")
+    menu.add("${n++}. Stats" to "title:stats")
+    menu.add("${n++}. Options" to "title:manage")
+    menu.add("${n++}. End" to "title:end")
+    screen.center(0, "OREGON", Palette.BRIGHT_YELLOW, bold = true)
+    screen.center(1, "TRAIL", Palette.BRIGHT_YELLOW, bold = true)
+    renderMenuColumns(screen, 3, menu)
 }
 
 internal fun Game.renderAbout(screen: Screen) {
@@ -441,7 +439,8 @@ private fun ultraTravelOptions(): List<Pair<String, String>> = listOf(
     "6. Food" to "travel:rations",
     "7. Rest" to "travel:rest",
     "8. Trade" to "travel:trade",
-    "9. Hunt" to "travel:hunt"
+    "9. Hunt" to "travel:hunt",
+    "10.Save" to "travel:save"
 )
 
 internal fun Game.compactStatusLines(): List<String> {
@@ -491,7 +490,8 @@ internal fun Game.travelOptions(): List<Pair<String, String>> = listOf(
     "6. Change food rations" to "travel:rations",
     "7. Stop to rest" to "travel:rest",
     "8. Attempt to trade" to "travel:trade",
-    "9. Hunt for food" to "travel:hunt"
+    "9. Hunt for food" to "travel:hunt",
+    "10. Save game" to "travel:save"
 )
 
 internal fun Game.renderLandmark(screen: Screen) {
@@ -941,6 +941,105 @@ internal fun Game.renderRafting(screen: Screen) {
     screen.hotspot("raft:left", cx, cy, leftBtn.length)
     screen.text(cx + 12, cy, rightBtn, Palette.BRIGHT_GREEN, bold = true)
     screen.hotspot("raft:right", cx + 12, cy, rightBtn.length)
+}
+
+internal fun Game.renderLoad(screen: Screen) {
+    if (ultraCompact) {
+        screen.center(0, "SAVED", Palette.BRIGHT_GREEN, bold = true)
+        if (saveSlots.isEmpty()) screen.center(1, "(none)", Palette.GRAY)
+        saveSlots.take(rows - 2).forEachIndexed { i, slot ->
+            val y = 1 + i
+            val label = slot.label.take(cols)
+            screen.text(0, y, label, Palette.GREEN)
+            screen.hotspot("slot:load:${slot.id}", 0, y, label.length)
+        }
+        val back = "[X]"
+        screen.text(0, rows - 1, back, Palette.BRIGHT_GREEN, bold = true)
+        screen.hotspot("slots:back", 0, rows - 1, back.length)
+        return
+    }
+    screen.center(0, "SAVED GAMES", Palette.BRIGHT_GREEN, bold = true)
+    if (saveSlots.isEmpty()) {
+        screen.wrap(
+            marginX + 1, 3, contentW - 2,
+            "No saved games yet. Choose Save game from the travel menu to make one.", Palette.GRAY
+        )
+    } else {
+        var y = 2
+        for (slot in saveSlots) {
+            if (y >= rows - 2) break
+            val label = slot.label.take(contentW - 10)
+            screen.text(marginX + 1, y, label, Palette.BRIGHT_GREEN, bold = true)
+            screen.hotspot("slot:load:${slot.id}", marginX + 1, y, label.length)
+            screen.text(marginX + contentW - 6, y, "[del]", Palette.RED)
+            screen.hotspot("slot:del:${slot.id}", marginX + contentW - 6, y, 5)
+            y++
+            screen.text(marginX + 3, y, slot.detail.take(contentW - 6), Palette.GRAY)
+            y += 2
+        }
+    }
+    val back = "[ Back ]"
+    screen.text(marginX + 1, rows - 2, back, Palette.BRIGHT_GREEN, bold = true)
+    screen.hotspot("slots:back", marginX + 1, rows - 2, back.length)
+}
+
+internal fun Game.renderAchievements(screen: Screen) {
+    screen.center(
+        0, "AWARDS ${achievements.size}/${Achievements.all.size}",
+        Palette.BRIGHT_GREEN, bold = true
+    )
+    val detailed = rows >= 30
+    var y = 2
+    for (a in Achievements.all) {
+        if (y >= rows - 2) break
+        val got = a.id in achievements
+        val mark = if (got) "[x]" else "[ ]"
+        val color = if (got) Palette.BRIGHT_GREEN else Palette.GRAY
+        screen.text(marginX + 1, y, "$mark ${a.name}".take(contentW - 2), color)
+        y++
+        if (detailed) y = screen.wrap(marginX + 5, y, contentW - 6, a.description, Palette.DIM)
+    }
+    val back = "[ Back ]"
+    screen.text(marginX + 1, rows - 2, back, Palette.BRIGHT_GREEN, bold = true)
+    screen.hotspot("ach:back", marginX + 1, rows - 2, back.length)
+}
+
+internal fun Game.renderStats(screen: Screen) {
+    if (ultraCompact) {
+        screen.center(0, "STATS", Palette.BRIGHT_GREEN, bold = true)
+        val lines = listOf(
+            "played ${stats.gamesPlayed}",
+            "made it ${stats.arrivals}",
+            "died ${stats.deaths}",
+            "best ${stats.bestScore}",
+            "miles ${stats.totalMiles}",
+            "awards ${achievements.size}/${Achievements.all.size}"
+        )
+        lines.forEachIndexed { i, l ->
+            if (1 + i >= rows - 1) return@forEachIndexed
+            screen.text(0, 1 + i, l.take(cols), Palette.GREEN)
+        }
+        val back = "[X]"
+        screen.text(0, rows - 1, back, Palette.BRIGHT_GREEN, bold = true)
+        screen.hotspot("stats:back", 0, rows - 1, back.length)
+        return
+    }
+    screen.center(0, "STATISTICS", Palette.BRIGHT_GREEN, bold = true)
+    val lines = ArrayList<String>()
+    lines.add("Games played: ${stats.gamesPlayed}")
+    lines.add("Reached Oregon: ${stats.arrivals}")
+    lines.add("Died on the trail: ${stats.deaths}")
+    lines.add("Best score: ${stats.bestScore}")
+    lines.add("Total miles travelled: ${stats.totalMiles}")
+    lines.add("Achievements: ${achievements.size}/${Achievements.all.size}")
+    lines.add("")
+    lines.add("Oregon Top Ten:")
+    topTen.take(5).forEachIndexed { i, e -> lines.add("${i + 1}. ${e.name}  ${e.points}") }
+    var y = 3
+    for (line in lines) y = screen.wrap(marginX + 1, y, contentW - 2, line, Palette.GREEN)
+    val back = "[ Back ]"
+    screen.text(marginX + 1, rows - 2, back, Palette.BRIGHT_GREEN, bold = true)
+    screen.hotspot("stats:back", marginX + 1, rows - 2, back.length)
 }
 
 internal fun Game.renderNotice(screen: Screen) {
