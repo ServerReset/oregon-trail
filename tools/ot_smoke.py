@@ -84,12 +84,18 @@ class Driver:
         return dict(cols=cols, rows=rows, phase=phase, cw=cw, lh=lh,
                     mx=mx, my=my, ox=ox, oy=oy, scr=scr)
 
-    def wait_screen(self, timeout=25.0):
+    def wait_screen(self, timeout=90.0):
+        """Waits for the first screen dump, re-launching the app if the cold
+        start is slow (CI emulators can take a minute or more)."""
         deadline = time.time() + timeout
+        last_launch = time.time()
         while time.time() < deadline:
             s = self.last_screen()
             if s:
                 return s
+            if time.time() - last_launch > 20:
+                self.sh("shell", "am", "start", "-n", PKG + "/.MainActivity", check=False)
+                last_launch = time.time()
             time.sleep(0.5)
         raise RuntimeError("no screen dump found - is this a debug build and is the app running?")
 
@@ -171,8 +177,26 @@ def run(serial=None, max_steps=400, verbose=True):
     d.sh("shell", "settings", "put", "secure", "immersive_mode_confirmations", "confirmed", check=False)
     d.sh("shell", "am", "start", "-n", PKG + "/.MainActivity")
     time.sleep(4)
-    d.wait_screen()
-    d.wait_stable()
+    try:
+        d.wait_screen()
+        d.wait_stable()
+        return _drive(d)
+    except Exception:
+        d.log("--- recent device logcat (app/crash lines) ---")
+        try:
+            diag = subprocess.run(
+                [d.adb] + d.dev + ["logcat", "-d", "-t", "600"],
+                capture_output=True, text=True
+            ).stdout
+            for line in diag.splitlines():
+                if any(k in line for k in ("oregontrail", "OTS", "FATAL", "AndroidRuntime")):
+                    d.log(line)
+        except Exception:
+            pass
+        raise
+
+
+def _drive(d):
     d.capture("title")
 
     # Set up a fresh journey.
@@ -197,7 +221,7 @@ def run(serial=None, max_steps=400, verbose=True):
 
     reached_landmark = False
     reached_river = False
-    for step in range(max_steps):
+    for step in range(d.max_steps):
         s = d.last_screen()
         if not s:
             raise RuntimeError("lost the screen dump mid-run")
@@ -242,7 +266,7 @@ def run(serial=None, max_steps=400, verbose=True):
             d.tap_text("[ Leave the store ]")
         else:
             break
-    d.log("  stopped after %d steps; phases=%s" % (max_steps, sorted(d.seen_phases)))
+    d.log("  stopped after %d steps; phases=%s" % (d.max_steps, sorted(d.seen_phases)))
     return reached_landmark and reached_river
 
 
