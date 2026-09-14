@@ -125,6 +125,12 @@ class PrefsScoreStore(context: Context) : ScoreStore {
         writeSlots(listSlots().filterNot { it.id == id })
     }
 
+    fun renameSlot(id: String, newLabel: String) {
+        val clean = newLabel.replace('|', '/').replace('\n', ' ').take(24)
+        if (clean.isBlank()) return
+        writeSlots(listSlots().map { if (it.id == id) it.copy(label = clean) else it })
+    }
+
     fun loadSlotData(id: String): String? = listSlots().firstOrNull { it.id == id }?.data
 
     private fun writeSlots(slots: List<SaveSlot>) {

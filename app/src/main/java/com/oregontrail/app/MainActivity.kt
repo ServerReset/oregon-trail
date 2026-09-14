@@ -22,6 +22,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.oregontrail.engine.DefaultRng
 import com.oregontrail.engine.Game
 import com.oregontrail.engine.Phase
+import com.oregontrail.engine.SaveSlot
 import com.oregontrail.engine.Sound
 
 class MainActivity : AppCompatActivity() {
@@ -64,7 +65,7 @@ class MainActivity : AppCompatActivity() {
         ui = AppUiSettings(this)
         game.uiSettings = ui
         // The title screen offers Continue (autosave) and Load (named slots).
-        game.saveSlots = store.listSlots()
+        refreshSlots()
         game.autosaveAvailable = store.loadState() != null
         game.dailySeed = dailySeed()
         game.transitions = true
@@ -138,7 +139,9 @@ class MainActivity : AppCompatActivity() {
         handleQuickLoad()
         handleSaveRequest()
         handleLoadRequest()
+        handleRenameRequest()
         handleDeleteRequest()
+        refreshSlots()
         game.pendingUnlock?.let { name ->
             Toast.makeText(this, "Achievement unlocked: $name", Toast.LENGTH_LONG).show()
             game.pendingUnlock = null
@@ -256,7 +259,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Save") { _, _ ->
                 val detail = "${game.date}, ${game.miles} mi, ${game.occupation.displayName}"
                 store.saveSlot(input.text.toString(), detail, game.save())
-                game.saveSlots = store.listSlots()
+                refreshSlots()
                 game.clearSaveRequest()
                 render()
             }
@@ -271,22 +274,72 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    /** Rebuilds the slot list, including the autosave as a "Quick save" entry. */
+    private fun refreshSlots() {
+        val slots = store.listSlots().toMutableList()
+        val auto = store.loadState()
+        if (auto != null) {
+            slots.removeAll { it.id == AUTO_ID }
+            slots.add(
+                0,
+                SaveSlot(AUTO_ID, "Quick save (auto)", "Resumes exactly where you left off", Long.MAX_VALUE, auto)
+            )
+        } else {
+            slots.removeAll { it.id == AUTO_ID }
+        }
+        game.saveSlots = slots.sortedByDescending { it.savedAt }
+    }
+
     private fun handleLoadRequest() {
         val id = game.requestedLoadId ?: return
-        store.loadSlotData(id)?.let { data -> game.load(data) }
+        if (id == AUTO_ID) store.loadState()?.let { data -> game.load(data) }
+        else store.loadSlotData(id)?.let { data -> game.load(data) }
         game.clearLoadRequest()
-        game.saveSlots = store.listSlots()
+        refreshSlots()
+    }
+
+    private fun handleRenameRequest() {
+        val id = game.requestedRenameId ?: return
+        val current = game.saveSlots.firstOrNull { it.id == id }
+        if (current == null || id == AUTO_ID) {
+            game.clearRenameRequest()
+            return
+        }
+        val input = EditText(this).apply {
+            setText(current.label)
+            setSelection(text.length)
+            filters = arrayOf(InputFilter.LengthFilter(24))
+            hint = "Save name"
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Rename saved game")
+            .setView(input)
+            .setPositiveButton("Rename") { _, _ ->
+                store.renameSlot(id, input.text.toString())
+                game.clearRenameRequest()
+                refreshSlots()
+                render()
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                game.clearRenameRequest()
+                render()
+            }
+            .setOnCancelListener {
+                game.clearRenameRequest()
+                render()
+            }
+            .show()
     }
 
     private fun handleDeleteRequest() {
         val id = game.requestedDeleteId ?: return
-        val slot = store.listSlots().firstOrNull { it.id == id }
+        val slot = game.saveSlots.firstOrNull { it.id == id }
         AlertDialog.Builder(this)
             .setTitle("Delete saved game")
             .setMessage(slot?.label ?: "this save")
             .setPositiveButton("Delete") { _, _ ->
-                store.deleteSlot(id)
-                game.saveSlots = store.listSlots()
+                if (id == AUTO_ID) store.clearState() else store.deleteSlot(id)
+                refreshSlots()
                 game.clearDeleteRequest()
                 render()
             }
@@ -373,7 +426,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         hideSystemBars()
         terminal.selectionEnabled = isWatchLike()
-        game.saveSlots = store.listSlots()
+        refreshSlots()
         game.autosaveAvailable = store.loadState() != null
         applyUi()
         render()
@@ -386,5 +439,10 @@ class MainActivity : AppCompatActivity() {
         handler.removeCallbacks(animator)
         tone?.release()
         tone = null
+    }
+
+    private companion object {
+        /** Pseudo-id for the autosave shown in the saved-games list. */
+        const val AUTO_ID = "__auto__"
     }
 }

@@ -90,8 +90,11 @@ Debug and release APKs are also attached to each CI run as artifacts.
 - **Event illustrations** — ASCII scenes for breakdowns, bandits, snakes,
   wolves, teepees, fruit, fire, riders and stranded wagons.
 - **Weather ambience** — the background tint shifts with weather and terrain.
-- **Save states** — name and keep multiple saved games, load or delete them
-  from the title screen, plus a separate autosave offered as **Continue**.
+- **Save states** — name and keep multiple saved games (paged list with
+  rename and delete), a **Quick save** entry under the autosave, and a
+  Continue option on the title.
+- **Obvious controls** — menu rows show a `>` marker with generous tap
+  targets, low supplies blink a warning, and status lines are colour-coded.
 - **Achievements and statistics** — twelve milestones to unlock and a
   lifetime stats screen, both persisted between runs.
 - **Save / resume** — the journey survives rotation, folding and process death.

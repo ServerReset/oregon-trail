@@ -133,6 +133,11 @@ class Game(
     var saveSlots: List<SaveSlot> = emptyList()
     /** True when the front-end has an autosave to continue. */
     var autosaveAvailable: Boolean = false
+    /** Current page of the saved-games list. */
+    var loadPage: Int = 0
+    /** Set when the player asks to rename a slot; the front-end shows a dialog. */
+    var requestedRenameId: String? = null
+        private set
     /** Seed for the Trail of the Day, supplied by the front-end. */
     var dailySeed: Long = 0L
     /** Set when the player asks to continue the autosave. */
@@ -272,7 +277,7 @@ class Game(
             id == "title:about" -> { aboutPage = 0; phase = Phase.ABOUT }
             id == "title:topten" -> phase = Phase.TOP_TEN
             id == "title:continue" -> requestedAutosaveLoad = true
-            id == "title:load" -> phase = Phase.LOAD
+            id == "title:load" -> { loadPage = 0; phase = Phase.LOAD }
             id == "title:ach" -> phase = Phase.ACHIEVEMENTS
             id == "title:stats" -> phase = Phase.STATS
             id == "title:manage" -> { managementReturn = Phase.TITLE; phase = Phase.MANAGEMENT }
@@ -281,6 +286,9 @@ class Game(
             id == "stats:back" -> phase = Phase.TITLE
             id.startsWith("slot:load:") -> requestedLoadId = id.substringAfter("slot:load:")
             id.startsWith("slot:del:") -> requestedDeleteId = id.substringAfter("slot:del:")
+            id.startsWith("slot:rename:") -> requestedRenameId = id.substringAfter("slot:rename:")
+            id == "slots:prev" -> loadPage = (loadPage - 1).coerceAtLeast(0)
+            id == "slots:next" -> loadPage++
             id == "title:end" -> { /* handled by front-end by finishing activity */ }
             id == "about:next" -> {
                 aboutPage++
@@ -299,7 +307,7 @@ class Game(
             id == "pause:save" -> requestedSave = true
             id == "pause:quicksave" -> requestedQuickSave = true
             id == "pause:quickload" -> requestedQuickLoad = true
-            id == "pause:load" -> { loadReturn = Phase.PAUSE; phase = Phase.LOAD }
+            id == "pause:load" -> { loadPage = 0; loadReturn = Phase.PAUSE; phase = Phase.LOAD }
             id == "pause:manage" -> { managementReturn = Phase.PAUSE; phase = Phase.MANAGEMENT }
             id == "pause:title" -> phase = Phase.TITLE
             id == "pause:quit" -> { /* handled by the front-end by finishing the activity */ }
@@ -632,6 +640,10 @@ class Game(
 
     fun clearDeleteRequest() {
         requestedDeleteId = null
+    }
+
+    fun clearRenameRequest() {
+        requestedRenameId = null
     }
 
     fun clearSaveRequest() {
@@ -2032,7 +2044,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "1.9.0"
+        const val VERSION = "2.0.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400

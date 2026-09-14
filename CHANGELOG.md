@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.0.0] - 2026-09-14
+
+### Added
+- **Tappable menus everywhere** — every menu row now shows a bright `>`
+  marker and has a forgiving tap target that extends past the label. Stock
+  warnings: low food or tired oxen blink a red alert on the travel screen,
+  and food/ammo/oxen lines are colour-coded when they run low.
+- **Full save-slot management** — the saved-games screen now paginates
+  unlimited slots, labels each slot with date/miles/profession, and offers
+  per-slot **rename** (`[ren]`) and **delete** (`[del]`). The autosave appears
+  as a **Quick save (auto)** entry you can load or delete from the list.
+- 5 new polish tests (94 total).
+
+### Changed
+- The pause menu's Load and Management screens return to the pause menu.
+
 ## [1.9.0] - 2026-09-14
 
 ### Added

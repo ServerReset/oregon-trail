@@ -136,11 +136,15 @@ internal fun Game.overlaySmoke(screen: Screen, artTop: Int, artH: Int) {
     }
 }
 
+/** Draws a menu with a bright marker and a forgiving tap target on each row. */
 private fun Screen.menuAt(x: Int, yStart: Int, options: List<Pair<String, String>>): Int {
     var y = yStart
     for ((label, id) in options) {
-        text(x, y, label, Palette.GREEN)
-        hotspot(id, x, y, label.length)
+        text(x, y, ">", Palette.BRIGHT_YELLOW, bold = true)
+        text(x + 2, y, label, Palette.GREEN)
+        val sx = (x - 1).coerceAtLeast(0)
+        val len = (label.length + 4).coerceAtMost(width - sx)
+        hotspot(id, sx, y, len)
         y++
     }
     return y
@@ -182,10 +186,11 @@ internal fun Game.renderTitle(screen: Screen) {
     var y = ((rows - totalH) / 2).coerceAtLeast(0)
     Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.BRIGHT_GREEN)
     y += art.size + 1
-    val x = (cols - menu.maxOf { it.first.length }) / 2
+    val x = ((cols - (menu.maxOf { it.first.length } + 2)) / 2).coerceAtLeast(0)
     for ((label, id) in menu) {
-        screen.text(x, y, label, Palette.GREEN)
-        screen.hotspot(id, x, y, label.length)
+        screen.text(x, y, ">", Palette.BRIGHT_YELLOW, bold = true)
+        screen.text(x + 2, y, label, Palette.GREEN)
+        screen.hotspot(id, (x - 1).coerceAtLeast(0), y, label.length + 4)
         y++
     }
     screen.footer(rows, "Oregon Trail v${Game.VERSION}")
@@ -261,8 +266,9 @@ internal fun Game.renderManagement(screen: Screen) {
     var y = 3
     for ((label, id) in options) {
         if (y >= rows - 1) break
-        screen.text(marginX + 2, y, label, Palette.GREEN)
-        screen.hotspot(id, marginX + 2, y, label.length)
+        screen.text(marginX + 1, y, ">", Palette.BRIGHT_YELLOW, bold = true)
+        screen.text(marginX + 3, y, label, Palette.GREEN)
+        screen.hotspot(id, marginX + 1, y, label.length + 4)
         y += step
     }
 }
@@ -326,8 +332,9 @@ internal fun Game.renderProfession(screen: Screen) {
         "Your occupation decides how much money you start with and how many points you earn.", Palette.GRAY)
     y++
     Occupation.entries.forEachIndexed { i, occ ->
-        screen.text(marginX + 1, y, "${i + 1}. ${occ.displayName} - $${occ.startingMoney}", Palette.BRIGHT_YELLOW, bold = true)
-        screen.hotspot("prof:$i", marginX + 1, y, 20)
+        screen.text(marginX + 1, y, ">", Palette.BRIGHT_YELLOW, bold = true)
+        screen.text(marginX + 3, y, "${i + 1}. ${occ.displayName} - $${occ.startingMoney}", Palette.BRIGHT_YELLOW, bold = true)
+        screen.hotspot("prof:$i", marginX + 1, y, occ.displayName.length + 12)
         y++
         if (!compact) {
             y = screen.wrap(marginX + 4, y, contentW - 5, occ.blurb, Palette.GREEN)
@@ -358,8 +365,9 @@ internal fun Game.renderMonth(screen: Screen) {
         y++
     }
     TravelMonth.entries.forEachIndexed { i, m ->
+        screen.text(marginX + 1, y, ">", Palette.BRIGHT_YELLOW, bold = true)
         screen.text(marginX + 3, y, "${i + 1}. ${m.displayName}", Palette.GREEN)
-        screen.hotspot("month:$i", marginX + 3, y, 14)
+        screen.hotspot("month:$i", marginX + 1, y, 16)
         y += if (compact) 1 else 2
     }
 }
@@ -389,8 +397,9 @@ internal fun Game.renderNames(screen: Screen) {
     }
     party.forEachIndexed { i, m ->
         val label = "${i + 1}. ${m.name}"
+        screen.text(marginX + 1, y, ">", Palette.BRIGHT_YELLOW, bold = true)
         screen.text(marginX + 3, y, label, Palette.GREEN)
-        screen.hotspot("name:$i", marginX + 3, y, label.length)
+        screen.hotspot("name:$i", marginX + 1, y, label.length + 2)
         y += if (compact) 1 else 2
     }
     val go = "[ Begin the journey ]"
@@ -487,9 +496,23 @@ internal fun Game.renderTravel(screen: Screen) {
     }
     screen.box(marginX, y, boxW, wrapped.size + 2, Palette.GREEN, "Status")
     wrapped.forEachIndexed { i, line ->
-        screen.text(marginX + 2, y + 1 + i, line, Palette.GREEN)
+        val color = when {
+            (line.startsWith("Food") || line.startsWith("fd")) && inventory.food <= 150 -> Palette.YELLOW
+            (line.startsWith("Ammo") || line.contains("ammo")) && inventory.ammo <= 20 -> Palette.YELLOW
+            line.contains("poor") || line.contains("failing") -> Palette.RED
+            else -> Palette.GREEN
+        }
+        screen.text(marginX + 2, y + 1 + i, line, color)
     }
     y += wrapped.size + 3
+    if ((inventory.food <= 80 || oxHealth <= 25) && y < rows - 2) {
+        screen.center(
+            y,
+            if (blink()) "*** LOW SUPPLIES - HUNT OR BUY FOOD ***" else "",
+            Palette.RED, bold = true
+        )
+        y++
+    }
 
     if (!compact) {
         val scene = sceneArt()
@@ -773,12 +796,18 @@ internal fun Game.pauseButton(screen: Screen) {
 /** Lays out a short menu in one or two columns to fit tiny screens. */
 internal fun Game.renderMenuColumns(screen: Screen, startY: Int, options: List<Pair<String, String>>) {
     if (options.isEmpty()) return
-    val widest = options.maxOf { it.first.length }
+    val widest = options.maxOf { it.first.length + 2 }
+    fun line(x: Int, y: Int, label: String, id: String) {
+        screen.text(x, y, ">", Palette.BRIGHT_YELLOW, bold = true)
+        screen.text(x + 2, y, label, Palette.GREEN)
+        val sx = (x - 1).coerceAtLeast(0)
+        val len = (label.length + 4).coerceAtMost(cols - sx)
+        screen.hotspot(id, sx, y, len)
+    }
     if (widest <= cols && options.size <= rows - startY) {
         var y = startY
         for ((label, id) in options) {
-            screen.text(0, y, label, Palette.GREEN)
-            screen.hotspot(id, 0, y, label.length)
+            line(0, y, label, id)
             y++
         }
         return
@@ -789,8 +818,7 @@ internal fun Game.renderMenuColumns(screen: Screen, startY: Int, options: List<P
         val cx = if (i < half) 0 else min(col2, cols - 1)
         val cy = startY + (i % half)
         if (cy >= rows) return@forEachIndexed
-        screen.text(cx, cy, label, Palette.GREEN)
-        screen.hotspot(id, cx, cy, label.length)
+        line(cx, cy, label, id)
     }
 }
 
@@ -1101,12 +1129,19 @@ internal fun Game.renderRafting(screen: Screen) {
 }
 
 internal fun Game.renderLoad(screen: Screen) {
+    val perPage = max(1, (rows - 5) / 2)
+    val lastPage = if (saveSlots.isEmpty()) 0 else (saveSlots.size - 1) / perPage
+    val page = loadPage.coerceIn(0, lastPage)
+    val from = page * perPage
+    val to = min(saveSlots.size, from + perPage)
+
     if (ultraCompact) {
         screen.center(0, "SAVED", Palette.BRIGHT_GREEN, bold = true)
         if (saveSlots.isEmpty()) screen.center(1, "(none)", Palette.GRAY)
-        saveSlots.take(rows - 2).forEachIndexed { i, slot ->
+        saveSlots.subList(from, to).forEachIndexed { i, slot ->
             val y = 1 + i
-            val label = slot.label.take(cols)
+            if (y >= rows - 1) return@forEachIndexed
+            val label = ("*" + slot.label).take(cols)
             screen.text(0, y, label, Palette.GREEN)
             screen.hotspot("slot:load:${slot.id}", 0, y, label.length)
         }
@@ -1115,24 +1150,43 @@ internal fun Game.renderLoad(screen: Screen) {
         screen.hotspot("slots:back", 0, rows - 1, back.length)
         return
     }
+
     screen.center(0, "SAVED GAMES", Palette.BRIGHT_GREEN, bold = true)
+    screen.text(marginX + 1, 1, "Page ${page + 1}/${lastPage + 1}  -  ${saveSlots.size} saves", Palette.DIM)
+    screen.text(marginX + 1, 2, "[ren] rename   [del] delete   > load", Palette.DIM)
     if (saveSlots.isEmpty()) {
         screen.wrap(
-            marginX + 1, 3, contentW - 2,
-            "No saved games yet. Choose Save game from the travel menu to make one.", Palette.GRAY
+            marginX + 1, 4, contentW - 2,
+            "No saved games yet. Open the pause menu (Back or [||]) and choose " +
+                "Save game or Quick save.",
+            Palette.GRAY
         )
     } else {
-        var y = 2
-        for (slot in saveSlots) {
-            if (y >= rows - 2) break
-            val label = slot.label.take(contentW - 10)
-            screen.text(marginX + 1, y, label, Palette.BRIGHT_GREEN, bold = true)
-            screen.hotspot("slot:load:${slot.id}", marginX + 1, y, label.length)
-            screen.text(marginX + contentW - 6, y, "[del]", Palette.RED)
-            screen.hotspot("slot:del:${slot.id}", marginX + contentW - 6, y, 5)
+        var y = 4
+        for (slot in saveSlots.subList(from, to)) {
+            if (y >= rows - 3) break
+            val label = slot.label.take(contentW - 16)
+            screen.text(marginX + 2, y, ">", Palette.BRIGHT_YELLOW, bold = true)
+            screen.text(marginX + 4, y, label, Palette.BRIGHT_GREEN, bold = true)
+            screen.hotspot("slot:load:${slot.id}", marginX + 1, y, label.length + 4)
+            val ren = "[ren]"
+            val del = "[del]"
+            val rx = marginX + contentW - 11
+            screen.text(rx, y, ren, Palette.CYAN)
+            screen.hotspot("slot:rename:${slot.id}", rx, y, ren.length)
+            screen.text(rx + 6, y, del, Palette.RED)
+            screen.hotspot("slot:del:${slot.id}", rx + 6, y, del.length)
             y++
-            screen.text(marginX + 3, y, slot.detail.take(contentW - 6), Palette.GRAY)
+            screen.text(marginX + 4, y, slot.detail.take(contentW - 8), Palette.GRAY)
             y += 2
+        }
+        if (lastPage > 0) {
+            val prev = "[< Prev]"
+            val next = "[Next >]"
+            screen.text(marginX + 1, rows - 3, prev, Palette.BRIGHT_GREEN)
+            screen.hotspot("slots:prev", marginX + 1, rows - 3, prev.length)
+            screen.text(marginX + 10, rows - 3, next, Palette.BRIGHT_GREEN)
+            screen.hotspot("slots:next", marginX + 10, rows - 3, next.length)
         }
     }
     val back = "[ Back ]"
