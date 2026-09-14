@@ -32,17 +32,21 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ui: AppUiSettings
     private val handler = Handler(Looper.getMainLooper())
     private var tone: ToneGenerator? = null
+    private var lastDump: String? = null
 
-    private val ticker = object : Runnable {
+    private val animator = object : Runnable {
         override fun run() {
             when (game.phase) {
                 Phase.HUNTING -> game.huntTick()
                 Phase.RAFTING -> game.raftTick()
                 Phase.BARLOW -> game.barlowTick()
-                else -> return
+                else -> game.animate()
             }
             render()
-            handler.postDelayed(this, 150L)
+            val delay = if (game.phase == Phase.HUNTING || game.phase == Phase.RAFTING ||
+                game.phase == Phase.BARLOW
+            ) 150L else 280L
+            handler.postDelayed(this, delay)
         }
     }
 
@@ -140,12 +144,8 @@ class MainActivity : AppCompatActivity() {
         }
         applyUi()
         render()
-        if (game.phase == Phase.HUNTING || game.phase == Phase.RAFTING || game.phase == Phase.BARLOW) {
-            handler.removeCallbacks(ticker)
-            handler.post(ticker)
-        } else {
-            handler.removeCallbacks(ticker)
-        }
+        handler.removeCallbacks(animator)
+        handler.post(animator)
     }
 
     private fun applyUi() {
@@ -304,17 +304,23 @@ class MainActivity : AppCompatActivity() {
         val s = game.render()
         terminal.screen = s
         if (BuildConfig.DEBUG) {
-            val m = terminal.metrics()
-            val loc = IntArray(2)
-            terminal.getLocationOnScreen(loc)
-            android.util.Log.i(
-                "OTS",
-                "grid=${terminal.currentGrid()} phase=${game.phase} " +
-                    "origin=${loc[0]},${loc[1]} " +
-                    "metrics=%.2f,%.2f,%.2f,%.2f".format(m[0], m[1], m[2], m[3])
-            )
-            s.toLines().forEachIndexed { y, line ->
-                android.util.Log.i("OTS", "R%02d|%s".format(y, line))
+            // Only dump when the content actually changes, so animation does
+            // not flood the log.
+            val text = s.toText()
+            if (text != lastDump) {
+                lastDump = text
+                val m = terminal.metrics()
+                val loc = IntArray(2)
+                terminal.getLocationOnScreen(loc)
+                android.util.Log.i(
+                    "OTS",
+                    "grid=${terminal.currentGrid()} phase=${game.phase} " +
+                        "origin=${loc[0]},${loc[1]} " +
+                        "metrics=%.2f,%.2f,%.2f,%.2f".format(m[0], m[1], m[2], m[3])
+                )
+                s.toLines().forEachIndexed { y, line ->
+                    android.util.Log.i("OTS", "R%02d|%s".format(y, line))
+                }
             }
         }
         playPendingSound()
@@ -354,7 +360,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        handler.removeCallbacks(ticker)
+        handler.removeCallbacks(animator)
         when (game.phase) {
             Phase.DEATH, Phase.ARRIVED -> store.clearState()
             Phase.TITLE -> { /* keep any existing autosave so Continue still works */ }
@@ -370,10 +376,13 @@ class MainActivity : AppCompatActivity() {
         game.autosaveAvailable = store.loadState() != null
         applyUi()
         render()
+        handler.removeCallbacks(animator)
+        handler.post(animator)
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        handler.removeCallbacks(animator)
         tone?.release()
         tone = null
     }

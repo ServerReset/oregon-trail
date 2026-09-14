@@ -180,6 +180,24 @@ object Ascii {
         "        \\___/"
     )
 
+    /** The second campfire frame, for a flickering flame. */
+    val campFlicker: List<String> = listOf(
+        "   .    *        .     *",
+        "        *    .        *",
+        "           ___",
+        "  .      .'   '.   .",
+        "        /  ___  \\",
+        "       |  /   \\  |",
+        "        \\ \\___/ /",
+        "     ____'.___.'____",
+        "    |_______________|",
+        "   *    (@)   (@)    *",
+        "        \\ /|\\ /",
+        "         \\ | /",
+        "        .-*.*-.",
+        "         \\_/_/"
+    )
+
     /** Chimney Rock: a tall clay spire. */
     val chimneyRock: List<String> = listOf(
         "          ___",

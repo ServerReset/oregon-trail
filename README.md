@@ -84,6 +84,8 @@ Debug and release APKs are also attached to each CI run as artifacts.
 - **Pause menu** — press Back or tap `[||]` for camp-at-night pause with save,
   quick save/load, options and quit.
 - **Trail of the Day** — a date-seeded challenge, the same trail for everyone.
+- **Animated ASCII** — drifting rain and snow, flowing rivers, a flickering
+  campfire on the pause screen, twinkling title stars and a blinking prompt.
 - **Weather ambience** — the background tint shifts with weather and terrain.
 - **Save states** — name and keep multiple saved games, load or delete them
   from the title screen, plus a separate autosave offered as **Continue**.

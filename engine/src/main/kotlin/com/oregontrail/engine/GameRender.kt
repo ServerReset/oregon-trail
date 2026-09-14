@@ -28,6 +28,62 @@ internal val Game.ultraCompact: Boolean get() = cols < 26 || rows < 16
 /** Even tighter: a watch in particular. */
 internal val Game.watchLike: Boolean get() = cols < 22 || rows < 13
 
+// ----------------------------------------------------------------------
+// Animated visuals (driven by Game.frame, advanced by the front-end)
+// ----------------------------------------------------------------------
+
+internal fun Game.blink(): Boolean = frame % 2 == 0
+
+/** A flowing river: the wave pattern shifts each frame. */
+internal fun riverArt(frame: Int): List<String> = Ascii.river.mapIndexed { r, line ->
+    val sb = StringBuilder()
+    for ((c, ch) in line.withIndex()) {
+        if (ch == '~') {
+            sb.append(if (((c / 2 + r + frame / 2) % 2) == 0) '~' else ' ')
+        } else {
+            sb.append(ch)
+        }
+    }
+    sb.toString()
+}
+
+/** A flickering campfire. */
+internal fun campArt(frame: Int): List<String> =
+    if (frame % 2 == 0) Ascii.camp else Ascii.campFlicker
+
+/** Stars that twinkle. */
+internal fun starsArt(frame: Int): List<String> = Ascii.stars.mapIndexed { r, line ->
+    val sb = StringBuilder()
+    for ((c, ch) in line.withIndex()) {
+        if (ch == '*' && (c + r + frame) % 3 == 0) sb.append('.') else sb.append(ch)
+    }
+    sb.toString()
+}
+
+/** Rain, snow and hail drifting through a band of the screen. */
+internal fun Game.overlayWeather(screen: Screen, top: Int, bottom: Int) {
+    val ch: Char
+    val step: Int
+    val count: Int
+    when (weather.kind) {
+        WeatherKind.SNOW -> { ch = '*'; step = 1; count = 26 }
+        WeatherKind.BLIZZARD -> { ch = '*'; step = 1; count = 46 }
+        WeatherKind.HAIL -> { ch = 'o'; step = 2; count = 22 }
+        WeatherKind.RAIN -> { ch = '/'; step = 2; count = 28 }
+        WeatherKind.HEAVY_RAIN -> { ch = '/'; step = 2; count = 44 }
+        WeatherKind.THUNDERSTORM -> { ch = '/'; step = 3; count = 38 }
+        else -> return
+    }
+    if (bottom <= top) return
+    val bandH = bottom - top
+    for (i in 0 until count) {
+        val x = (i * 37 + frame / 2) % cols
+        val y = top + (i * 53 + frame * step) % bandH
+        val cell = screen.cell(x, y) ?: continue
+        if (cell.ch == ' ') screen.put(x, y, ch, Palette.DIM)
+    }
+}
+
 private fun Screen.menuAt(x: Int, yStart: Int, options: List<Pair<String, String>>): Int {
     var y = yStart
     for ((label, id) in options) {
@@ -49,7 +105,7 @@ internal fun Game.renderTitle(screen: Screen) {
     }
     val art = ArrayList<String>()
     if (contentW >= 36 && rows >= 30) {
-        art.addAll(Ascii.stars)
+        art.addAll(starsArt(frame))
         art.addAll(Ascii.wagon)
         art.addAll(Ascii.blockWord("OREGON"))
         art.addAll(Ascii.blockWord("TRAIL"))
@@ -385,8 +441,10 @@ internal fun Game.renderTravel(screen: Screen) {
 
     if (!compact) {
         val scene = sceneArt()
+        val sceneTop = y
         Ascii.draw(screen, (cols - Ascii.width(scene)) / 2, y, scene, Palette.GREEN)
         y += Ascii.height(scene) + 1
+        overlayWeather(screen, sceneTop, sceneTop + Ascii.height(scene))
     }
 
     val remaining = rows - y - 1
@@ -481,7 +539,7 @@ internal fun Game.statusLines(): List<String> {
 
 internal fun Game.sceneArt(): List<String> = when (Data.landmarkAt(landmarkIndex).kind) {
     LandmarkKind.MOUNTAINS -> Ascii.mountains
-    LandmarkKind.RIVER -> Ascii.river
+    LandmarkKind.RIVER -> riverArt(frame)
     LandmarkKind.FORT -> Ascii.fort
     LandmarkKind.START -> Ascii.wagonSmall
     else -> if (miles > 700) Ascii.rock else Ascii.trees
@@ -539,8 +597,10 @@ internal fun Game.renderLandmark(screen: Screen) {
     var y = 2
     if (rows >= 26) {
         val art = landmarkArt(lm)
+        val artTop = y
         Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.GREEN)
         y += Ascii.height(art) + 1
+        overlayWeather(screen, artTop, artTop + Ascii.height(art))
     }
     y = screen.wrap(marginX + 1, y, contentW - 2, lm.blurb.joinToString(" "), Palette.GREEN)
     y++
@@ -586,7 +646,7 @@ internal fun Game.landmarkArt(lm: Landmark): List<String> = when (lm.id) {
     else -> when (lm.kind) {
         LandmarkKind.FORT -> Ascii.fort
         LandmarkKind.MOUNTAINS -> Ascii.mountains
-        LandmarkKind.RIVER -> Ascii.river
+        LandmarkKind.RIVER -> riverArt(frame)
         else -> Ascii.rock
     }
 }
@@ -624,8 +684,10 @@ internal fun Game.renderRiver(screen: Screen) {
     pauseButton(screen)
     var y = 2
     if (rows >= 26) {
-        Ascii.draw(screen, (cols - Ascii.width(Ascii.river)) / 2, y, Ascii.river, Palette.CYAN)
-        y += Ascii.height(Ascii.river) + 1
+        val art = riverArt(frame)
+        Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.CYAN)
+        y += Ascii.height(art) + 1
+        overlayWeather(screen, y - Ascii.height(art) - 1, y - 1)
     }
     y = screen.wrap(marginX + 1, y, contentW - 2, lm.blurb.joinToString(" "), Palette.GREEN)
     screen.text(marginX + 1, y, "The river is ${riverState(river)}.", Palette.CYAN)
@@ -1211,7 +1273,7 @@ internal fun Game.renderPause(screen: Screen) {
         "7. Title" to "pause:title",
         "8. Quit" to "pause:quit"
     )
-    val camp = Ascii.camp
+    val camp = campArt(frame)
     val artFits = !ultraCompact && rows >= 2 + Ascii.height(camp) + 3
     val startY = if (artFits) {
         Ascii.draw(screen, (cols - Ascii.width(camp)) / 2, 2, camp, Palette.GREEN)
@@ -1240,8 +1302,9 @@ internal fun Game.renderNotice(screen: Screen) {
         y = screen.wrap(marginX + 1, y, contentW - 2, line, Palette.GREEN)
     }
     val label = "[ Continue ]"
-    screen.text(marginX + 1, rows - 2, label, Palette.BRIGHT_GREEN, bold = true)
-    screen.hotspot("notice:continue", marginX + 1, rows - 2, label.length)
+    val marker = if (blink()) ">" else " "
+    screen.text(marginX + 1, rows - 2, "$marker $label", Palette.BRIGHT_GREEN, bold = true)
+    screen.hotspot("notice:continue", marginX + 1, rows - 2, label.length + 2)
 }
 
 internal fun Game.renderDeath(screen: Screen) {

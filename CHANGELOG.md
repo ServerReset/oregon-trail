@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [1.8.0] - 2026-09-14
+
+### Added
+- **Animated visuals.** The engine now has an animation clock that the app
+  advances a few times a second, so the whole game moves:
+  - drifting **rain, snow and hail** across the travel, landmark and river
+    scenes (matched to the current weather),
+  - **flowing river** waves on crossings and travel,
+  - a **flickering campfire** on the pause screen,
+  - **twinkling stars** over the title wagon,
+  - a **blinking prompt** on continue screens.
+- The app animates continuously (not only during minigames) and de-duplicates
+  debug output so animation does not flood the log.
+- 8 animation tests (87 total).
+
 ## [1.7.0] - 2026-09-14
 
 ### Added

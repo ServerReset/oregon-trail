@@ -162,6 +162,14 @@ class Game(
     private var loadReturn: Phase = Phase.TITLE
     /** How many landmark histories the player has read this run. */
     private var factsRead = 0
+    /** Animation clock, advanced by the front-end on a timer. */
+    var frame: Int = 0
+        private set
+
+    /** Advances the animation clock (called a few times a second). */
+    fun animate() {
+        frame = (frame + 1) % 100000
+    }
 
     /** Presentation settings supplied by the front-end (may be null in tests). */
     var uiSettings: UiSettings? = null
@@ -1976,7 +1984,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "1.7.0"
+        const val VERSION = "1.8.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400
