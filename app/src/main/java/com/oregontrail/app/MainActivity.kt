@@ -139,7 +139,7 @@ class MainActivity : AppCompatActivity() {
     private fun render() {
         val s = game.render()
         terminal.screen = s
-        if (DEBUG) {
+        if (BuildConfig.DEBUG) {
             val m = terminal.metrics()
             val loc = IntArray(2)
             terminal.getLocationOnScreen(loc)
@@ -209,10 +209,5 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         tone?.release()
         tone = null
-    }
-
-    companion object {
-        /** Emits a full screen dump to logcat for automated verification. */
-        const val DEBUG = false
     }
 }

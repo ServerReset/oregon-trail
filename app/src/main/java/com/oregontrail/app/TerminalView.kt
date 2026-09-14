@@ -140,7 +140,7 @@ class TerminalView @JvmOverloads constructor(
                 val cx = ((event.x - marginX) / cellW).toInt()
                 val cy = ((event.y - marginY) / lineH).toInt()
                 val id = screen?.hotspotAt(cx, cy)
-                if (DEBUG_TOUCH) {
+                if (BuildConfig.DEBUG) {
                     android.util.Log.i(
                         "OTS", "touch x=${event.x} y=${event.y} cell=($cx,$cy) id=$id"
                     )
@@ -161,8 +161,4 @@ class TerminalView @JvmOverloads constructor(
 
     /** Layout metrics [cellW, lineH, marginX, marginY] for diagnostics. */
     fun metrics(): FloatArray = floatArrayOf(cellW, lineH, marginX, marginY)
-
-    companion object {
-        const val DEBUG_TOUCH = false
-    }
 }

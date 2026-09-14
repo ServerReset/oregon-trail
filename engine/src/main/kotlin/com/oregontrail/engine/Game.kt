@@ -78,6 +78,7 @@ class Game(
     var lastScore: Int = 0
     var topTen: MutableList<ScoreEntry> = ArrayList()
     val journal: MutableList<JournalEntry> = ArrayList()
+    val graves: MutableList<Grave> = ArrayList()
 
     /** Presentation settings supplied by the front-end (may be null in tests). */
     var uiSettings: UiSettings? = null
@@ -98,6 +99,7 @@ class Game(
     private var huntDays = 1
 
     private var raftField: RaftField? = null
+    private var cutoffTarget: Int = -1
 
     private var deathCause = ""
     private var restingDays = 0
@@ -110,6 +112,7 @@ class Game(
     init {
         topTen = scores.loadScores()
         lastGravestone = scores.loadGravestone()
+        graves.addAll(scores.loadGraves())
         newRun(Occupation.BANKER, TravelMonth.MARCH)
         phase = Phase.TITLE
     }
@@ -133,6 +136,7 @@ class Game(
         weather = Weather(WeatherKind.CLEAR, 60)
         miles = 0
         landmarkIndex = 0
+        cutoffTarget = -1
         pace = Pace.STEADY
         rations = Rations.FILLING
         party = ArrayList()
@@ -471,6 +475,7 @@ class Game(
     }
 
     private fun nextLandmark(): Landmark? {
+        if (cutoffTarget > landmarkIndex) return Data.landmarkAt(cutoffTarget)
         val idx = landmarkIndex + 1
         return if (idx <= Data.landmarks.lastIndex) Data.landmarkAt(idx) else null
     }
@@ -500,15 +505,18 @@ class Game(
         if (pace == Pace.GRUELING) aliveMembers().forEach { it.hurt(rng.nextInt(0, 3)) }
 
         // Illness.
-        if (checkIllness(msgs)) return stopOrDeath()
+        if (checkIllness(msgs)) { clampMiles(); return stopOrDeath() }
 
         // Random event.
         if (rng.chance(difficulty.eventChance)) {
             val before = msgs.size
             rollEvent(msgs)
             msgs.getOrNull(before)?.let { addJournal(it) }
+            clampMiles()
             return stopOrDeath()
         }
+
+        clampMiles()
 
         // Reached next landmark?
         val next = nextLandmark()
@@ -519,6 +527,13 @@ class Game(
         }
 
         return DayResult.OK
+    }
+
+    /** Miles traveled can never fall behind the last landmark reached. */
+    private fun clampMiles() {
+        val floor = Data.landmarkAt(landmarkIndex).mile
+        if (miles < floor) miles = floor
+        if (miles < 0) miles = 0
     }
 
     private fun stopOrDeath(): DayResult {
@@ -858,14 +873,21 @@ class Game(
     // ====================================================================
 
     private fun advanceToLandmark(msgs: MutableList<String>) {
-        val idx = landmarkIndex + 1
+        val idx = if (cutoffTarget > landmarkIndex) cutoffTarget else landmarkIndex + 1
         landmarkIndex = min(idx, Data.landmarks.lastIndex)
+        cutoffTarget = -1
         val lm = Data.landmarkAt(landmarkIndex)
         if (lm.kind == LandmarkKind.END) { arriveOregon(); return }
         val lines = ArrayList<String>()
         lines.add("You have reached ${lm.name}.")
         lines.add("")
         lines.addAll(lm.blurb)
+        val here = graves.filter { it.landmarkId == lm.id }
+        if (here.isNotEmpty()) {
+            lines.add("")
+            lines.add("You pass the graves of earlier travelers:")
+            here.take(3).forEach { lines.add(it.text) }
+        }
         msgs.clear()
         lines.forEach { msgs.add(it) }
         addJournal("Reached ${lm.name}.")
@@ -892,9 +914,9 @@ class Game(
         val targetId = lm.cutoffId ?: return
         val targetIdx = Data.indexOf(targetId)
         if (targetIdx <= landmarkIndex + 1) return
-        val floor = Data.landmarkAt(landmarkIndex).mile
-        miles = (miles - lm.cutoffMiles).coerceAtLeast(floor)
-        landmarkIndex = targetIdx - 1
+        cutoffTarget = targetIdx
+        val targetMile = Data.landmarkAt(targetIdx).mile
+        miles = min(targetMile - 1, miles + lm.cutoffMiles)
         pendingSound = Sound.GOOD
         addJournal("Took the ${lm.cutoffLabel?.removePrefix("Take the ")} to save ${lm.cutoffMiles} miles.")
         showNotice(
@@ -1116,6 +1138,11 @@ class Game(
         val epitaph = "Here lies $leader, died of $cause on the Oregon Trail."
         lastGravestone = epitaph
         addJournal("$leader died of $cause.")
+        val lm = Data.landmarkAt(landmarkIndex)
+        val grave = Grave(leader, cause, lm.id, epitaph)
+        graves.add(grave)
+        if (graves.size > 50) graves.removeAt(0)
+        scores.addGrave(grave)
         scores.saveGravestone(epitaph)
         pendingSound = Sound.DEATH
         phase = Phase.DEATH
@@ -1980,6 +2007,7 @@ class Game(
         line("weather", "${weather.kind.name},${weather.tempF}")
         line("miles", miles)
         line("landmark", landmarkIndex)
+        line("cutoff", cutoffTarget)
         line("pace", pace.name)
         line("rations", rations.name)
         line("difficulty", difficulty.name)
@@ -2020,6 +2048,8 @@ class Game(
             weather = Weather(WeatherKind.valueOf(w[0]), w[1].toInt())
             miles = map["miles"]?.toIntOrNull() ?: 0
             landmarkIndex = (map["landmark"]?.toIntOrNull() ?: 0).coerceIn(0, Data.landmarks.lastIndex)
+            cutoffTarget = (map["cutoff"]?.toIntOrNull() ?: -1)
+                .coerceIn(-1, Data.landmarks.lastIndex)
             pace = Pace.valueOf(map["pace"] ?: pace.name)
             rations = Rations.valueOf(map["rations"] ?: rations.name)
             difficulty = try {

@@ -27,6 +27,93 @@ class FeaturesTest {
     }
 
     @Test
+    fun graves_from_previous_runs_appear_at_landmarks() {
+        val store = InMemoryScoreStore()
+        store.addGrave(Grave("Old Jed", "cholera", "kansas", "Here lies Old Jed, died of cholera."))
+        val g = newGame(1L, store)
+        g.onTap("title:travel"); g.onTap("prof:0"); g.onTap("month:0"); g.onTap("names:go")
+        g.onTap("store:inc:OXEN"); g.onTap("store:inc:FOOD")
+        g.onTap("store:leave"); g.onTap("notice:continue")
+        var seen = false
+        var guard = 0
+        while (guard++ < 60 && !seen) {
+            when (g.phase) {
+                Phase.TRAVEL -> g.onTap("travel:continue")
+                Phase.NOTICE -> {
+                    if (g.render().toText().contains("Old Jed")) {
+                        seen = true
+                        break
+                    }
+                    g.onTap("notice:continue")
+                }
+                Phase.CHOICE -> g.onTap("choice:continue")
+                Phase.RIVER -> break
+                Phase.LANDMARK -> g.onTap("land:continue")
+                Phase.HUNTING -> g.onTap("hunt:leave")
+                else -> break
+            }
+        }
+        assertTrue(seen, "the Kansas arrival notice should mention the earlier grave")
+    }
+
+    @Test
+    fun dying_leaves_a_grave_for_future_runs() {
+        val store = InMemoryScoreStore()
+        val g = Game(DefaultRng(2L), store)
+        g.setViewport(40, 30)
+        g.onTap("title:travel"); g.onTap("prof:2"); g.onTap("month:0"); g.onTap("names:go")
+        g.onTap("store:inc:OXEN")   // no food at all
+        g.onTap("store:leave"); g.onTap("notice:continue")
+        var guard = 0
+        while (guard++ < 300 && g.phase != Phase.DEATH) {
+            when (g.phase) {
+                Phase.TRAVEL -> g.onTap("travel:continue")
+                Phase.NOTICE -> g.onTap("notice:continue")
+                Phase.CHOICE -> g.onTap("choice:continue")
+                Phase.RIVER -> g.onTap("river:caulk")
+                Phase.LANDMARK -> g.onTap("land:continue")
+                Phase.HUNTING -> g.onTap("hunt:leave")
+                else -> break
+            }
+        }
+        assertEquals(Phase.DEATH, g.phase)
+        assertTrue(store.loadGraves().isNotEmpty(), "a death should leave a grave")
+        assertEquals(Data.landmarkAt(g.landmarkIndex).id, store.loadGraves().last().landmarkId)
+    }
+
+    @Test
+    fun random_actions_keep_game_invariants() {
+        val random = kotlin.random.Random(2024)
+        for (seed in 1..30) {
+            val g = Game(DefaultRng(seed.toLong()), InMemoryScoreStore())
+            g.setViewport(40, 30)
+            var steps = 0
+            while (steps++ < 800 && g.phase != Phase.DEATH && g.phase != Phase.ARRIVED) {
+                val s = g.render()
+                assertTrue(g.inventory.cash >= -0.001, "negative cash")
+                assertTrue(g.inventory.food >= 0, "negative food")
+                assertTrue(g.inventory.oxen >= 0, "negative oxen")
+                assertTrue(g.inventory.clothing >= 0, "negative clothing")
+                assertTrue(g.inventory.ammo >= 0, "negative ammo")
+                assertTrue(g.inventory.wheels >= 0 && g.inventory.axles >= 0 && g.inventory.tongues >= 0)
+                assertTrue(g.landmarkIndex in 0..Data.landmarks.lastIndex, "landmark out of range")
+                assertTrue(
+                    g.miles >= Data.landmarkAt(g.landmarkIndex).mile,
+                    "miles ${g.miles} behind landmark ${g.landmarkIndex}"
+                )
+                assertTrue(g.date.month in 1..12 && g.date.day in 1..31, "bad date")
+                g.party.forEach { assertTrue(it.health in 0..100, "health out of range") }
+                assertTrue(g.journal.size <= 400)
+                if (s.hotspots.isEmpty()) break
+                val id = s.hotspots[random.nextInt(s.hotspots.size)].id
+                g.onTap(id)
+                if (g.phase == Phase.HUNTING) repeat(random.nextInt(3)) { g.huntTick() }
+                if (g.phase == Phase.RAFTING) repeat(random.nextInt(3)) { g.raftTick() }
+            }
+        }
+    }
+
+    @Test
     fun journal_records_key_events_and_survives_save() {
         val g = newGame(3L)
         g.intro()

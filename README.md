@@ -61,7 +61,8 @@ or by opening the APK on the device.
 - **Columbia River rafting finale** — steer a raft through the rapids, dodging
   rocks, or pay the Barlow Road toll instead.
 - **Disease and death** — party members sicken and die; you get a gravestone
-  and a full epitaph.
+  and a full epitaph. Graves left by earlier journeys appear when you reach
+  the same stretch of trail.
 - **Scoring with a full breakdown** and the Oregon Top Ten, persisted between runs.
 - **Difficulty and accessibility** — Easy/Normal/Hard changes how often trouble
   strikes; text size, a high-contrast palette and CRT scanlines can be toggled
@@ -132,8 +133,22 @@ If the file is absent the release build is produced unsigned.
   70 different viewport sizes (28–82 columns, 16–60 rows) and asserts that
   every tap target stays on screen.
 
-The Android front-end was additionally driven on an emulator across phone,
-tablet and landscape metrics using computed taps and a logcat screen dump.
+The Android front-end is additionally exercised end to end by
+`tools/ot_smoke.py`, which drives a real device/emulator with computed taps
+(read from a debug-only logcat screen dump) through setup, the store, a river
+crossing, landmarks, the rafting finale and on to Oregon:
+
+```bash
+./gradlew :app:assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+python3 tools/ot_smoke.py --serial emulator-5554
+```
+
+A GitHub Actions job (`.github/workflows/instrumented.yml`) boots an Android
+emulator and runs this smoke test on every version tag or on demand.
+
+The front-end was also manually verified across phone, tablet and landscape
+metrics using computed taps and the logcat screen dump.
 
 ## Extending the game
 

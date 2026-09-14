@@ -2,6 +2,7 @@ package com.oregontrail.app
 
 import android.content.Context
 import com.oregontrail.engine.Data
+import com.oregontrail.engine.Grave
 import com.oregontrail.engine.ScoreEntry
 import com.oregontrail.engine.ScoreStore
 
@@ -31,6 +32,24 @@ class PrefsScoreStore(context: Context) : ScoreStore {
         prefs.edit().putString(KEY_GRAVE, text).apply()
     }
 
+    override fun loadGraves(): List<Grave> {
+        val raw = prefs.getString(KEY_GRAVES, null) ?: return emptyList()
+        return raw.split('\n').mapNotNull { line ->
+            val p = line.split('|')
+            if (p.size < 4) null else Grave(p[0], p[1], p[2], p[3])
+        }
+    }
+
+    override fun addGrave(grave: Grave) {
+        val existing = loadGraves().toMutableList()
+        existing.add(grave)
+        while (existing.size > 50) existing.removeAt(0)
+        val raw = existing.joinToString("\n") {
+            listOf(it.name, it.cause, it.landmarkId, it.text).joinToString("|")
+        }
+        prefs.edit().putString(KEY_GRAVES, raw).apply()
+    }
+
     fun saveState(state: String) {
         prefs.edit().putString(KEY_STATE, state).apply()
     }
@@ -47,6 +66,7 @@ class PrefsScoreStore(context: Context) : ScoreStore {
     companion object {
         private const val KEY_SCORES = "top_ten"
         private const val KEY_GRAVE = "gravestone"
+        private const val KEY_GRAVES = "graves"
         private const val KEY_STATE = "saved_game"
     }
 }
