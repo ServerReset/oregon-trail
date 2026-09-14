@@ -145,8 +145,11 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 python3 tools/ot_smoke.py --serial emulator-5554
 ```
 
-A GitHub Actions job (`.github/workflows/instrumented.yml`) boots an Android
-emulator and runs this smoke test on every version tag or on demand.
+A GitHub Actions job (`.github/workflows/instrumented.yml`) can boot an
+Android emulator and run this smoke test; because emulator boot on hosted
+runners is slow, that job runs on demand or for a version tag and is marked
+non-blocking. The fast JVM suite (`.github/workflows/android.yml`) runs on
+every push and builds the debug and release APKs.
 
 The front-end was also manually verified across phone, tablet and landscape
 metrics using computed taps and the logcat screen dump.

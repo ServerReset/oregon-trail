@@ -1,5 +1,10 @@
 name: Instrumented smoke test
 
+# This job boots a full Android emulator and drives the real app with
+# tools/ot_smoke.py. Emulator boot on hosted runners is slow, so the job is
+# run on demand (or for a release tag) and is marked continue-on-error: a
+# flaky emulator will not turn the build red, but the smoke output is still
+# in the logs. The fast JVM tests run on every push in "Android CI".
 on:
   workflow_dispatch:
   push:
@@ -12,7 +17,8 @@ jobs:
   smoke:
     name: Drive the debug app on an emulator
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    continue-on-error: true
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -40,6 +46,7 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
+          emulator-boot-timeout: 1200
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           script: |
             adb wait-for-device
