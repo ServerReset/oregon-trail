@@ -39,4 +39,17 @@ object RetroPalette {
     }
 
     fun isBoldDefault(p: Palette): Boolean = p == Palette.BRIGHT_GREEN || p == Palette.BRIGHT_YELLOW || p == Palette.BRIGHT_WHITE
+
+    /** Dark background tints used for the ambient mood. */
+    fun bg(ambient: Palette, highContrast: Boolean = false): Int {
+        if (highContrast) return 0xFF000000.toInt()
+        return when (ambient) {
+            Palette.BLACK -> BACKGROUND
+            Palette.GREEN, Palette.BRIGHT_GREEN -> 0xFF0A1C0E.toInt()
+            Palette.BLUE, Palette.CYAN -> 0xFF08101F.toInt()
+            Palette.BROWN, Palette.YELLOW -> 0xFF1A1208.toInt()
+            Palette.RED, Palette.MAGENTA -> 0xFF1A0A0A.toInt()
+            else -> BACKGROUND
+        }
+    }
 }

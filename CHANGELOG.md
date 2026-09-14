@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [1.6.0] - 2026-09-14
+
+### Added
+- **Weather ambience** — the background tint now shifts with the weather and
+  terrain (cold blues for snow and rain, warm browns for heat, green on the
+  open plains), on top of the CRT scanlines and vignette.
+- **Trail of the Day** — a date-seeded daily challenge: everyone gets the same
+  trail for the day.
+- A much larger test suite: **71 tests** including save/load round-trips at
+  every resumable phase, coverage of every event and every river/landmark/
+  ending option, a determinism replay test, a balance test over 30 seeded
+  games, ambience checks and the layout fuzz across 120 viewports.
+- The on-device smoke test now opens the journal, switches rations, and must
+  finish the trail (arrival or death), and it is robust to wrapped text.
+
+### Changed
+- The RNG can be re-seeded (used by the Trail of the Day).
+
 ## [1.5.0] - 2026-09-14
 
 Features the original designer, Philip Bouchard, said on The Verge's

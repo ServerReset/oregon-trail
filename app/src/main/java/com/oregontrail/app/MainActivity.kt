@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
         // The title screen offers Continue (autosave) and Load (named slots).
         game.saveSlots = store.listSlots()
         game.autosaveAvailable = store.loadState() != null
+        game.dailySeed = dailySeed()
         try {
             tone = ToneGenerator(AudioManager.STREAM_MUSIC, 60)
         } catch (_: Exception) {
@@ -77,6 +78,14 @@ class MainActivity : AppCompatActivity() {
         terminal.selectionEnabled = isWatchLike()
         applyUi()
         render()
+    }
+
+    /** A seed that is the same for everyone on a given day. */
+    private fun dailySeed(): Long {
+        val c = java.util.Calendar.getInstance()
+        return c.get(java.util.Calendar.YEAR) * 10000L +
+            (c.get(java.util.Calendar.MONTH) + 1) * 100L +
+            c.get(java.util.Calendar.DAY_OF_MONTH)
     }
 
     /** Watches and round displays get the rotary-driven selection cursor. */

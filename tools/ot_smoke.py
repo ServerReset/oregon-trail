@@ -34,11 +34,12 @@ def find_adb() -> str:
 
 
 class Driver:
-    def __init__(self, serial=None, max_steps=400, verbose=True):
+    def __init__(self, serial=None, max_steps=400, verbose=True, trace=False):
         self.adb = find_adb()
         self.dev = ["-s", serial] if serial else []
         self.max_steps = max_steps
         self.verbose = verbose
+        self.trace = trace
         self.seen_phases = set()
 
     def sh(self, *args, check=True, capture=False):
@@ -167,8 +168,8 @@ class Driver:
             self.log("  reached phase %s (grid %dx%d)" % (s["phase"], s["cols"], s["rows"]))
 
 
-def run(serial=None, max_steps=400, verbose=True):
-    d = Driver(serial=serial, max_steps=max_steps, verbose=verbose)
+def run(serial=None, max_steps=400, verbose=True, trace=False):
+    d = Driver(serial=serial, max_steps=max_steps, verbose=verbose, trace=trace)
     d.log("== Oregon Trail smoke test ==")
     d.sh("shell", "am", "force-stop", PKG, check=False)
     d.sh("shell", "pm", "clear", PKG, check=False)
@@ -218,6 +219,12 @@ def _drive(d):
     d.tap_text("[ Leave the store ]")
     d.tap_text("[ Continue ]")
     d.capture("travel")
+    # Peek at the journal and come back.
+    d.tap_text("Look at journal", required=False)
+    d.tap_text("[ Back ]", required=False)
+    # Stretch the food: switch to meager rations.
+    d.tap_text("Change food rations", required=False)
+    d.tap_text("[ Continue ]", required=False)
 
     reached_landmark = False
     reached_river = False
@@ -226,6 +233,8 @@ def _drive(d):
         if not s:
             raise RuntimeError("lost the screen dump mid-run")
         phase = s["phase"]
+        if d.trace:
+            d.log("  step %d phase %s" % (step, phase))
         d.capture(phase)
         if phase == "LANDMARK":
             reached_landmark = True
@@ -235,25 +244,37 @@ def _drive(d):
             d.log("  ARRIVED in Oregon after %d steps" % step)
             return True
         if phase == "DEATH":
-            d.log("  party died after %d steps (still a valid run)" % step)
-            # A death is an acceptable smoke result once we've exercised phases.
-            return reached_landmark and reached_river
+            d.log("  party died after %d steps" % step)
+            return True
         if phase == "TRAVEL":
             d.tap_text("1. Continue on trail")
         elif phase == "NOTICE":
             d.tap_text("[ Continue ]")
         elif phase == "CHOICE":
-            d.tap_text("No thanks", required=False) or d.tap_text("3. Continue", required=False) \
-                or d.tap_text("4. Circle", required=False) or d.tap_cell(0, 0)
+            if not (d.tap_text("Decline", required=False) or d.tap_text("Wish them luck", required=False)
+                    or d.tap_text("No thanks", required=False) or d.tap_text("3. Continue", required=False)
+                    or d.tap_text("4. Circle", required=False)):
+                # Fall back to tapping the last option line on the screen.
+                lines = [i for i, l in enumerate(d.last_screen()["scr"]) if l.strip()]
+                if lines:
+                    d.tap_cell(lines[-1], 2)
         elif phase == "RIVER":
             d.tap_text("Take the ferry", required=False) or d.tap_text("Caulk", required=False) \
                 or d.tap_text("Ford the river", required=False)
         elif phase == "LANDMARK":
-            if "The Dalles" in "\n".join(s["scr"]):
-                d.tap_text("Raft down", required=False) or d.tap_text("Barlow", required=False)
-            else:
-                d.tap_text("Continue on the trail", required=False) \
+            # Try the ordinary continue first; at The Dalles fall through to
+            # the ending options (exercising the Barlow Road minigame).
+            if not (d.tap_text("Continue on the trail", required=False)
                     or d.tap_text("Continue on trail", required=False)
+                    or d.tap_text("Barlow", required=False)
+                    or d.tap_text("Raft down", required=False)
+                    or d.tap_text("Portage", required=False)
+                    or d.tap_text("Wait for better", required=False)):
+                d.log("  LANDMARK: no option found in:")
+                for line in s["scr"]:
+                    if line.strip():
+                        d.log("    " + line)
+                return False
         elif phase == "RAFTING":
             d.tap_text("RIGHT >>", required=False) or d.tap_text("<< LEFT", required=False)
         elif phase == "BARLOW":
@@ -269,7 +290,7 @@ def _drive(d):
         else:
             break
     d.log("  stopped after %d steps; phases=%s" % (d.max_steps, sorted(d.seen_phases)))
-    return reached_landmark and reached_river
+    return False  # must actually finish the trail
 
 
 def main():
@@ -277,9 +298,10 @@ def main():
     ap.add_argument("--serial", default=None)
     ap.add_argument("--max-steps", type=int, default=400)
     ap.add_argument("--quiet", action="store_true")
+    ap.add_argument("--trace", action="store_true")
     args = ap.parse_args()
     try:
-        ok = run(args.serial, args.max_steps, verbose=not args.quiet)
+        ok = run(args.serial, args.max_steps, verbose=not args.quiet, trace=args.trace)
     except Exception as e:  # noqa: BLE001
         print("SMOKE TEST FAILED: %s" % e, file=sys.stderr)
         return 1

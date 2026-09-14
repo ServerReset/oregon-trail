@@ -201,8 +201,11 @@ class TerminalView @JvmOverloads constructor(
     }
 
     override fun onDraw(canvas: Canvas) {
-        canvas.drawColor(RetroPalette.BACKGROUND)
-        val s = screen ?: return
+        val s = screen
+        canvas.drawColor(
+            if (s != null) RetroPalette.bg(s.ambient, highContrast) else RetroPalette.BACKGROUND
+        )
+        if (s == null) return
 
         val highlight = if (selectionEnabled) s.hotspots.getOrNull(selectedIndex) else null
         if (highlight != null) {

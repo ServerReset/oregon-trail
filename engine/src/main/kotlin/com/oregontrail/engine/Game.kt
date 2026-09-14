@@ -132,6 +132,8 @@ class Game(
     var saveSlots: List<SaveSlot> = emptyList()
     /** True when the front-end has an autosave to continue. */
     var autosaveAvailable: Boolean = false
+    /** Seed for the Trail of the Day, supplied by the front-end. */
+    var dailySeed: Long = 0L
     /** Set when the player asks to continue the autosave. */
     var requestedAutosaveLoad: Boolean = false
         private set
@@ -236,6 +238,7 @@ class Game(
         pendingSound = Sound.CLICK
         when {
             id == "title:travel" -> { phase = Phase.PROFESSION }
+            id == "title:daily" -> startDailyChallenge()
             id == "title:about" -> { aboutPage = 0; phase = Phase.ABOUT }
             id == "title:topten" -> phase = Phase.TOP_TEN
             id == "title:continue" -> requestedAutosaveLoad = true
@@ -547,6 +550,27 @@ class Game(
     }
 
     /** Records a dated line in the traveler's journal. */
+    /** Starts a run seeded by today's date: the same trail for everyone. */
+    private fun startDailyChallenge() {
+        if (dailySeed == 0L) return
+        rng.reseed(dailySeed)
+        newRun(Occupation.BANKER, TravelMonth.MARCH)
+        addJournal("Trail of the Day: a fresh start on a shared trail.")
+        pendingSound = Sound.GOOD
+        phase = Phase.PROFESSION
+    }
+
+    /** Test hook: fires a named event and returns its messages. */
+    internal fun debugFireEvent(id: String): List<String> {
+        val msgs = ArrayList<String>()
+        applyEvent(id, msgs)
+        return msgs
+    }
+
+    /** Test hook: the list of event ids the game can produce. */
+    internal fun debugEventIds(): List<String> =
+        (eventPool(0) + eventPool(1500)).toSet().toList()
+
     private fun addJournal(text: String) {
         val dateText = "${date.monthName} ${date.day}"
         journal.add(JournalEntry(dateText, text))
@@ -1766,7 +1790,24 @@ class Game(
             Phase.DEATH -> renderDeath(screen)
             Phase.ARRIVED -> renderArrived(screen)
         }
+        screen.ambient = ambientFor()
         return screen
+    }
+
+    /** Chooses a background mood for the current situation. */
+    private fun ambientFor(): Palette = when (phase) {
+        Phase.RAFTING -> Palette.BLUE
+        Phase.BARLOW -> Palette.BROWN
+        Phase.HUNTING -> Palette.GREEN
+        Phase.TRAVEL, Phase.LANDMARK, Phase.RIVER -> when (weather.kind) {
+            WeatherKind.SNOW, WeatherKind.BLIZZARD, WeatherKind.COLD,
+            WeatherKind.HEAVY_RAIN, WeatherKind.RAIN, WeatherKind.THUNDERSTORM,
+            WeatherKind.HAIL -> Palette.BLUE
+            WeatherKind.HOT -> Palette.BROWN
+            WeatherKind.CLEAR -> Palette.GREEN
+            else -> Palette.BLACK
+        }
+        else -> Palette.BLACK
     }
 
     // ====================================================================
@@ -1896,7 +1937,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "1.5.0"
+        const val VERSION = "1.6.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400

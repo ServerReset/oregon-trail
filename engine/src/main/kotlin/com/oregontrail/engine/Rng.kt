@@ -8,6 +8,9 @@ import kotlin.random.Random
 interface Rng {
     fun nextDouble(): Double
 
+    /** Re-seeds the generator (used by the Trail of the Day). */
+    fun reseed(seed: Long) {}
+
     fun nextInt(bound: Int): Int = if (bound <= 0) 0 else (nextDouble() * bound).toInt().coerceIn(0, bound - 1)
 
     fun nextInt(from: Int, untilExclusive: Int): Int =
@@ -31,8 +34,11 @@ interface Rng {
 
 /** Default RNG backed by [kotlin.random.Random]. */
 class DefaultRng(seed: Long = System.nanoTime()) : Rng {
-    private val random = Random(seed)
+    private var random = Random(seed)
     override fun nextDouble(): Double = random.nextDouble()
+    override fun reseed(seed: Long) {
+        random = Random(seed)
+    }
 }
 
 /** Deterministic RNG for reproducible playthroughs and tests. */

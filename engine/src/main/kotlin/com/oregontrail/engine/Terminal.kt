@@ -66,12 +66,19 @@ class Screen(val width: Int, val height: Int) {
 
     val hotspots: MutableList<Hotspot> = ArrayList()
 
+    /**
+     * Background tint for the screen. The front-end blends this into the
+     * background so weather and region change the mood of the display.
+     */
+    var ambient: Palette = Palette.BLACK
+
     fun cell(x: Int, y: Int): Cell? =
         if (x in 0 until width && y in 0 until height) cells[y][x] else null
 
     fun clear() {
         for (row in cells) for (c in row) c.clear()
         hotspots.clear()
+        ambient = Palette.BLACK
     }
 
     /** Fills the entire screen with the given background. */

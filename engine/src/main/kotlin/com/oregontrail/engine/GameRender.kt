@@ -60,6 +60,7 @@ internal fun Game.renderTitle(screen: Screen) {
     val menu = ArrayList<Pair<String, String>>()
     var n = 1
     menu.add("${n++}. Travel the trail" to "title:travel")
+    if (dailySeed != 0L) menu.add("${n++}. Trail of the Day" to "title:daily")
     if (autosaveAvailable) menu.add("${n++}. Continue saved journey" to "title:continue")
     if (saveSlots.isNotEmpty()) menu.add("${n++}. Load a saved game" to "title:load")
     menu.add("${n++}. Learn about the trail" to "title:about")
@@ -86,6 +87,7 @@ private fun Game.renderTitleCompact(screen: Screen) {
     val menu = ArrayList<Pair<String, String>>()
     var n = 1
     menu.add("${n++}. Travel" to "title:travel")
+    if (dailySeed != 0L) menu.add("${n++}. Daily" to "title:daily")
     if (autosaveAvailable) menu.add("${n++}. Continue" to "title:continue")
     if (saveSlots.isNotEmpty()) menu.add("${n++}. Load" to "title:load")
     menu.add("${n++}. About" to "title:about")
