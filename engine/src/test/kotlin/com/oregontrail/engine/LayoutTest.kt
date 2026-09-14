@@ -36,6 +36,7 @@ class LayoutTest {
         Phase.MAP -> "map:back"
         Phase.HUNTING -> "hunt:leave"
         Phase.RAFTING -> "raft:right"
+        Phase.BARLOW -> "barlow:right"
         Phase.CHOICE -> s.hotspots.firstOrNull {
             it.id.startsWith("riders:") || it.id.startsWith("trade:") || it.id.startsWith("rest:")
         }?.id ?: "choice:continue"
@@ -43,9 +44,14 @@ class LayoutTest {
         Phase.LANDMARK -> {
             val dalles = s.hotspots.firstOrNull { it.id.startsWith("dalles:") }
             if (dalles != null) {
-                // Exercise the rafting finale so it is rendered/validated everywhere.
-                s.hotspots.firstOrNull { it.id == "dalles:raft" }?.id
-                    ?: s.hotspots.firstOrNull { it.id == "dalles:barlow" }?.id
+                // Exercise both endings: the rafting and Barlow Road minigames.
+                if (steps % 2 == 0) {
+                    s.hotspots.firstOrNull { it.id == "dalles:raft" }?.id
+                        ?: s.hotspots.firstOrNull { it.id == "dalles:barlow" }?.id
+                } else {
+                    s.hotspots.firstOrNull { it.id == "dalles:barlow" }?.id
+                        ?: s.hotspots.firstOrNull { it.id == "dalles:raft" }?.id
+                }
             } else "land:continue"
         }
         Phase.DEATH, Phase.ARRIVED -> null
@@ -67,6 +73,7 @@ class LayoutTest {
                     // Minigames advance on a timer in the app; drive them here.
                     if (g.phase == Phase.HUNTING) g.huntTick()
                     if (g.phase == Phase.RAFTING) g.raftTick()
+                    if (g.phase == Phase.BARLOW) g.barlowTick()
                     if (g.phase == Phase.DEATH || g.phase == Phase.ARRIVED) {
                         val end = g.render()
                         assertHotspotsInside(end, w, h, "end viewport=${w}x$h")

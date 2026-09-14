@@ -56,6 +56,9 @@ object Achievements {
     const val DYSENTERY = "dysentery"
     const val SURVIVOR = "survivor"
     const val RIVERBANK = "riverbank"
+    const val GOOD_SAMARITAN = "good_samaritan"
+    const val HISTORIAN = "historian"
+    const val BARGAINER = "bargainer"
 
     val all: List<Achievement> = listOf(
         Achievement(REACHED_OREGON, "Oregon or Bust", "Reach the Willamette Valley."),
@@ -69,10 +72,69 @@ object Achievements {
         Achievement(FERRYMAN, "Ferryman", "Pay for a ferry crossing."),
         Achievement(RIVERBANK, "Forced a Crossing", "Ford or caulk a river."),
         Achievement(DYSENTERY, "You Have Died of Dysentery", "Lose a traveler to dysentery."),
-        Achievement(SURVIVOR, "Sole Survivor", "Reach Oregon with only one traveler alive.")
+        Achievement(SURVIVOR, "Sole Survivor", "Reach Oregon with only one traveler alive."),
+        Achievement(GOOD_SAMARITAN, "Good Samaritan", "Share your food with a stranded family."),
+        Achievement(HISTORIAN, "Student of the Trail", "Read the history at five landmarks."),
+        Achievement(BARGAINER, "Wheeler-Dealer", "Haggle a trader into a better deal.")
     )
 
     fun name(id: String): String = all.firstOrNull { it.id == id }?.name ?: id
+}
+
+/** Historical notes shown at landmarks ("Learn the history"). */
+object Facts {
+    val byLandmark: Map<String, String> = mapOf(
+        "independence" to "Independence was the main jumping-off point; by 1849 over 30,000 emigrants a year passed through.",
+        "kansas" to "Most travelers crossed the Kansas River by ferry, paying a few dollars rather than risk a ford.",
+        "bigblue" to "The Big Blue was notorious for spring floods that stranded whole wagon trains for days.",
+        "kearney" to "Fort Kearney was established in 1848 to protect travelers on the Platte River road.",
+        "chimney" to "Chimney Rock is a spire of clay and sandstone that once stood over 100 feet tall.",
+        "laramie" to "Fort Laramie began as a fur-trading post and became the great supply point of the high plains.",
+        "independence_rock" to "Independence Rock is a granite dome 1,900 feet long; reaching it by July 4 was a rite of passage.",
+        "southpass" to "South Pass is a broad, gentle gap in the Rockies that wagons could cross without ropes.",
+        "green" to "The Green River was the major obstacle of the Rockies; ferries and guides profited here.",
+        "bridger" to "Jim Bridger's fort was famous for tall tales and expensive supplies.",
+        "soda" to "Soda Springs still bubbles naturally; emigrants wrote it tasted like the new 'soda water'.",
+        "hall" to "Fort Hall was a Hudson's Bay Company post and the last real store before the desert.",
+        "snake" to "The Snake River's rapids drowned many; some travelers floated their wagons downstream.",
+        "boise" to "Fort Boise was a small, remote post on the way to the Blue Mountains.",
+        "bluemountains" to "The Blue Mountains were steep, wooded and muddy, and snow could close the road early.",
+        "wallawalla" to "Fort Walla Walla stood where the Walla Walla River meets the Columbia.",
+        "dalles" to "At The Dalles the Columbia squeezed through the Cascades; many rafted or took the Barlow toll road."
+    )
+
+    fun forLandmark(id: String): String? = byLandmark[id]
+}
+
+/** Things people say when you talk to them on the trail. */
+object Talk {
+    /** Flavor lines. */
+    val lines: List<String> = listOf(
+        "An old trapper warns: \"Keep to the high ground and watch for alkali water.\"",
+        "\"The Snake River is fearsome this year,\" says a settler. \"Hire a guide.\"",
+        "A missionary family shares a meal and news from the Willamette.",
+        "\"We buried two on the plains,\" says a widow quietly. \"Take your time.\"",
+        "A young man boasts he will be in Oregon by August. The old-timers smile.",
+        "\"Buy all the food you can at Fort Hall,\" advises a wagon captain.",
+        "\"There is good grass past Chimney Rock,\" says a scout. \"Rest your teams there.\"",
+        "A mountain man trades tall tales for coffee and tells you Jim Bridger's best lies.",
+        "A soldier at the fort grumbles about pay, whiskey and the long ride home.",
+        "\"Cholera took half our company,\" says a shaken father. \"Boil your water.\"",
+        "A Shoshone woman shows the children how to find camas root.",
+        "\"Caulk the wagon and float,\" says a carpenter. \"Fording is how you lose everything.\"",
+        "\"We saw a wagon train strung out for a mile,\" says a boy, wide-eyed.",
+        "An emigrant reads from her diary: \"Rain again. The road is a river of mud.\"",
+        "A preacher holds a Sunday service and blesses the wagons.",
+        "\"Independence Rock by the Fourth of July,\" says a captain, \"or you'll winter in the mountains.\""
+    )
+
+    /** Occasional useful rumors, tied to gameplay. */
+    val rumors: List<String> = listOf(
+        "\"The river ahead is running high. Be careful.\"",
+        "\"Bandits have been seen near the next ford.\"",
+        "\"There's a ferry at the crossing, but it costs dear.\"",
+        "\"Rest your oxen before the mountains. You'll thank me.\""
+    )
 }
 
 /** Starting months. Leaving late means winter in the mountains. */

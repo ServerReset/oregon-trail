@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
             when (game.phase) {
                 Phase.HUNTING -> game.huntTick()
                 Phase.RAFTING -> game.raftTick()
+                Phase.BARLOW -> game.barlowTick()
                 else -> return
             }
             render()
@@ -113,7 +114,7 @@ class MainActivity : AppCompatActivity() {
         }
         applyUi()
         render()
-        if (game.phase == Phase.HUNTING || game.phase == Phase.RAFTING) {
+        if (game.phase == Phase.HUNTING || game.phase == Phase.RAFTING || game.phase == Phase.BARLOW) {
             handler.removeCallbacks(ticker)
             handler.post(ticker)
         } else {

@@ -20,10 +20,12 @@ enum class Phase {
     CHOICE,
     HUNTING,
     RAFTING,
+    BARLOW,
     JOURNAL,
     LOAD,
     ACHIEVEMENTS,
     STATS,
+    EPILOGUE,
     NOTICE,
     DEATH,
     ARRIVED
@@ -84,6 +86,12 @@ class Game(
                 raftField = RaftField(w, h, rng, old.totalProgress, old.maxHits, old.progress, old.hits)
             }
         }
+        barlowField?.let { old ->
+            val (w, h) = barlowSize()
+            if (w != old.width || h != old.height) {
+                barlowField = BarlowField(w, h, rng, old.totalProgress, old.maxDamage, old.progress, old.damage)
+            }
+        }
     }
 
     // ----- persistent settings -----------------------------------------
@@ -106,6 +114,9 @@ class Game(
     var landmarkIndex: Int = 0
     var pace: Pace = Pace.STEADY
     var rations: Rations = Rations.FILLING
+    /** Average condition of the oxen, 0..100. Hard driving and bad weather wear it down. */
+    var oxHealth: Int = 100
+        private set
     var difficulty: Difficulty = Difficulty.NORMAL
     var storeAtFort: Boolean = false
     var lastGravestone: String? = null
@@ -134,6 +145,11 @@ class Game(
         private set
     /** Name of an achievement just unlocked, for the front-end to toast. */
     var pendingUnlock: String? = null
+    /** Set when the player asks to share their journey summary. */
+    var requestedShare: Boolean = false
+        private set
+    /** How many landmark histories the player has read this run. */
+    private var factsRead = 0
 
     /** Presentation settings supplied by the front-end (may be null in tests). */
     var uiSettings: UiSettings? = null
@@ -154,6 +170,7 @@ class Game(
     private var huntDays = 1
 
     internal var raftField: RaftField? = null
+    internal var barlowField: BarlowField? = null
     private var cutoffTarget: Int = -1
 
     internal var deathCause = ""
@@ -197,6 +214,7 @@ class Game(
         cutoffTarget = -1
         pace = Pace.STEADY
         rations = Rations.FILLING
+        oxHealth = 100
         party = ArrayList()
         val surname = Data.surnames[rng.nextInt(Data.surnames.size)]
         repeat(5) { i ->
@@ -208,7 +226,7 @@ class Game(
     }
 
     internal fun aliveMembers(): List<PartyMember> = party.filter { it.alive }
-    private val aliveCount: Int get() = aliveMembers().size
+    internal val aliveCount: Int get() = aliveMembers().size
 
     // ====================================================================
     //  Public input
@@ -267,6 +285,7 @@ class Game(
             id.startsWith("choice:") -> handleChoice(id.substringAfter("choice:"))
             id.startsWith("riders:") || id.startsWith("trade:") || id.startsWith("rest:") ->
                 handleChoice(id)
+            id.startsWith("stranded:") -> handleStranded(id.substringAfter("stranded:"))
             id == "notice:continue" -> phase = noticeNext
             id == "map:back" -> phase = Phase.TRAVEL
             id == "journal:prev" -> journalPage = (journalPage - 1).coerceAtLeast(0)
@@ -280,10 +299,15 @@ class Game(
             id == "hunt:leave" -> endHunt()
             id == "raft:left" -> raftField?.moveLeft()
             id == "raft:right" -> raftField?.moveRight()
+            id == "barlow:left" -> barlowField?.moveLeft()
+            id == "barlow:right" -> barlowField?.moveRight()
             id == "death:topten" -> phase = Phase.TOP_TEN
             id == "death:epitaph" -> requestedEpitaphEdit = true
             id == "death:restart" -> { newRun(occupation, travelMonth); phase = Phase.PROFESSION }
             id == "arrived:topten" -> phase = Phase.TOP_TEN
+            id == "arrived:epilogue" -> phase = Phase.EPILOGUE
+            id == "epilogue:back" -> phase = Phase.ARRIVED
+            id == "arrived:share" || id == "death:share" -> requestedShare = true
             id == "arrived:restart" -> { newRun(occupation, travelMonth); phase = Phase.PROFESSION }
             id.startsWith("dalles:") -> handleDalles(id.substringAfter("dalles:"))
         }
@@ -329,6 +353,14 @@ class Game(
         val field = raftField ?: return
         field.tick()
         if (field.done) finishRaft()
+    }
+
+    /** Advances the Barlow Road climb; called on a timer by the front-end. */
+    fun barlowTick() {
+        if (phase != Phase.BARLOW) return
+        val field = barlowField ?: return
+        field.tick()
+        if (field.done) finishBarlow()
     }
 
     // ====================================================================
@@ -506,6 +538,14 @@ class Game(
         )
     }
 
+    /** The average condition of the oxen as a word. */
+    fun oxCondition(): String = when {
+        oxHealth >= 75 -> "good"
+        oxHealth >= 45 -> "fair"
+        oxHealth >= 20 -> "poor"
+        else -> "failing"
+    }
+
     /** Records a dated line in the traveler's journal. */
     private fun addJournal(text: String) {
         val dateText = "${date.monthName} ${date.day}"
@@ -540,6 +580,30 @@ class Game(
         requestedAutosaveLoad = false
     }
 
+    fun clearShareRequest() {
+        requestedShare = false
+    }
+
+    /** A short, shareable summary of the journey. */
+    fun summaryText(): String {
+        val leader = party.firstOrNull()?.name ?: "Traveler"
+        val sb = StringBuilder()
+        sb.append("The Oregon Trail - $leader\n")
+        sb.append("${occupation.displayName}, departed ${travelMonth.displayName} 1848\n")
+        sb.append("${date}: $miles of ${Data.TOTAL_MILES} miles\n")
+        if (phase == Phase.DEATH) {
+            sb.append("Died of $deathCause on the trail.\n")
+        } else {
+            sb.append("Final score: $lastScore\n")
+        }
+        sb.append("Party:\n")
+        for (m in party) {
+            val fate = if (m.alive) "reached Oregon" else "died of ${m.condition ?: "the trail"}"
+            sb.append("  ${m.name}: $fate\n")
+        }
+        return sb.toString()
+    }
+
     private fun recordStats(transform: (GameStats) -> GameStats) {
         stats = transform(stats)
         scores.saveStats(stats)
@@ -568,6 +632,7 @@ class Game(
             consumeFood()
         }
         aliveMembers().forEach { it.heal(days * 4) }
+        oxHealth = (oxHealth + days * 5).coerceAtMost(100)
         val healed = aliveMembers().joinToString(", ") { "${it.name} (${it.state.displayName})" }
         report += "\n\nRest helps. Your party's health: $healed."
         addJournal("Rested for $days day(s) to recover.")
@@ -575,7 +640,7 @@ class Game(
     }
 
     private fun attemptTrade() {
-        // A nearby party offers a trade.
+        // A trader, mountain man or soldier offers a deal.
         val offers = listOf(
             Triple("80 pounds of food", "1 set of clothing", "food80"),
             Triple("1 spare wheel", "1 set of clothing", "wheel"),
@@ -583,15 +648,17 @@ class Game(
             Triple("1 yoke of oxen", "50 pounds of food", "oxen")
         )
         val offer = offers[rng.nextInt(offers.size)]
+        val who = listOf("A trader", "A mountain man", "A soldier from the fort")[rng.nextInt(3)]
         choiceTitle = "Trading"
         choiceLines.clear()
-        choiceLines.add("A party camped nearby offers you")
+        choiceLines.add("$who camped nearby offers you")
         choiceLines.add("${offer.first} in exchange for ${offer.second}.")
         choiceLines.add("")
-        choiceLines.add("Do you accept?")
+        choiceLines.add("What do you do?")
         choiceOptions.clear()
-        choiceOptions.add("Yes, trade" to "trade:yes:${offer.third}")
-        choiceOptions.add("No thanks" to "trade:no")
+        choiceOptions.add("Accept the trade" to "trade:yes:${offer.third}")
+        choiceOptions.add("Haggle for more" to "trade:haggle:${offer.third}")
+        choiceOptions.add("Decline" to "trade:no")
         choiceNext = Phase.TRAVEL
         phase = Phase.CHOICE
     }
@@ -641,9 +708,27 @@ class Game(
         val weatherFactor = weatherSpeedFactor(weather.kind)
         val oxenYokes = inventory.oxen / 2
         val oxenFactor = if (oxenYokes <= 0) 0.0 else min(1.2, 0.6 + 0.2 * oxenYokes)
+
+        // Hard driving and harsh weather wear the oxen down (a cut feature the
+        // original designer wished he could have tracked).
+        when (pace) {
+            Pace.STRENUOUS -> oxHealth -= rng.nextInt(0, 2)
+            Pace.GRUELING -> oxHealth -= rng.nextInt(1, 3)
+            else -> {}
+        }
+        if (weather.tempF >= 90 || weather.tempF <= 25) oxHealth -= 1
+        if (inventory.food <= 0) oxHealth -= 1
+        oxHealth = oxHealth.coerceIn(0, 100)
+        val oxHealthFactor = 0.55 + 0.45 * oxHealth / 100.0
+
         val terrain = terrainFactor(Data.landmarkAt(landmarkIndex).kind)
-        var gained = (pace.milesPerDay * weatherFactor * oxenFactor * terrain).toInt()
+        var gained = (pace.milesPerDay * weatherFactor * oxenFactor * terrain * oxHealthFactor).toInt()
         if (inventory.oxen <= 0) gained = 0
+        if (oxHealth <= 15 && inventory.oxen >= 2 && rng.chance(0.12)) {
+            inventory.oxen -= 2
+            oxHealth = 45
+            msgs.add("An exhausted ox collapses. You are down a yoke.")
+        }
         miles += max(0, gained)
 
         // Ill health from hard travel.
@@ -788,12 +873,13 @@ class Game(
         val plains = listOf(
             "breakdown", "breakdown", "ox_lame", "ox_wander", "child_lost",
             "child_arm", "unsafe_water", "heavy_rain", "hail", "bandits",
-            "wild_animals", "fire", "fog", "indians", "thief", "fruit", "riders"
+            "wild_animals", "fire", "fog", "indians", "thief", "fruit", "riders",
+            "stranded"
         )
         val mountains = listOf(
             "breakdown", "ox_lame", "ox_wander", "unsafe_water", "heavy_rain",
             "hail", "bandits", "wild_animals", "fire", "fog", "snakebite",
-            "cold", "blizzard", "indians", "riders"
+            "cold", "blizzard", "indians", "riders", "stranded"
         )
         return if (m > 900) mountains else plains
     }
@@ -821,8 +907,14 @@ class Game(
             "ox_lame" -> {
                 val lost = rng.nextInt(15, 26)
                 miles -= lost
+                oxHealth = (oxHealth - rng.nextInt(10, 25)).coerceIn(0, 100)
                 msgs.add("An ox goes lame. You slow down and")
                 msgs.add("lose $lost miles resting the animal.")
+                if (oxHealth <= 0 && inventory.oxen >= 2) {
+                    inventory.oxen -= 2
+                    oxHealth = 45
+                    msgs.add("The lame ox has to be cut from the team.")
+                }
             }
             "ox_wander" -> {
                 val lost = rng.nextInt(10, 18)
@@ -951,12 +1043,53 @@ class Game(
                 msgs.add("You find bushes heavy with wild fruit")
                 msgs.add("and gather $gained pounds of food.")
             }
+            "stranded" -> startStrandedChoice()
             "riders" -> startRidersChoice()
         }
     }
 
-    private fun startRidersChoice() {
-        choiceTitle = "Riders Ahead"
+    /** A moral encounter: help a family in need, at a cost. */
+    private fun startStrandedChoice() {
+        choiceTitle = "Stranded Family"
+        choiceLines.clear()
+        choiceLines.add("A family's wagon has thrown a wheel and")
+        choiceLines.add("they are nearly out of food. They ask you")
+        choiceLines.add("for help. What do you do?")
+        choiceOptions.clear()
+        choiceOptions.add("Share 50 lb of food" to "stranded:food")
+        choiceOptions.add("Give them a spare wheel" to "stranded:wheel")
+        choiceOptions.add("Wish them luck" to "stranded:no")
+        choiceNext = Phase.TRAVEL
+        phase = Phase.CHOICE
+    }
+
+    private fun handleStranded(action: String) {
+        val msgs = ArrayList<String>()
+        when (action) {
+            "food" -> if (inventory.food >= 50) {
+                inventory.food -= 50
+                msgs.add("You share 50 pounds of food with the")
+                msgs.add("stranded family. They thank you warmly.")
+                unlock(Achievements.GOOD_SAMARITAN)
+            } else {
+                msgs.add("You have no food to spare and roll on,")
+                msgs.add("heavy of heart.")
+            }
+            "wheel" -> if (inventory.wheels > 0) {
+                inventory.wheels -= 1
+                msgs.add("You give them a spare wheel. They vow")
+                msgs.add("to repay the kindness someday.")
+                unlock(Achievements.GOOD_SAMARITAN)
+            } else {
+                msgs.add("You have no spare wheel to give.")
+            }
+            else -> msgs.add("You wish them luck and move on. The trail is hard.")
+        }
+        addJournal("Stranded family on the trail: chose '$action'.")
+        showNotice("Stranded Family", msgs, Phase.TRAVEL)
+    }
+
+    private fun startRidersChoice() {        choiceTitle = "Riders Ahead"
         choiceLines.clear()
         choiceLines.add("Riders appear on the horizon.")
         choiceLines.add(if (rng.chance(0.6)) "They look hostile." else "They look friendly.")
@@ -1050,9 +1183,35 @@ class Game(
             "rest" -> startRest()
             "buy" -> { storeAtFort = true; phase = Phase.STORE }
             "talk" -> talkToPeople()
+            "fact" -> showHistory()
             "hunt" -> startHunt(Phase.LANDMARK)
             "cutoff" -> takeCutoff()
         }
+    }
+
+    /** Shows a historical note about the current landmark (the educational bit). */
+    private fun showHistory() {
+        val lm = Data.landmarkAt(landmarkIndex)
+        val fact = Facts.forLandmark(lm.id)
+            ?: "This stretch of the trail is remembered by the families who crossed it."
+        factsRead++
+        if (factsRead >= 5) unlock(Achievements.HISTORIAN)
+        addJournal("Read about ${lm.name}.")
+        showNotice("History of ${shortLandmarkTitle(lm)}", listOf(fact), Phase.LANDMARK)
+    }
+
+    private fun shortLandmarkTitle(lm: Landmark): String =
+        if (lm.name.length <= cols - 12) lm.name else lm.name.substringBefore(",")
+
+    /** Approximate river depth in feet, deepened by rain. */
+    fun riverDepth(river: River): Double {
+        val base = river.widthYards / 130.0 + 1.5
+        val rain = when (weather.kind) {
+            WeatherKind.HEAVY_RAIN, WeatherKind.THUNDERSTORM -> 2.0
+            WeatherKind.RAIN, WeatherKind.HAIL -> 1.0
+            else -> 0.0
+        }
+        return (base + rain)
     }
 
     private fun takeCutoff() {
@@ -1078,16 +1237,14 @@ class Game(
 
     private fun talkToPeople() {
         val lm = Data.landmarkAt(landmarkIndex)
-        val tales = listOf(
-            "An old trapper warns: \"Keep to the high ground and watch for alkali water.\"",
-            "\"The Snake River is fearsome this year,\" says a settler. \"Hire a guide.\"",
-            "A missionary family shares a meal and news from the Willamette.",
-            "\"We buried two on the plains,\" says a widow quietly. \"Take your time.\"",
-            "A young man boasts he will be in Oregon by August. The old-timers smile.",
-            "\"Buy all the food you can at Fort Hall,\" advises a wagon captain.",
-            "\"There is good grass past Chimney Rock,\" says a scout. \"Rest your teams there.\""
-        )
-        showNotice(lm.name, listOf(tales[rng.nextInt(tales.size)]), Phase.LANDMARK)
+        val lines = ArrayList<String>()
+        lines.add(Talk.lines[rng.nextInt(Talk.lines.size)])
+        // Sometimes you also pick up a useful rumor.
+        if (rng.chance(0.4)) {
+            lines.add("")
+            lines.add(Talk.rumors[rng.nextInt(Talk.rumors.size)])
+        }
+        showNotice(lm.name, lines, Phase.LANDMARK)
     }
 
     // ====================================================================
@@ -1190,7 +1347,6 @@ class Game(
     // ====================================================================
 
     private fun handleDalles(action: String) {
-        val msgs = ArrayList<String>()
         when (action) {
             "barlow" -> {
                 val toll = 5.0
@@ -1199,14 +1355,24 @@ class Game(
                     return
                 }
                 inventory.cash -= toll
-                val lost = rng.nextInt(4, 10)
-                date.plusDays(lost)
-                msgs.add("You pay the $5 toll and take the Barlow")
-                msgs.add("Road over the Cascades. It takes $lost days.")
-                msgs.add("At last, the Willamette Valley lies below.")
+                startBarlow()
+                return
             }
             "raft" -> {
                 startRaft()
+                return
+            }
+            "portage" -> {
+                val days = rng.nextInt(4, 8)
+                date.plusDays(days)
+                arriveOregon(
+                    listOf(
+                        "You portage around the rapids, hauling the",
+                        "wagons overland. It is slow and exhausting,",
+                        "taking $days days, but nothing is lost.",
+                        "At last, the Willamette Valley lies below."
+                    )
+                )
                 return
             }
             "wait" -> {
@@ -1215,6 +1381,34 @@ class Game(
                 return
             }
         }
+    }
+
+    private fun startBarlow() {
+        val (w, h) = barlowSize()
+        barlowField = BarlowField(w, h, rng)
+        phase = Phase.BARLOW
+    }
+
+    private fun barlowSize(): Pair<Int, Int> =
+        min(contentW, 40).coerceIn(10, 40) to min(rows - 5, 16).coerceIn(4, 16)
+
+    private fun finishBarlow() {
+        val field = barlowField ?: return
+        val msgs = ArrayList<String>()
+        if (field.success) {
+            msgs.add("After a long climb over the Cascades, the")
+            msgs.add("Barlow Road brings you down into the valley.")
+            if (field.damage > 0) {
+                supplyLoss(msgs, field.damage * 8, 0)
+                msgs.add("The rocks and ruts cost you some supplies.")
+            }
+        } else {
+            msgs.add("A wheel shatters on the rocks and the")
+            msgs.add("wagon is dragged down the slope.")
+            supplyLoss(msgs, 40, 1)
+        }
+        addJournal("Took the Barlow Road over the Cascades.")
+        barlowField = null
         arriveOregon(msgs)
     }
 
@@ -1275,7 +1469,7 @@ class Game(
         phase = Phase.NOTICE
     }
 
-    private fun daysOnTrail(): Int {
+    internal fun daysOnTrail(): Int {
         // Rough day count from March 1 to current date.
         var count = 0
         val start = GameDate(1848, travelMonth.monthIndex, 1)
@@ -1379,44 +1573,75 @@ class Game(
         }
     }
 
-    private fun handleTradeResult(id: String) {
-        val parts = id.split(":")
-        if (parts.size < 2 || parts[1] == "no") {
-            showNotice("Trading", listOf("You decline the trade and move on."), Phase.TRAVEL)
-            return
-        }
-        val kind = parts.getOrNull(2) ?: ""
-        val msgs = ArrayList<String>()
-        when (kind) {
+    /** Applies a trade, scaling what you receive by [bonus]. */
+    private fun applyTrade(kind: String, bonus: Double, msgs: MutableList<String>): Boolean {
+        return when (kind) {
             "food80" -> {
                 if (inventory.clothing >= 1) {
-                    inventory.clothing -= 1; inventory.food += 80
+                    inventory.clothing -= 1
+                    inventory.food += (80 * bonus).toInt()
                     msgs.add("You trade a set of clothing for")
-                    msgs.add("80 pounds of food. A good bargain.")
-                } else msgs.add("You do not have the goods to trade.")
+                    msgs.add("${(80 * bonus).toInt()} pounds of food.")
+                    true
+                } else { msgs.add("You do not have the goods to trade."); false }
             }
             "wheel" -> {
                 if (inventory.clothing >= 1) {
-                    inventory.clothing -= 1; inventory.wheels += 1
-                    msgs.add("You trade a set of clothing for a")
-                    msgs.add("spare wheel.")
-                } else msgs.add("You do not have the goods to trade.")
+                    inventory.clothing -= 1
+                    inventory.wheels += 1
+                    if (bonus > 1.0) inventory.axles += 1
+                    msgs.add("You trade a set of clothing for a spare wheel.")
+                    if (bonus > 1.0) msgs.add("He throws in an axle as well.")
+                    true
+                } else { msgs.add("You do not have the goods to trade."); false }
             }
             "ammo" -> {
                 if (inventory.food >= 30) {
-                    inventory.food -= 30; inventory.ammo += 40
+                    inventory.food -= 30
+                    inventory.ammo += (40 * bonus).toInt()
                     msgs.add("You trade 30 pounds of food for")
-                    msgs.add("40 bullets.")
-                } else msgs.add("You do not have the goods to trade.")
+                    msgs.add("${(40 * bonus).toInt()} bullets.")
+                    true
+                } else { msgs.add("You do not have the goods to trade."); false }
             }
             "oxen" -> {
                 if (inventory.food >= 50) {
-                    inventory.food -= 50; inventory.oxen += 2
-                    msgs.add("You trade 50 pounds of food for a")
-                    msgs.add("yoke of oxen.")
-                } else msgs.add("You do not have the goods to trade.")
+                    inventory.food -= 50
+                    inventory.oxen += 2
+                    if (bonus > 1.0) inventory.food += 20
+                    msgs.add("You trade 50 pounds of food for a yoke of oxen.")
+                    if (bonus > 1.0) msgs.add("He throws in 20 pounds of food.")
+                    true
+                } else { msgs.add("You do not have the goods to trade."); false }
             }
+            else -> false
         }
+    }
+
+    private fun handleTradeResult(id: String) {
+        val parts = id.split(":")
+        val action = parts.getOrElse(1) { "" }
+        if (action == "no") {
+            showNotice("Trading", listOf("You decline the trade and move on."), Phase.TRAVEL)
+            return
+        }
+        val kind = parts.getOrElse(2) { "" }
+        val msgs = ArrayList<String>()
+        if (action == "haggle") {
+            // Bankers are practised at driving a bargain.
+            val skill = if (occupation == Occupation.BANKER) 0.6 else 0.45
+            if (rng.chance(skill)) {
+                unlock(Achievements.BARGAINER)
+                msgs.add("You haggle hard and the trader sweetens the deal.")
+                applyTrade(kind, 1.25, msgs)
+            } else {
+                msgs.add("The trader scowls at your cheek and packs up.")
+                msgs.add("No deal.")
+            }
+            showNotice("Bargaining", msgs, Phase.TRAVEL)
+            return
+        }
+        applyTrade(kind, 1.0, msgs)
         showNotice("Trading", msgs, Phase.TRAVEL)
     }
 
@@ -1496,7 +1721,7 @@ class Game(
         val yokes = inventory.oxen / 2
         return listOf(
             "Cash: $${"%.2f".format(inventory.cash)}",
-            "Oxen: ${inventory.oxen} ($yokes yoke)",
+            "Oxen: ${inventory.oxen} ($yokes yoke, ${oxCondition()})",
             "Food: ${inventory.food} pounds",
             "Clothing: ${inventory.clothing} sets",
             "Ammunition: ${inventory.ammo / 20} boxes (${inventory.ammo} bullets)",
@@ -1532,9 +1757,11 @@ class Game(
             Phase.LOAD -> renderLoad(screen)
             Phase.ACHIEVEMENTS -> renderAchievements(screen)
             Phase.STATS -> renderStats(screen)
+            Phase.EPILOGUE -> renderEpilogue(screen)
             Phase.CHOICE -> renderChoice(screen)
             Phase.HUNTING -> renderHunting(screen)
             Phase.RAFTING -> renderRafting(screen)
+            Phase.BARLOW -> renderBarlow(screen)
             Phase.NOTICE -> renderNotice(screen)
             Phase.DEATH -> renderDeath(screen)
             Phase.ARRIVED -> renderArrived(screen)
@@ -1562,6 +1789,7 @@ class Game(
         line("cutoff", cutoffTarget)
         line("pace", pace.name)
         line("rations", rations.name)
+        line("oxHealth", oxHealth)
         line("difficulty", difficulty.name)
         line("storeAtFort", storeAtFort)
         line("sound", soundEnabled)
@@ -1604,6 +1832,7 @@ class Game(
                 .coerceIn(-1, Data.landmarks.lastIndex)
             pace = Pace.valueOf(map["pace"] ?: pace.name)
             rations = Rations.valueOf(map["rations"] ?: rations.name)
+            oxHealth = (map["oxHealth"]?.toIntOrNull() ?: 100).coerceIn(0, 100)
             difficulty = try {
                 Difficulty.valueOf(map["difficulty"] ?: "NORMAL")
             } catch (_: Exception) {
@@ -1654,7 +1883,7 @@ class Game(
     }
 
     private fun safePhase(): Phase = when {
-        phase == Phase.RAFTING -> Phase.LANDMARK
+        phase == Phase.RAFTING || phase == Phase.BARLOW -> Phase.LANDMARK
         phase in INVALID_RESUME_PHASES -> Phase.TRAVEL
         else -> phase
     }
@@ -1667,7 +1896,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "1.4.0"
+        const val VERSION = "1.5.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400
@@ -1676,8 +1905,9 @@ class Game(
         val INVALID_RESUME_PHASES = setOf(
             Phase.TITLE, Phase.ABOUT, Phase.MANAGEMENT, Phase.TOP_TEN,
             Phase.PROFESSION, Phase.MONTH, Phase.NAMES, Phase.DEATH,
-            Phase.ARRIVED, Phase.CHOICE, Phase.HUNTING, Phase.RAFTING,
-            Phase.JOURNAL, Phase.LOAD, Phase.ACHIEVEMENTS, Phase.STATS, Phase.NOTICE
+            Phase.ARRIVED, Phase.CHOICE, Phase.HUNTING, Phase.RAFTING, Phase.BARLOW,
+            Phase.JOURNAL, Phase.LOAD, Phase.ACHIEVEMENTS, Phase.STATS, Phase.NOTICE,
+            Phase.EPILOGUE
         )
 
         val ABOUT_PAGES: List<String> = listOf(

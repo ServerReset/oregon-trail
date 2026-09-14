@@ -1,5 +1,6 @@
 package com.oregontrail.engine
 
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -453,7 +454,7 @@ internal fun Game.compactStatusLines(): List<String> {
         "Pace: ${pace.displayName}  Rations: ${rations.displayName}",
         "Miles: $miles/${Data.TOTAL_MILES}  Next: $toNext",
         "Food: ${inventory.food}  Ammo: ${inventory.ammo}  " +
-            "Cash: $${"%.0f".format(inventory.cash)}  Oxen: ${inventory.oxen}"
+            "Cash: $${"%.0f".format(inventory.cash)}  Oxen ${inventory.oxen} ${oxCondition()}"
     )
 }
 
@@ -468,7 +469,7 @@ internal fun Game.statusLines(): List<String> {
         "Miles: $miles / ${Data.TOTAL_MILES}",
         "Next: $toNext",
         "Food: ${inventory.food} lb   Clothing: ${inventory.clothing}",
-        "Ammo: ${inventory.ammo}   Cash: $${"%.0f".format(inventory.cash)}   Oxen: ${inventory.oxen}",
+        "Ammo: ${inventory.ammo}   Cash: $${"%.0f".format(inventory.cash)}   Oxen: ${inventory.oxen} (${oxCondition()})",
         if (party.any { !it.alive }) "$healthy" else "All five are alive"
     )
 }
@@ -504,7 +505,8 @@ internal fun Game.renderLandmark(screen: Screen) {
                 listOf(
                     "1.Barlow" to "dalles:barlow",
                     "2.Raft" to "dalles:raft",
-                    "3.Wait" to "dalles:wait"
+                    "3.Port" to "dalles:portage",
+                    "4.Wait" to "dalles:wait"
                 )
             )
             return
@@ -517,6 +519,7 @@ internal fun Game.renderLandmark(screen: Screen) {
             options.add("${n++}.Cut" to "land:cutoff")
         }
         options.add("${n++}.Inv" to "land:supplies")
+        options.add("${n++}.Hist" to "land:fact")
         options.add("${n++}.Map" to "land:map")
         options.add("${n++}.Rest" to "land:rest")
         if (lm.kind == LandmarkKind.FORT || lm.kind == LandmarkKind.LANDMARK) {
@@ -546,7 +549,8 @@ internal fun Game.renderLandmark(screen: Screen) {
         val options = listOf(
             "1. Take the Barlow Road (toll $5)" to "dalles:barlow",
             "2. Raft down the Columbia River" to "dalles:raft",
-            "3. Wait for better weather" to "dalles:wait"
+            "3. Portage around the rapids" to "dalles:portage",
+            "4. Wait for better weather" to "dalles:wait"
         )
         screen.menuAt(marginX + 1, y, options)
         return
@@ -559,6 +563,7 @@ internal fun Game.renderLandmark(screen: Screen) {
         options.add("${n++}. ${lm.cutoffLabel}" to "land:cutoff")
     }
     options.add("${n++}. Check supplies" to "land:supplies")
+    options.add("${n++}. Learn the history" to "land:fact")
     options.add("${n++}. Look at the map" to "land:map")
     options.add("${n++}. Stop to rest" to "land:rest")
     if (lm.kind == LandmarkKind.FORT || lm.kind == LandmarkKind.LANDMARK) {
@@ -606,7 +611,9 @@ internal fun Game.renderRiver(screen: Screen) {
         y += Ascii.height(Ascii.river) + 1
     }
     y = screen.wrap(marginX + 1, y, contentW - 2, lm.blurb.joinToString(" "), Palette.GREEN)
-    screen.text(marginX + 1, y, "The river is ${riverState(river)}.", Palette.CYAN); y += 2
+    screen.text(marginX + 1, y, "The river is ${riverState(river)}.", Palette.CYAN)
+    screen.text(marginX + 1, y + 1, "Depth: about ${"%.1f".format(riverDepth(river))} feet.", Palette.CYAN)
+    y += 3
     val options = ArrayList<Pair<String, String>>()
     var n = 1
     options.add("${n++}. Ford the river" to "river:ford")
@@ -1040,6 +1047,114 @@ internal fun Game.renderStats(screen: Screen) {
     val back = "[ Back ]"
     screen.text(marginX + 1, rows - 2, back, Palette.BRIGHT_GREEN, bold = true)
     screen.hotspot("stats:back", marginX + 1, rows - 2, back.length)
+}
+
+internal fun Game.renderEpilogue(screen: Screen) {
+    screen.center(0, "EPILOGUE", Palette.BRIGHT_GREEN, bold = true)
+    if (ultraCompact) {
+        var y = 1
+        for (m in party) {
+            if (y >= rows - 1) break
+            val fate = if (m.alive) "lived" else "died: ${m.condition ?: "trail"}"
+            screen.text(0, y, "${m.name.take(cols / 2)} $fate".take(cols), if (m.alive) Palette.GREEN else Palette.GRAY)
+            y++
+        }
+        val back = "[X]"
+        screen.text(0, rows - 1, back, Palette.BRIGHT_GREEN, bold = true)
+        screen.hotspot("epilogue:back", 0, rows - 1, back.length)
+        return
+    }
+    var y = 2
+    y = screen.wrap(
+        marginX + 1, y, contentW - 2,
+        "The journey is over. Here is how it ended for each of your travelers.",
+        Palette.GRAY
+    )
+    y++
+    for (m in party) {
+        val fate = if (m.alive) "lived to see Oregon" else "died of ${m.condition ?: "the trail"}"
+        y = screen.wrap(marginX + 2, y, contentW - 4, "${m.name}: $fate.", if (m.alive) Palette.GREEN else Palette.GRAY)
+    }
+    y++
+    if (rows - y >= 3) {
+        screen.wrap(
+            marginX + 1, y, contentW - 2,
+            "You traveled $miles miles in ${daysOnTrail()} days. " +
+                (if (aliveCount > 0) "The valley is green and the land is yours." else "The trail claimed them all."),
+            Palette.GREEN
+        )
+    }
+    val share = "[ Share ]"
+    val back = "[ Back ]"
+    val by = rows - 2
+    screen.text(marginX + 1, by, share, Palette.BRIGHT_GREEN, bold = true)
+    screen.hotspot("arrived:share", marginX + 1, by, share.length)
+    screen.text(marginX + 12, by, back, Palette.BRIGHT_GREEN, bold = true)
+    screen.hotspot("epilogue:back", marginX + 12, by, back.length)
+}
+
+internal fun Game.renderBarlow(screen: Screen) {
+    val field = barlowField ?: return
+    if (ultraCompact) {
+        screen.text(
+            0, 0,
+            "BARLOW ${field.progress}/${field.totalProgress} ${field.integrity}/${field.maxDamage}".take(cols),
+            Palette.BRIGHT_GREEN, bold = true
+        )
+        val fieldY = 1
+        for (fy in 0 until field.height) {
+            if (fieldY + fy >= rows - 1) break
+            val center = field.centerAt(fy)
+            for (fx in 0 until min(field.width, cols)) {
+                val inRoad = abs(fx - center) <= field.roadHalf()
+                val ch: Char
+                val color: Palette
+                when {
+                    field.isWagonAt(fx, fy) -> { ch = if (fx == field.wagonX) 'W' else '='; color = Palette.BRIGHT_YELLOW }
+                    field.rockAt(fx, fy) -> { ch = 'O'; color = Palette.GRAY }
+                    inRoad -> { ch = '.'; color = Palette.DIM }
+                    else -> { ch = ' '; color = Palette.DEFAULT }
+                }
+                screen.put(fx, fieldY + fy, ch, color)
+            }
+        }
+        val cy = rows - 1
+        screen.text(0, cy, "<<", Palette.BRIGHT_GREEN, bold = true)
+        screen.hotspot("barlow:left", 0, cy, 2)
+        screen.text(4, cy, ">>", Palette.BRIGHT_GREEN, bold = true)
+        screen.hotspot("barlow:right", 4, cy, 2)
+        return
+    }
+    screen.center(0, "BARLOW ROAD", Palette.BRIGHT_GREEN, bold = true)
+    val left = "Climb ${field.progress}/${field.totalProgress}"
+    val right = "Wagon ${field.integrity}/${field.maxDamage}"
+    screen.text(marginX + 1, 1, left, Palette.BRIGHT_YELLOW)
+    screen.text((marginX + contentW - right.length).coerceAtLeast(marginX + 1), 1, right, Palette.WHITE)
+    val fieldX = marginX + 1
+    val fieldY = 3
+    screen.box(fieldX - 1, fieldY - 1, field.width + 2, field.height + 2, Palette.BROWN)
+    for (fy in 0 until field.height) {
+        val center = field.centerAt(fy)
+        for (fx in 0 until field.width) {
+            val inRoad = abs(fx - center) <= field.roadHalf()
+            val ch: Char
+            val color: Palette
+            when {
+                field.isWagonAt(fx, fy) -> { ch = if (fx == field.wagonX) 'W' else '='; color = Palette.BRIGHT_YELLOW }
+                field.rockAt(fx, fy) -> { ch = 'O'; color = Palette.GRAY }
+                inRoad -> { ch = '.'; color = Palette.DIM }
+                else -> { ch = if ((fx + fy) % 9 == 0) '^' else ' '; color = Palette.GREEN }
+            }
+            screen.put(fieldX + fx, fieldY + fy, ch, color)
+        }
+    }
+    var cy = fieldY + field.height + 1
+    if (cy > rows - 2) cy = rows - 2
+    val cx = marginX + 1
+    screen.text(cx, cy, "<< LEFT ", Palette.BRIGHT_GREEN, bold = true)
+    screen.hotspot("barlow:left", cx, cy, 8)
+    screen.text(cx + 12, cy, " RIGHT >>", Palette.BRIGHT_GREEN, bold = true)
+    screen.hotspot("barlow:right", cx + 12, cy, 9)
 }
 
 internal fun Game.renderNotice(screen: Screen) {

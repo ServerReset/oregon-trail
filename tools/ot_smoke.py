@@ -256,6 +256,8 @@ def _drive(d):
                     or d.tap_text("Continue on trail", required=False)
         elif phase == "RAFTING":
             d.tap_text("RIGHT >>", required=False) or d.tap_text("<< LEFT", required=False)
+        elif phase == "BARLOW":
+            d.tap_text("RIGHT >>", required=False) or d.tap_text("<< LEFT", required=False)
         elif phase == "HUNTING":
             d.tap_text("[ Return to trail ]")
         elif phase == "MAP":

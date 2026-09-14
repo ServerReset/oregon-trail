@@ -114,6 +114,8 @@ class GameTest {
                     Phase.DEATH -> break
                     Phase.STORE -> game.onTap("store:leave")
                     Phase.HUNTING -> game.onTap("hunt:leave")
+                    Phase.RAFTING -> game.raftTick()
+                    Phase.BARLOW -> game.barlowTick()
                     else -> break
                 }
             }
@@ -217,6 +219,8 @@ class GameTest {
                 }
                 Phase.STORE -> game.onTap("store:leave")
                 Phase.HUNTING -> game.onTap("hunt:leave")
+                Phase.RAFTING -> game.raftTick()
+                Phase.BARLOW -> game.barlowTick()
                 else -> break
             }
         }

@@ -33,9 +33,11 @@ cues, saved games, and a persistent Oregon Top Ten.
 
 ## Download
 
-Prebuilt signed APKs are attached to the [Releases](../../releases) page.
-Minimum Android version: **7.0 (API 24)**. Install with `adb install app-release.apk`
-or by opening the APK on the device.
+The signed APK is on the **[latest release](../../releases/latest)** page as
+`oregon-trail.apk`. Minimum Android version: **7.0 (API 24)**. Install with
+`adb install oregon-trail.apk` or by opening the APK on the device.
+
+Each push also builds debug and release APKs as CI artifacts.
 
 ## Features
 
@@ -59,7 +61,17 @@ or by opening the APK on the device.
 - **ASCII hunting minigame** — a roguelike hunt with wandering animals, trees,
   rocks, a moving hunter and travelling bullets. Carry back up to 100 lb of meat.
 - **Columbia River rafting finale** — steer a raft through the rapids, dodging
-  rocks, or pay the Barlow Road toll instead.
+  rocks; or take the **Barlow Road** over the Cascades (the second ending
+  minigame the original designer never had room to build), or portage slowly
+  and safely.
+- **Bargaining** — traders, mountain men and soldiers offer deals; accept,
+  haggle for more, or decline. Bankers bargain best.
+- **Oxen health** — hard driving and harsh weather wear down the team, slowing
+  travel and risking a collapse if you don't rest.
+- **Talk to people** — sixteen trail monologues plus useful rumors, and a
+  "Learn the history" option at every landmark.
+- **Epilogue and sharing** — read what became of each traveler and share your
+  journey summary.
 - **Disease and death** — party members sicken and die; you get a gravestone
   and a full epitaph. Graves left by earlier journeys appear when you reach
   the same stretch of trail.
@@ -177,9 +189,9 @@ python3 tools/ot_smoke.py --serial emulator-5554
 
 A GitHub Actions job (`.github/workflows/instrumented.yml`) can boot an
 Android emulator and run this smoke test; because emulator boot on hosted
-runners is slow, that job runs on demand or for a version tag and is marked
-non-blocking. The fast JVM suite (`.github/workflows/android.yml`) runs on
-every push and builds the debug and release APKs.
+runners is slow, that job is run on demand and is marked non-blocking. The
+fast JVM suite (`.github/workflows/android.yml`) runs on every push and builds
+the debug and release APKs.
 
 The front-end was also manually verified across phone, tablet and landscape
 metrics using computed taps and the logcat screen dump.

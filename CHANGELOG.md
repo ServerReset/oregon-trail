@@ -4,6 +4,33 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [1.5.0] - 2026-09-14
+
+Features the original designer, Philip Bouchard, said on The Verge's
+*Version History* (13 Sep 2026) that he wished he'd had the space to add.
+
+### Added
+- **Barlow Road minigame** — the toll-road ending over the Cascades that was
+  cut for disc space: drive a winding, rutted mountain track, dodging rocks,
+  and arrive with only the damage you take. Plus a **portage** option.
+- **Bargaining** — traders, mountain men and soldiers offer deals you can
+  accept, haggle over (bankers get the best odds), or decline. New
+  "Wheeler-Dealer" achievement.
+- **Oxen health** — hard pace, heat, cold and hunger wear the team down,
+  slowing travel and risking a collapsed ox; rest restores them.
+- **Richer talk to people** — sixteen monologues plus useful rumors, and a
+  historical note ("Learn the history") at every landmark, with a
+  "Student of the Trail" achievement.
+- **Moral encounters** — a stranded family asks for help; sharing earns the
+  "Good Samaritan" achievement.
+- **Epilogue** on arrival describing each traveler's fate, and a **share**
+  action for your journey summary.
+- River crossings now report an estimated depth in feet.
+
+### Fixed
+- The Dalles options no longer skip straight to arrival; the Barlow and
+  rafting endings run the actual minigames.
+
 ## [1.4.0] - 2026-09-14
 
 ### Added

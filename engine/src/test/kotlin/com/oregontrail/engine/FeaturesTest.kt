@@ -114,6 +114,8 @@ class FeaturesTest {
         g.setViewport(48, 34)
         assertTrue(g.load(arrivalSave()))
         g.onTap("dalles:barlow")
+        var guard = 0
+        while (g.phase == Phase.BARLOW && guard++ < 600) g.barlowTick()
         if (g.phase == Phase.NOTICE) g.onTap("notice:continue")
         assertEquals(Phase.ARRIVED, g.phase)
         assertTrue(Achievements.REACHED_OREGON in g.achievements)
@@ -195,6 +197,81 @@ class FeaturesTest {
         var guard = 0
         while (g.phase == Phase.RAFTING && guard++ < 500) g.raftTick()
         assertTrue(g.phase == Phase.NOTICE || g.phase == Phase.ARRIVED)
+    }
+
+    @Test
+    fun haggling_can_improve_a_trade() {
+        // All-zero rng: offer "food80", and the haggle always succeeds.
+        val g = Game(ScriptedRng.of(*DoubleArray(400) { 0.0 }), InMemoryScoreStore())
+        g.setViewport(48, 34)
+        g.intro()
+        g.inventory.clothing = 1
+        val foodBefore = g.inventory.food
+        g.onTap("travel:trade")
+        assertEquals(Phase.CHOICE, g.phase)
+        g.onTap("trade:haggle:food80")
+        assertEquals(Phase.NOTICE, g.phase)
+        assertEquals(foodBefore + 100, g.inventory.food, "a good haggle gives 25% more food")
+        assertEquals(0, g.inventory.clothing)
+        assertTrue(Achievements.BARGAINER in g.achievements)
+    }
+
+    @Test
+    fun sharing_food_with_a_stranded_family_unlocks_good_samaritan() {
+        val g = newGame(5L)
+        g.intro()
+        g.inventory.food = 200
+        g.onTap("stranded:food")
+        assertEquals(150, g.inventory.food)
+        assertTrue(Achievements.GOOD_SAMARITAN in g.achievements)
+    }
+
+    @Test
+    fun barlow_road_is_reachable_and_completes() {
+        val g = newGame()
+        assertTrue(g.load(arrivalSave()))
+        g.onTap("dalles:barlow")
+        assertEquals(Phase.BARLOW, g.phase)
+        var guard = 0
+        while (g.phase == Phase.BARLOW && guard++ < 600) g.barlowTick()
+        assertTrue(g.phase == Phase.NOTICE || g.phase == Phase.ARRIVED)
+    }
+
+    @Test
+    fun barlow_field_completes_and_can_be_damaged() {
+        // 0.99: no rocks, road stays put -> a clean climb.
+        val calm = ScriptedRng.of(*DoubleArray(400) { 0.99 })
+        val safe = BarlowField(20, 10, calm, totalProgress = 20)
+        var guard = 0
+        while (!safe.done && guard++ < 200) safe.tick()
+        assertTrue(safe.done)
+        assertTrue(safe.success)
+        assertEquals(0, safe.damage)
+
+        // 0.0: constant rocks; steer off the road to take damage.
+        val rough = ScriptedRng.of(*DoubleArray(900) { 0.0 })
+        val bad = BarlowField(16, 8, rough, totalProgress = 300)
+        guard = 0
+        while (!bad.done && guard++ < 500) {
+            bad.moveLeft()
+            bad.tick()
+        }
+        assertTrue(bad.damage > 0)
+    }
+
+    @Test
+    fun hard_pace_wears_down_the_oxen() {
+        val g = newGame(4L)
+        g.intro()
+        assertEquals(100, g.oxHealth)
+        g.onTap("travel:pace")  // strenuous
+        g.onTap("notice:continue")
+        g.onTap("travel:pace")  // grueling
+        g.onTap("notice:continue")
+        var guard = 0
+        while (guard++ < 80 && g.phase == Phase.TRAVEL) g.onTap("travel:continue")
+        assertTrue(g.oxHealth < 100, "oxen should tire under hard driving, was ${g.oxHealth}")
+        assertTrue(g.oxCondition() in listOf("good", "fair", "poor", "failing"))
     }
 
     @Test
@@ -280,6 +357,7 @@ class FeaturesTest {
                 g.onTap(id)
                 if (g.phase == Phase.HUNTING) repeat(random.nextInt(3)) { g.huntTick() }
                 if (g.phase == Phase.RAFTING) repeat(random.nextInt(3)) { g.raftTick() }
+                if (g.phase == Phase.BARLOW) repeat(random.nextInt(3)) { g.barlowTick() }
             }
         }
     }
@@ -423,6 +501,8 @@ class FeaturesTest {
         arrived.setViewport(48, 34)
         assertTrue(arrived.load(save))
         arrived.onTap("dalles:barlow")
+        var guard2 = 0
+        while (arrived.phase == Phase.BARLOW && guard2++ < 600) arrived.barlowTick()
         if (arrived.phase == Phase.NOTICE) arrived.onTap("notice:continue")
         assertEquals(Phase.ARRIVED, arrived.phase)
         val text = arrived.render().toText()

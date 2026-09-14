@@ -7,8 +7,6 @@ name: Instrumented smoke test
 # in the logs. The fast JVM tests run on every push in "Android CI".
 on:
   workflow_dispatch:
-  push:
-    tags: [ 'v*' ]
 
 permissions:
   contents: read
