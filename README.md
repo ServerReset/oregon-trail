@@ -81,6 +81,8 @@ Debug and release APKs are also attached to each CI run as artifacts.
 - **Difficulty and accessibility** — Easy/Normal/Hard changes how often trouble
   strikes; text size, a high-contrast palette and CRT scanlines can be toggled
   on the Management screen and are remembered.
+- **Pause menu** — press Back or tap `[||]` for camp-at-night pause with save,
+  quick save/load, options and quit.
 - **Trail of the Day** — a date-seeded challenge, the same trail for everyone.
 - **Weather ambience** — the background tint shifts with weather and terrain.
 - **Save states** — name and keep multiple saved games, load or delete them

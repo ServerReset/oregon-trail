@@ -26,6 +26,7 @@ enum class Phase {
     ACHIEVEMENTS,
     STATS,
     EPILOGUE,
+    PAUSE,
     NOTICE,
     DEATH,
     ARRIVED
@@ -150,6 +151,15 @@ class Game(
     /** Set when the player asks to share their journey summary. */
     var requestedShare: Boolean = false
         private set
+    /** Set when the player quick-saves or quick-loads from the pause menu. */
+    var requestedQuickSave: Boolean = false
+        private set
+    var requestedQuickLoad: Boolean = false
+        private set
+    /** Where the pause / management / load screens return to. */
+    private var pauseReturn: Phase = Phase.TRAVEL
+    private var managementReturn: Phase = Phase.TITLE
+    private var loadReturn: Phase = Phase.TITLE
     /** How many landmark histories the player has read this run. */
     private var factsRead = 0
 
@@ -245,8 +255,8 @@ class Game(
             id == "title:load" -> phase = Phase.LOAD
             id == "title:ach" -> phase = Phase.ACHIEVEMENTS
             id == "title:stats" -> phase = Phase.STATS
-            id == "title:manage" -> phase = Phase.MANAGEMENT
-            id == "slots:back" -> phase = Phase.TITLE
+            id == "title:manage" -> { managementReturn = Phase.TITLE; phase = Phase.MANAGEMENT }
+            id == "slots:back" -> { phase = loadReturn; loadReturn = Phase.TITLE }
             id == "ach:back" -> phase = Phase.TITLE
             id == "stats:back" -> phase = Phase.TITLE
             id.startsWith("slot:load:") -> requestedLoadId = id.substringAfter("slot:load:")
@@ -263,7 +273,16 @@ class Game(
             id == "manage:textsize" -> uiSettings?.let { it.textScaleIndex = (it.textScaleIndex + 1) % 3 }
             id == "manage:contrast" -> uiSettings?.let { it.highContrast = !it.highContrast }
             id == "manage:scanlines" -> uiSettings?.let { it.scanlines = !it.scanlines }
-            id == "manage:back" -> phase = Phase.TITLE
+            id == "manage:back" -> phase = managementReturn
+            id == "pause:open" -> openPause()
+            id == "pause:resume" -> phase = pauseReturn
+            id == "pause:save" -> requestedSave = true
+            id == "pause:quicksave" -> requestedQuickSave = true
+            id == "pause:quickload" -> requestedQuickLoad = true
+            id == "pause:load" -> { loadReturn = Phase.PAUSE; phase = Phase.LOAD }
+            id == "pause:manage" -> { managementReturn = Phase.PAUSE; phase = Phase.MANAGEMENT }
+            id == "pause:title" -> phase = Phase.TITLE
+            id == "pause:quit" -> { /* handled by the front-end by finishing the activity */ }
             id == "topten:back" -> phase = Phase.TITLE
             id.startsWith("prof:") -> {
                 occupation = Occupation.entries[id.substringAfter("prof:").toInt()]
@@ -606,6 +625,24 @@ class Game(
 
     fun clearShareRequest() {
         requestedShare = false
+    }
+
+    fun clearQuickSaveRequest() {
+        requestedQuickSave = false
+    }
+
+    fun clearQuickLoadRequest() {
+        requestedQuickLoad = false
+    }
+
+    /** True when the Back button should open the pause menu. */
+    fun canPause(): Boolean = phase in PAUSABLE_PHASES
+
+    private fun openPause() {
+        if (canPause()) {
+            pauseReturn = phase
+            phase = Phase.PAUSE
+        }
     }
 
     /** A short, shareable summary of the journey. */
@@ -1782,6 +1819,7 @@ class Game(
             Phase.ACHIEVEMENTS -> renderAchievements(screen)
             Phase.STATS -> renderStats(screen)
             Phase.EPILOGUE -> renderEpilogue(screen)
+            Phase.PAUSE -> renderPause(screen)
             Phase.CHOICE -> renderChoice(screen)
             Phase.HUNTING -> renderHunting(screen)
             Phase.RAFTING -> renderRafting(screen)
@@ -1924,6 +1962,7 @@ class Game(
     }
 
     private fun safePhase(): Phase = when {
+        phase == Phase.PAUSE -> if (pauseReturn in PAUSABLE_PHASES) pauseReturn else Phase.TRAVEL
         phase == Phase.RAFTING || phase == Phase.BARLOW -> Phase.LANDMARK
         phase in INVALID_RESUME_PHASES -> Phase.TRAVEL
         else -> phase
@@ -1937,7 +1976,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "1.6.0"
+        const val VERSION = "1.7.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400
@@ -1947,8 +1986,14 @@ class Game(
             Phase.TITLE, Phase.ABOUT, Phase.MANAGEMENT, Phase.TOP_TEN,
             Phase.PROFESSION, Phase.MONTH, Phase.NAMES, Phase.DEATH,
             Phase.ARRIVED, Phase.CHOICE, Phase.HUNTING, Phase.RAFTING, Phase.BARLOW,
-            Phase.JOURNAL, Phase.LOAD, Phase.ACHIEVEMENTS, Phase.STATS, Phase.NOTICE,
-            Phase.EPILOGUE
+            Phase.JOURNAL, Phase.LOAD, Phase.ACHIEVEMENTS, Phase.STATS,
+            Phase.EPILOGUE, Phase.PAUSE, Phase.NOTICE
+        )
+
+        /** Phases from which the pause menu can be opened. */
+        val PAUSABLE_PHASES = setOf(
+            Phase.TRAVEL, Phase.LANDMARK, Phase.RIVER, Phase.MAP,
+            Phase.JOURNAL, Phase.STORE, Phase.HUNTING, Phase.RAFTING, Phase.BARLOW
         )
 
         val ABOUT_PAGES: List<String> = listOf(

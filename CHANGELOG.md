@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [1.7.0] - 2026-09-14
+
+### Added
+- **Pause menu** — press Back (or tap the new `[||]` button) for a camp-at-night
+  pause screen: Resume, Save game, **Quick save**, **Quick load**, Load a saved
+  game, Management options, Save and return to title, or Quit. Load and
+  Management return to the pause menu when opened from it.
+- **More ASCII art** — a night camp for the pause screen, and new landmark
+  scenes: a town at Independence, a tall spire for Chimney Rock, a gap for
+  South Pass, a gorge for The Dalles, plus a Willamette Valley cabin scene on
+  the arrival screen and stars over the title wagon.
+- 8 new pause/quick-save tests (79 total).
+
 ## [1.6.0] - 2026-09-14
 
 ### Added

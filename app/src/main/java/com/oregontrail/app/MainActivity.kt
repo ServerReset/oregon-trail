@@ -13,6 +13,7 @@ import android.view.WindowManager
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
@@ -74,6 +75,18 @@ class MainActivity : AppCompatActivity() {
         }
         terminal.tapListener = { id -> onHotspot(id) }
 
+        // Back opens the pause menu (or leaves the title/end screens).
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                when {
+                    game.phase == Phase.TITLE -> finish()
+                    game.phase == Phase.PAUSE -> { game.onTap("pause:resume"); render() }
+                    game.canPause() -> { game.onTap("pause:open"); render() }
+                    else -> finish()
+                }
+            }
+        })
+
         hideSystemBars()
         terminal.selectionEnabled = isWatchLike()
         applyUi()
@@ -106,14 +119,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onHotspot(id: String) {
-        if (id == "title:end") {
+        if (id == "title:end" || id == "pause:quit") {
             finish()
             return
         }
+        // Save the current position before leaving the pause menu to the title.
+        if (id == "pause:title") store.saveState(game.save())
         game.onTap(id)
         handleNameRequest()
         handleEpitaphRequest()
         handleAutosaveRequest()
+        handleQuickSave()
+        handleQuickLoad()
         handleSaveRequest()
         handleLoadRequest()
         handleDeleteRequest()
@@ -205,6 +222,21 @@ class MainActivity : AppCompatActivity() {
         store.loadState()?.let { data -> game.load(data) }
         game.clearAutosaveRequest()
         game.autosaveAvailable = false
+    }
+
+    private fun handleQuickSave() {
+        if (!game.requestedQuickSave) return
+        store.saveState(game.save())
+        game.clearQuickSaveRequest()
+        game.autosaveAvailable = true
+        Toast.makeText(this, "Quick saved", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleQuickLoad() {
+        if (!game.requestedQuickLoad) return
+        store.loadState()?.let { data -> game.load(data) }
+        game.clearQuickLoadRequest()
+        Toast.makeText(this, "Quick loaded", Toast.LENGTH_SHORT).show()
     }
 
     private fun handleSaveRequest() {

@@ -49,6 +49,7 @@ internal fun Game.renderTitle(screen: Screen) {
     }
     val art = ArrayList<String>()
     if (contentW >= 36 && rows >= 30) {
+        art.addAll(Ascii.stars)
         art.addAll(Ascii.wagon)
         art.addAll(Ascii.blockWord("OREGON"))
         art.addAll(Ascii.blockWord("TRAIL"))
@@ -296,6 +297,7 @@ internal fun Game.renderStore(screen: Screen) {
     }
     val title = if (storeAtFort) "FORT TRADING POST" else "MATT'S GENERAL STORE"
     screen.center(0, title, Palette.BRIGHT_GREEN, bold = true)
+    pauseButton(screen)
     screen.text(marginX + 1, 1, "Cash: $${"%.2f".format(inventory.cash)}", Palette.BRIGHT_YELLOW, bold = true)
     screen.hline(marginX, 2, contentW, '-', Palette.DIM)
 
@@ -366,6 +368,7 @@ internal fun Game.renderTravel(screen: Screen) {
     val compact = rows < 30
     var y = 0
     screen.center(y, "THE OREGON TRAIL", Palette.BRIGHT_GREEN, bold = true)
+    pauseButton(screen)
     y++
     // Status box, wrapped to fit narrow screens.
     val boxW = min(contentW, 56).coerceAtLeast(24)
@@ -532,14 +535,10 @@ internal fun Game.renderLandmark(screen: Screen) {
         return
     }
     screen.center(0, lm.name.uppercase(), Palette.BRIGHT_GREEN, bold = true)
+    pauseButton(screen)
     var y = 2
     if (rows >= 26) {
-        val art = when (lm.kind) {
-            LandmarkKind.FORT -> Ascii.fort
-            LandmarkKind.MOUNTAINS -> Ascii.mountains
-            LandmarkKind.RIVER -> Ascii.river
-            else -> Ascii.rock
-        }
+        val art = landmarkArt(lm)
         Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.GREEN)
         y += Ascii.height(art) + 1
     }
@@ -577,6 +576,21 @@ internal fun Game.renderLandmark(screen: Screen) {
     screen.menuAt(marginX + 1, y, options)
 }
 
+/** Picks artwork for a landmark, with special pieces for famous places. */
+internal fun Game.landmarkArt(lm: Landmark): List<String> = when (lm.id) {
+    "independence" -> Ascii.town
+    "chimney" -> Ascii.chimneyRock
+    "southpass" -> Ascii.southPass
+    "dalles" -> Ascii.dalles
+    "independence_rock" -> Ascii.rock
+    else -> when (lm.kind) {
+        LandmarkKind.FORT -> Ascii.fort
+        LandmarkKind.MOUNTAINS -> Ascii.mountains
+        LandmarkKind.RIVER -> Ascii.river
+        else -> Ascii.rock
+    }
+}
+
 /** Shortens a landmark name for tiny screens. */
 internal fun Game.shortLandmarkName(lm: Landmark): String = when (lm.id) {
     "dalles" -> "The Dalles"
@@ -607,6 +621,7 @@ internal fun Game.renderRiver(screen: Screen) {
         return
     }
     screen.center(0, lm.name.uppercase(), Palette.BRIGHT_GREEN, bold = true)
+    pauseButton(screen)
     var y = 2
     if (rows >= 26) {
         Ascii.draw(screen, (cols - Ascii.width(Ascii.river)) / 2, y, Ascii.river, Palette.CYAN)
@@ -624,6 +639,15 @@ internal fun Game.renderRiver(screen: Screen) {
     if (river.guideCost != null) options.add("${n++}. Hire a guide ($${"%.2f".format(river.guideCost)})" to "river:guide")
     options.add("${n++}. Wait a day" to "river:wait")
     screen.menuAt(marginX + 1, y, options)
+}
+
+/** Draws a small pause button in the top-right corner of a pausable screen. */
+internal fun Game.pauseButton(screen: Screen) {
+    if (!canPause()) return
+    val label = "[||]"
+    val x = (cols - label.length - 1).coerceAtLeast(0)
+    screen.text(x, 0, label, Palette.BRIGHT_YELLOW, bold = true)
+    screen.hotspot("pause:open", x, 0, label.length)
 }
 
 /** Lays out a short menu in one or two columns to fit tiny screens. */
@@ -657,6 +681,7 @@ internal fun Game.journalLastPage(): Int =
 
 internal fun Game.renderJournal(screen: Screen) {
     screen.center(0, "MY JOURNAL", Palette.BRIGHT_GREEN, bold = true)
+    pauseButton(screen)
     if (journal.isEmpty()) {
         screen.wrap(marginX + 1, 3, contentW - 2, "Nothing has happened yet. The trail awaits.", Palette.GREEN)
     } else {
@@ -735,6 +760,7 @@ internal fun Game.renderMap(screen: Screen) {
         return
     }
     screen.center(0, "MAP OF THE OREGON TRAIL", Palette.BRIGHT_GREEN, bold = true)
+    pauseButton(screen)
     screen.text(marginX + 1, 2, "--> West                          East", Palette.DIM)
     val all = Data.landmarks
     val windowSize = min(all.size, max(8, rows - 6))
@@ -811,6 +837,7 @@ internal fun Game.renderHunting(screen: Screen) {
         return
     }
     screen.center(0, "HUNTING", Palette.BRIGHT_GREEN, bold = true)
+    pauseButton(screen)
     val hLeft = "Meat ${field.meat}/${field.carryLimit}"
     val hMid = "Ammo ${inventory.ammo}"
     val hRight = "Kills ${field.kills}"
@@ -922,6 +949,7 @@ internal fun Game.renderRafting(screen: Screen) {
         return
     }
     screen.center(0, "COLUMBIA RIVER", Palette.BRIGHT_GREEN, bold = true)
+    pauseButton(screen)
         val left = "Distance ${field.progress}/${field.totalProgress}"
         val right = "Raft ${field.integrity}/${field.maxHits}"
     screen.text(marginX + 1, 1, left, Palette.BRIGHT_YELLOW)
@@ -1128,6 +1156,7 @@ internal fun Game.renderBarlow(screen: Screen) {
         return
     }
     screen.center(0, "BARLOW ROAD", Palette.BRIGHT_GREEN, bold = true)
+    pauseButton(screen)
     val left = "Climb ${field.progress}/${field.totalProgress}"
     val right = "Wagon ${field.integrity}/${field.maxDamage}"
     screen.text(marginX + 1, 1, left, Palette.BRIGHT_YELLOW)
@@ -1157,6 +1186,39 @@ internal fun Game.renderBarlow(screen: Screen) {
     screen.hotspot("barlow:left", cx, cy, 8)
     screen.text(cx + 12, cy, " RIGHT >>", Palette.BRIGHT_GREEN, bold = true)
     screen.hotspot("barlow:right", cx + 12, cy, 9)
+}
+
+/** A camp-at-night pause screen with save-state actions. */
+internal fun Game.renderPause(screen: Screen) {
+    screen.center(0, "PAUSED", Palette.BRIGHT_YELLOW, bold = true)
+    val options = listOf(
+        "1. Resume the journey" to "pause:resume",
+        "2. Save game" to "pause:save",
+        "3. Quick save" to "pause:quicksave",
+        "4. Quick load" to "pause:quickload",
+        "5. Load a saved game" to "pause:load",
+        "6. Management options" to "pause:manage",
+        "7. Save and return to title" to "pause:title",
+        "8. Quit" to "pause:quit"
+    )
+    val short = listOf(
+        "1. Resume" to "pause:resume",
+        "2. Save" to "pause:save",
+        "3. Q.save" to "pause:quicksave",
+        "4. Q.load" to "pause:quickload",
+        "5. Load" to "pause:load",
+        "6. Options" to "pause:manage",
+        "7. Title" to "pause:title",
+        "8. Quit" to "pause:quit"
+    )
+    val camp = Ascii.camp
+    val artFits = !ultraCompact && rows >= 2 + Ascii.height(camp) + 3
+    val startY = if (artFits) {
+        Ascii.draw(screen, (cols - Ascii.width(camp)) / 2, 2, camp, Palette.GREEN)
+    } else {
+        2
+    }
+    renderMenuColumns(screen, startY, if (ultraCompact) short else options)
 }
 
 internal fun Game.renderNotice(screen: Screen) {
@@ -1234,6 +1296,11 @@ internal fun Game.renderArrived(screen: Screen) {
     }
     val art = Ascii.blockWord("WELCOME")
     var y = 2
+    if (rows >= 40 && contentW >= 34) {
+        val valley = Ascii.valley
+        Ascii.draw(screen, (cols - Ascii.width(valley)) / 2, y, valley, Palette.GREEN)
+        y += Ascii.height(valley) + 1
+    }
     Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.BRIGHT_YELLOW)
     y += art.size + 2
     y = screen.wrap(marginX + 1, y, contentW - 2,
