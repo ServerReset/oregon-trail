@@ -5,6 +5,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -49,6 +51,22 @@ class TerminalView @JvmOverloads constructor(
     private var marginY = 0f
 
     var scanlinesEnabled = true
+
+    /** Held controls (store steppers, hunting D-pad, raft steering) auto-repeat. */
+    private val repeatHandler = Handler(Looper.getMainLooper())
+    private var repeatId: String? = null
+    private val repeatRunnable = object : Runnable {
+        override fun run() {
+            val id = repeatId ?: return
+            if (BuildConfig.DEBUG) android.util.Log.i("OTS", "repeat $id")
+            tapListener?.invoke(id)
+            repeatHandler.postDelayed(this, 90L)
+        }
+    }
+
+    private fun isRepeatable(id: String): Boolean =
+        id.startsWith("store:inc:") || id.startsWith("store:dec:") ||
+            id.startsWith("hunt:") || id.startsWith("raft:")
 
     /** Accessibility scale: <1 fits more columns, >1 makes glyphs larger. */
     var textScale: Float = 1f
@@ -148,9 +166,17 @@ class TerminalView @JvmOverloads constructor(
                 if (id != null) {
                     performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
                     tapListener?.invoke(id)
+                    if (isRepeatable(id)) {
+                        repeatId = id
+                        repeatHandler.postDelayed(repeatRunnable, 420L)
+                    }
                     return true
                 }
                 return false
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                repeatHandler.removeCallbacks(repeatRunnable)
+                repeatId = null
             }
         }
         return super.onTouchEvent(event)
