@@ -166,6 +166,18 @@ class Game(
     var frame: Int = 0
         private set
 
+    /** When true, the front-end gets a top-to-bottom reveal on screen changes. */
+    var transitions: Boolean = false
+
+    /** Optional illustration shown on the current notice screen. */
+    var noticeArt: List<String>? = null
+        private set
+
+    private var lastRenderedPhase: Phase? = null
+    private var transitionStart = 0
+    private var lastEventArt: List<String>? = null
+    private var arrivalFrame = -1
+
     /** Advances the animation clock (called a few times a second). */
     fun animate() {
         frame = (frame + 1) % 100000
@@ -750,7 +762,8 @@ class Game(
             DayResult.DEATH -> dieOf(deathCause.ifEmpty { "disease" })
             else -> {
                 if (msgs.isEmpty()) msgs.add("The trail is long and quiet.")
-                showNotice("On the Trail", msgs, Phase.TRAVEL)
+                showNotice("On the Trail", msgs, Phase.TRAVEL, lastEventArt)
+                lastEventArt = null
             }
         }
     }
@@ -935,6 +948,7 @@ class Game(
     private fun rollEvent(msgs: MutableList<String>) {
         val pool = eventPool(miles)
         val event = pool[rng.nextInt(pool.size)]
+        lastEventArt = eventArtFor(event)
         applyEvent(event, msgs)
     }
 
@@ -1508,6 +1522,7 @@ class Game(
 
     private fun arriveOregon(extra: List<String> = emptyList()) {
         lastScore = computeScore()
+        arrivalFrame = frame
         addJournal("Arrived safely in the Willamette Valley!")
         topTen.add(ScoreEntry(party.firstOrNull()?.name ?: "Traveler", lastScore, occupation.displayName))
         topTen = topTen.sortedByDescending { it.points }.take(10).toMutableList()
@@ -1751,12 +1766,28 @@ class Game(
     //  Notices
     // ====================================================================
 
-    private fun showNotice(title: String, lines: List<String>, next: Phase) {
+    private fun showNotice(title: String, lines: List<String>, next: Phase, art: List<String>? = null) {
         noticeTitle = title
         noticeLines.clear()
         noticeLines.addAll(lines)
         noticeNext = next
+        noticeArt = art
         phase = Phase.NOTICE
+    }
+
+    /** ASCII illustration for an event, shown on the notice screen. */
+    fun eventArtFor(eventId: String): List<String>? = when (eventId) {
+        "breakdown" -> Ascii.wheel
+        "bandits" -> Ascii.bandit
+        "snakebite" -> Ascii.snake
+        "wild_animals" -> Ascii.wolf
+        "indians" -> Ascii.teepee
+        "fruit" -> Ascii.bush
+        "fire" -> Ascii.fireArt
+        "riders" -> Ascii.horses
+        "stranded" -> Ascii.brokenWagon
+        "heavy_rain", "hail", "thunderstorm" -> Ascii.cloud
+        else -> null
     }
 
     internal fun wrapString(s: String, width: Int): List<String> {
@@ -1837,7 +1868,24 @@ class Game(
             Phase.ARRIVED -> renderArrived(screen)
         }
         screen.ambient = ambientFor()
+        applyTransition(screen)
         return screen
+    }
+
+    /**
+     * A top-to-bottom reveal when the screen changes. Opt-in so headless tests
+     * always see the complete screen.
+     */
+    private fun applyTransition(screen: Screen) {
+        if (!transitions) return
+        if (phase != lastRenderedPhase) {
+            lastRenderedPhase = phase
+            transitionStart = frame
+        }
+        val elapsed = frame - transitionStart
+        if (elapsed >= TRANSITION_FRAMES) return
+        val revealed = rows * elapsed / TRANSITION_FRAMES
+        for (y in revealed until rows) screen.blankRow(y)
     }
 
     /** Chooses a background mood for the current situation. */
@@ -1984,11 +2032,14 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "1.8.0"
+        const val VERSION = "1.9.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400
         const val GRAVE_LIMIT = 50
+
+        /** Frames over which a screen-change reveal plays. */
+        const val TRANSITION_FRAMES = 4
 
         val INVALID_RESUME_PHASES = setOf(
             Phase.TITLE, Phase.ABOUT, Phase.MANAGEMENT, Phase.TOP_TEN,

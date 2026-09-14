@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
         game.saveSlots = store.listSlots()
         game.autosaveAvailable = store.loadState() != null
         game.dailySeed = dailySeed()
+        game.transitions = true
         try {
             tone = ToneGenerator(AudioManager.STREAM_MUSIC, 60)
         } catch (_: Exception) {

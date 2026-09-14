@@ -116,6 +116,18 @@ class Screen(val width: Int, val height: Int) {
         for (i in 0 until len) put(x + i, y, ch, fg)
     }
 
+    /** Clears one row (used by the reveal transition). */
+    fun blankRow(y: Int) {
+        if (y < 0 || y >= height) return
+        for (x in 0 until width) cells[y][x].clear()
+    }
+
+    /** Draws a character only where the cell is currently blank. */
+    fun putIfBlank(x: Int, y: Int, ch: Char, fg: Palette = Palette.DEFAULT) {
+        val c = cell(x, y) ?: return
+        if (c.ch == ' ') put(x, y, ch, fg)
+    }
+
     fun vline(x: Int, y: Int, len: Int, ch: Char = '|', fg: Palette = Palette.DEFAULT) {
         for (i in 0 until len) put(x, y + i, ch, fg)
     }

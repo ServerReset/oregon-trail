@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [1.9.0] - 2026-09-14
+
+### Added
+- **Living skies** — a sun with turning rays, drifting clouds and flitting
+  birds over the travel, landmark and river scenes (weather-aware: more
+  clouds and no sun in rain, snow and storms).
+- **Event illustrations** — breakdowns show a wheel, bandits a highwayman,
+  snakebites a snake, wild animals a wolf, helpful Shoshone a teepee, wild
+  fruit a bush, fire, riders and a broken wagon for the stranded family.
+- **Campfire smoke** curls above the pause-screen fire.
+- **Sunrise** sun on the arrival screen.
+- **Screen-change transitions** — an opt-in top-to-bottom reveal when the
+  screen changes.
+- 2 new animation tests (89 total).
+
 ## [1.8.0] - 2026-09-14
 
 ### Added

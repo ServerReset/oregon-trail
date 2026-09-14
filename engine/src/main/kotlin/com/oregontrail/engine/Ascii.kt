@@ -257,6 +257,93 @@ object Ascii {
     )
 
     // ------------------------------------------------------------------
+    // Sky props (animated)
+    // ------------------------------------------------------------------
+
+    val sun: List<String> = listOf(
+        "\\ | /",
+        "-(o)-",
+        "/ | \\"
+    )
+
+    /** One frame of a small cloud. */
+    val cloud: List<String> = listOf("( .. )")
+
+    // ------------------------------------------------------------------
+    // Event illustrations
+    // ------------------------------------------------------------------
+
+    val wheel: List<String> = listOf(
+        "  ___",
+        " /   \\",
+        "|  +  |",
+        " \\___/"
+    )
+
+    val bandit: List<String> = listOf(
+        "  ____",
+        " /    \\",
+        " | oo |",
+        "  \\__/",
+        "  /||\\",
+        "  /  \\"
+    )
+
+    val snake: List<String> = listOf(
+        "   __",
+        "  /  \\____",
+        "  \\_/\\    \\",
+        "      \\____>"
+    )
+
+    val wolf: List<String> = listOf(
+        " /\\_/\\",
+        "( o o )",
+        " \\_v_/",
+        "  |||"
+    )
+
+    val teepee: List<String> = listOf(
+        "   /\\",
+        "  /  \\",
+        " /    \\",
+        "/______\\"
+    )
+
+    val bush: List<String> = listOf(
+        "  @ @  @",
+        " (*****)",
+        "   \\|/"
+    )
+
+    val fireArt: List<String> = listOf(
+        "   ( )",
+        " ( ) ( )",
+        "  (   )",
+        "   \\|/"
+    )
+
+    val horses: List<String> = listOf(
+        "  /\\   /\\",
+        " (  )-(  )",
+        "  \\/   \\/"
+    )
+
+    val brokenWagon: List<String> = listOf(
+        "   ___",
+        "  /   \\",
+        " |  X  |",
+        "  \\___/",
+        "  O   O"
+    )
+
+    val snowflake: List<String> = listOf(
+        "  *",
+        " */\\*",
+        "  *"
+    )
+
+    // ------------------------------------------------------------------
     // Hunting field props (roguelike style)
     // ------------------------------------------------------------------
 

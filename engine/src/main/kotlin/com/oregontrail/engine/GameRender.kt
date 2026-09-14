@@ -84,6 +84,58 @@ internal fun Game.overlayWeather(screen: Screen, top: Int, bottom: Int) {
     }
 }
 
+/** A sun with turning rays, drifting clouds and the odd bird. */
+internal fun Game.overlaySky(screen: Screen, top: Int, bottom: Int) {
+    if (bottom <= top) return
+    val kind = weather.kind
+    val fair = kind == WeatherKind.CLEAR || kind == WeatherKind.HOT ||
+        kind == WeatherKind.CLOUDY || kind == WeatherKind.WINDY
+    if (fair && cols >= 14) {
+        val sx = (cols - 7).coerceAtLeast(1)
+        screen.putIfBlank(sx + 1, top, if (frame % 2 == 0) '\\' else '/', Palette.BRIGHT_YELLOW)
+        screen.putIfBlank(sx + 5, top, if (frame % 2 == 0) '/' else '\\', Palette.BRIGHT_YELLOW)
+        screen.text(sx, top + 1, "-(o)-", Palette.BRIGHT_YELLOW)
+        screen.putIfBlank(sx + 1, top + 2, if (frame % 2 == 0) '/' else '\\', Palette.BRIGHT_YELLOW)
+        screen.putIfBlank(sx + 5, top + 2, if (frame % 2 == 0) '\\' else '/', Palette.BRIGHT_YELLOW)
+    }
+    val cloudy = kind == WeatherKind.CLOUDY || kind == WeatherKind.RAIN ||
+        kind == WeatherKind.HEAVY_RAIN || kind == WeatherKind.THUNDERSTORM ||
+        kind == WeatherKind.WINDY || kind == WeatherKind.SNOW || kind == WeatherKind.BLIZZARD
+    if (cloudy) {
+        val n = if (kind == WeatherKind.HEAVY_RAIN || kind == WeatherKind.THUNDERSTORM ||
+            kind == WeatherKind.BLIZZARD
+        ) 3 else 2
+        val bandH = bottom - top
+        for (i in 0 until n) {
+            val x = ((i * 23 + frame) % (cols + 8)) - 4
+            val y = top + (i * 3) % bandH
+            screen.putIfBlank(x, y, '(', Palette.GRAY)
+            screen.putIfBlank(x + 1, y, '.', Palette.GRAY)
+            screen.putIfBlank(x + 2, y, '.', Palette.GRAY)
+            screen.putIfBlank(x + 3, y, ')', Palette.GRAY)
+        }
+    }
+    if (fair && cols >= 20) {
+        val bx = ((frame * 2) % (cols + 6)) - 3
+        val by = (top + 1).coerceAtMost(bottom - 1)
+        val bird = if (frame % 2 == 0) 'v' else '^'
+        screen.putIfBlank(bx, by, bird, Palette.DIM)
+        screen.putIfBlank(bx + 2, by, bird, Palette.DIM)
+    }
+}
+
+/** Smoke curling up from the campfire. */
+internal fun Game.overlaySmoke(screen: Screen, artTop: Int, artH: Int) {
+    if (artH <= 2) return
+    val cx = cols / 2
+    for (i in 0 until 4) {
+        val rise = (frame / 2 + i * 2) % (artH - 1)
+        val y = artTop + artH - 2 - rise
+        val x = cx + ((i % 3) - 1)
+        screen.putIfBlank(x, y, if (i % 2 == 0) '.' else 'o', Palette.GRAY)
+    }
+}
+
 private fun Screen.menuAt(x: Int, yStart: Int, options: List<Pair<String, String>>): Int {
     var y = yStart
     for ((label, id) in options) {
@@ -443,8 +495,10 @@ internal fun Game.renderTravel(screen: Screen) {
         val scene = sceneArt()
         val sceneTop = y
         Ascii.draw(screen, (cols - Ascii.width(scene)) / 2, y, scene, Palette.GREEN)
+        val sceneBottom = sceneTop + Ascii.height(scene)
         y += Ascii.height(scene) + 1
-        overlayWeather(screen, sceneTop, sceneTop + Ascii.height(scene))
+        overlaySky(screen, sceneTop, sceneBottom)
+        overlayWeather(screen, sceneTop, sceneBottom)
     }
 
     val remaining = rows - y - 1
@@ -599,8 +653,10 @@ internal fun Game.renderLandmark(screen: Screen) {
         val art = landmarkArt(lm)
         val artTop = y
         Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.GREEN)
+        val artBottom = artTop + Ascii.height(art)
         y += Ascii.height(art) + 1
-        overlayWeather(screen, artTop, artTop + Ascii.height(art))
+        overlaySky(screen, artTop, artBottom)
+        overlayWeather(screen, artTop, artBottom)
     }
     y = screen.wrap(marginX + 1, y, contentW - 2, lm.blurb.joinToString(" "), Palette.GREEN)
     y++
@@ -686,8 +742,10 @@ internal fun Game.renderRiver(screen: Screen) {
     if (rows >= 26) {
         val art = riverArt(frame)
         Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.CYAN)
+        val artBottom = y + Ascii.height(art)
         y += Ascii.height(art) + 1
-        overlayWeather(screen, y - Ascii.height(art) - 1, y - 1)
+        overlaySky(screen, y - Ascii.height(art) - 1, artBottom)
+        overlayWeather(screen, y - Ascii.height(art) - 1, artBottom)
     }
     y = screen.wrap(marginX + 1, y, contentW - 2, lm.blurb.joinToString(" "), Palette.GREEN)
     screen.text(marginX + 1, y, "The river is ${riverState(river)}.", Palette.CYAN)
@@ -1276,7 +1334,9 @@ internal fun Game.renderPause(screen: Screen) {
     val camp = campArt(frame)
     val artFits = !ultraCompact && rows >= 2 + Ascii.height(camp) + 3
     val startY = if (artFits) {
-        Ascii.draw(screen, (cols - Ascii.width(camp)) / 2, 2, camp, Palette.GREEN)
+        val top = Ascii.draw(screen, (cols - Ascii.width(camp)) / 2, 2, camp, Palette.GREEN)
+        overlaySmoke(screen, 2, Ascii.height(camp))
+        top
     } else {
         2
     }
@@ -1298,6 +1358,12 @@ internal fun Game.renderNotice(screen: Screen) {
     }
     screen.center(0, noticeTitle.uppercase(), Palette.BRIGHT_GREEN, bold = true)
     var y = 2
+    noticeArt?.let { art ->
+        if (!ultraCompact && rows - 2 > art.size + 3) {
+            Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.GREEN)
+            y += Ascii.height(art) + 1
+        }
+    }
     for (line in noticeLines) {
         y = screen.wrap(marginX + 1, y, contentW - 2, line, Palette.GREEN)
     }
@@ -1349,6 +1415,14 @@ internal fun Game.renderDeath(screen: Screen) {
 
 internal fun Game.renderArrived(screen: Screen) {
     screen.center(0, "OREGON!", Palette.BRIGHT_GREEN, bold = true)
+    if (!ultraCompact && cols >= 14) {
+        val sx = cols - 7
+        screen.putIfBlank(sx + 1, 1, if (frame % 2 == 0) '\\' else '/', Palette.BRIGHT_YELLOW)
+        screen.putIfBlank(sx + 5, 1, if (frame % 2 == 0) '/' else '\\', Palette.BRIGHT_YELLOW)
+        screen.text(sx, 2, "-(o)-", Palette.BRIGHT_YELLOW)
+        screen.putIfBlank(sx + 1, 3, if (frame % 2 == 0) '/' else '\\', Palette.BRIGHT_YELLOW)
+        screen.putIfBlank(sx + 5, 3, if (frame % 2 == 0) '\\' else '/', Palette.BRIGHT_YELLOW)
+    }
     if (ultraCompact) {
         screen.center(1, "Score $lastScore".take(cols), Palette.BRIGHT_YELLOW, bold = true)
         renderMenuColumns(

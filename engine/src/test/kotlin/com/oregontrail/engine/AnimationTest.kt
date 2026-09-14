@@ -46,13 +46,48 @@ class AnimationTest {
     }
 
     @Test
-    fun clear_weather_adds_no_particles() {
+    fun clear_weather_has_no_snow_and_a_living_sky() {
         val g = newGame()
         g.weather = Weather(WeatherKind.CLEAR, 70)
+        assertFalse(g.render().toText().contains('*'), "clear weather should not snow")
+        // The sky (sun rays, birds) still animates even in fair weather.
         val f0 = g.render().toText()
         g.animate()
-        val f1 = g.render().toText()
-        assertEquals(f0, f1, "clear weather should not animate any particles")
+        assertNotEquals(f0, g.render().toText())
+    }
+
+    @Test
+    fun every_event_that_has_art_renders_it() {
+        val g = newGame()
+        for (id in g.debugEventIds()) {
+            val art = g.eventArtFor(id)
+            if (art != null) {
+                assertTrue(art.isNotEmpty(), "empty art for $id")
+                assertTrue(art.all { it.length <= 40 }, "event art for $id is too wide")
+            }
+        }
+        assertTrue(g.eventArtFor("snakebite") != null)
+        assertTrue(g.eventArtFor("bandits") != null)
+    }
+
+    @Test
+    fun the_reveal_transition_hides_then_shows() {
+        val g = newGame()
+        g.transitions = true
+        // Let the first screen finish revealing.
+        g.render()
+        repeat(Game.TRANSITION_FRAMES + 1) { g.animate() }
+        val settledTravel = g.render().toText()
+        assertTrue(settledTravel.contains("THE OREGON TRAIL"))
+
+        // Move to a new screen: the first frame is hidden, then it reveals.
+        g.onTap("travel:supplies")
+        val first = g.render().toText()
+        assertNotEquals(settledTravel, first)
+        repeat(Game.TRANSITION_FRAMES + 1) { g.animate() }
+        val settled = g.render().toText()
+        assertTrue(settled.length > first.length, "the reveal should complete")
+        assertEquals(settled, g.render().toText())
     }
 
     @Test
