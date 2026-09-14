@@ -5,12 +5,42 @@ enum class Occupation(
     val displayName: String,
     val startingMoney: Int,
     val multiplier: Int,
-    val blurb: String
+    val blurb: String,
+    val perk: String
 ) {
-    BANKER("Banker", 1600, 1, "You start with the most money but earn the fewest points."),
-    CARPENTER("Carpenter", 800, 2, "A skilled trade earns a middle income and middle points."),
-    FARMER("Farmer", 400, 3, "You start with little money but earn the most points.")
+    BANKER(
+        "Banker", 1600, 1,
+        "You start with the most money but earn the fewest points.",
+        "Perk: merchants give you a 10% discount at forts."
+    ),
+    CARPENTER(
+        "Carpenter", 800, 2,
+        "A skilled trade earns a middle income and middle points.",
+        "Perk: you can often repair a broken wagon without a spare part."
+    ),
+    FARMER(
+        "Farmer", 400, 3,
+        "You start with little money but earn the most points.",
+        "Perk: you know game, and bring home 50% more meat from a hunt."
+    )
 }
+
+/** Overall difficulty, which scales how often trouble finds you. */
+enum class Difficulty(val displayName: String, val eventChance: Double, val illnessScale: Double) {
+    EASY("Easy", 0.08, 0.7),
+    NORMAL("Normal", 0.12, 1.0),
+    HARD("Hard", 0.17, 1.4)
+}
+
+/** Presentation settings owned by the front-end. */
+interface UiSettings {
+    var textScaleIndex: Int      // 0 = small, 1 = medium, 2 = large
+    var highContrast: Boolean
+    var scanlines: Boolean
+}
+
+/** One dated line in the traveler's journal. */
+data class JournalEntry(val date: String, val text: String)
 
 /** Starting months. Leaving late means winter in the mountains. */
 enum class TravelMonth(val displayName: String, val monthIndex: Int) {

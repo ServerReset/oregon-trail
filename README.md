@@ -43,10 +43,14 @@ or by opening the APK on the device.
   Valley, including the Kansas, Big Blue, Green and Snake river crossings and
   the historic Lander and Sublette cutoffs.
 - **Real setup** — choose Banker, Carpenter or Farmer; pick a departure month;
-  name all five members of the party.
+  name all five members of the party. Each occupation has a perk: bankers get
+  a fort discount, carpenters can repair wagons without spare parts, farmers
+  bring home more meat.
 - **Matt's General Store** — buy oxen, food, clothing, ammunition and spare
   wheels/axles/tongues with a touch stepper and a running cash total. Fort
   prices are higher, as they were on the real trail.
+- **Trail journal** — every arrival, illness, hunt, river crossing and mishap
+  is written to a dated diary you can page back through.
 - **Day-by-day travel** — pace, food rations, resting, trading, weather,
   disease, injury, thieves, bandits, wild animals, blizzards and helpful
   Shoshone.
@@ -58,7 +62,10 @@ or by opening the APK on the device.
   rocks, or pay the Barlow Road toll instead.
 - **Disease and death** — party members sicken and die; you get a gravestone
   and a full epitaph.
-- **Scoring and the Oregon Top Ten**, persisted between runs.
+- **Scoring with a full breakdown** and the Oregon Top Ten, persisted between runs.
+- **Difficulty and accessibility** — Easy/Normal/Hard changes how often trouble
+  strikes; text size, a high-contrast palette and CRT scanlines can be toggled
+  on the Management screen and are remembered.
 - **Save / resume** — the journey survives rotation and process death.
 
 ## Controls
@@ -72,6 +79,7 @@ Everything is touch. Menu entries and buttons are tappable on the terminal.
 | Names       | Tap a name to open the keyboard dialog                |
 | Hunting     | On-screen `^ < > v` D-pad to move/aim, `SHOOT`, `Return to trail` |
 | Rafting     | `<< LEFT` / `RIGHT >>` to steer                            |
+| Journal     | `[< Prev ]` / `[ Next >]` / `[ Back ]`                 |
 | Map         | Tap `[ Back ]`                                        |
 
 ## Architecture

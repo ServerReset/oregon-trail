@@ -80,6 +80,36 @@ class LayoutTest {
     }
 
     @Test
+    fun journal_and_management_render_on_small_screens() {
+        for (w in widths) {
+            val g = Game(DefaultRng(11L), InMemoryScoreStore())
+            g.setViewport(w, 22)
+            g.onTap("title:manage")
+            assertHotspotsInside(g.render(), w, 22, "management@$w")
+            g.onTap("manage:back")
+
+            g.onTap("title:travel"); g.onTap("prof:0"); g.onTap("month:0"); g.onTap("names:go")
+            g.onTap("store:inc:OXEN"); g.onTap("store:leave"); g.onTap("notice:continue")
+            var guard = 0
+            while (guard++ < 60 && g.phase != Phase.TRAVEL) {
+                when (g.phase) {
+                    Phase.NOTICE -> g.onTap("notice:continue")
+                    Phase.CHOICE -> g.onTap("choice:continue")
+                    Phase.RIVER -> g.onTap("river:caulk")
+                    Phase.LANDMARK -> g.onTap("land:continue")
+                    Phase.HUNTING -> g.onTap("hunt:leave")
+                    else -> break
+                }
+            }
+            g.onTap("travel:journal")
+            assertTrue(g.phase == Phase.JOURNAL, "journal should open at $w cols")
+            assertHotspotsInside(g.render(), w, 22, "journal@$w")
+            g.onTap("journal:back")
+            assertTrue(g.phase == Phase.TRAVEL)
+        }
+    }
+
+    @Test
     fun store_buttons_fit_at_minimum_width() {
         val g = Game(DefaultRng(5L), InMemoryScoreStore())
         g.setViewport(28, 20)

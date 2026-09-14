@@ -26,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var game: Game
     private lateinit var terminal: TerminalView
     private lateinit var store: PrefsScoreStore
+    private lateinit var ui: AppUiSettings
     private val handler = Handler(Looper.getMainLooper())
     private var tone: ToneGenerator? = null
 
@@ -51,6 +52,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(root)
 
         game = Game(DefaultRng(), PrefsScoreStore(this).also { store = it })
+        ui = AppUiSettings(this)
+        game.uiSettings = ui
         // Resume an in-progress journey if one was saved.
         store.loadState()?.let { saved ->
             if (game.load(saved) && game.phase != Phase.TITLE) {
@@ -70,6 +73,7 @@ class MainActivity : AppCompatActivity() {
         terminal.tapListener = { id -> onHotspot(id) }
 
         hideSystemBars()
+        applyUi()
         render()
     }
 
@@ -80,6 +84,7 @@ class MainActivity : AppCompatActivity() {
         }
         game.onTap(id)
         handleNameRequest()
+        applyUi()
         render()
         if (game.phase == Phase.HUNTING || game.phase == Phase.RAFTING) {
             handler.removeCallbacks(ticker)
@@ -87,6 +92,16 @@ class MainActivity : AppCompatActivity() {
         } else {
             handler.removeCallbacks(ticker)
         }
+    }
+
+    private fun applyUi() {
+        terminal.textScale = when (ui.textScaleIndex) {
+            0 -> 0.8f
+            1 -> 1.0f
+            else -> 1.3f
+        }
+        terminal.highContrast = ui.highContrast
+        terminal.scanlinesEnabled = ui.scanlines
     }
 
     private fun handleNameRequest() {
@@ -186,6 +201,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         hideSystemBars()
+        applyUi()
         render()
     }
 

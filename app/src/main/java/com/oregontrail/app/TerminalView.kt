@@ -50,6 +50,27 @@ class TerminalView @JvmOverloads constructor(
 
     var scanlinesEnabled = true
 
+    /** Accessibility scale: <1 fits more columns, >1 makes glyphs larger. */
+    var textScale: Float = 1f
+        set(value) {
+            val clamped = value.coerceIn(0.6f, 1.6f)
+            if (field == clamped) return
+            field = clamped
+            if (width > 0 && height > 0) {
+                recomputeGrid(width, height)
+                viewportListener?.invoke(cols, rows)
+            }
+            invalidate()
+        }
+
+    /** Switches to a bright, high-contrast palette for readability. */
+    var highContrast: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            invalidate()
+        }
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         if (w == 0 || h == 0) return
@@ -66,7 +87,7 @@ class TerminalView @JvmOverloads constructor(
         // Target a readable character width, then derive the column count.
         // Very wide (often landscape) screens get more columns, which keeps the
         // glyphs a comfortable size while still yielding enough rows.
-        val desiredCellW = 9f * density
+        val desiredCellW = 9f * density * textScale
         var c = (contentW / desiredCellW).roundToInt().coerceIn(28, 110)
 
         // Measure the monospace advance ratio for this typeface.
@@ -95,7 +116,7 @@ class TerminalView @JvmOverloads constructor(
             for (x in 0 until minOf(s.width, cols)) {
                 val cell = s.cell(x, y) ?: continue
                 if (cell.ch == ' ') continue
-                val fg = RetroPalette.fg(cell.fg)
+                val fg = RetroPalette.fg(cell.fg, highContrast)
                 paint.color = fg
                 paint.isFakeBoldText = cell.bold || RetroPalette.isBoldDefault(cell.fg)
                 val px = marginX + x * cellW

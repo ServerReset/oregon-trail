@@ -20,6 +20,7 @@ enum class Phase {
     CHOICE,
     HUNTING,
     RAFTING,
+    JOURNAL,
     NOTICE,
     DEATH,
     ARRIVED
@@ -71,13 +72,19 @@ class Game(
     var landmarkIndex: Int = 0
     var pace: Pace = Pace.STEADY
     var rations: Rations = Rations.FILLING
+    var difficulty: Difficulty = Difficulty.NORMAL
     var storeAtFort: Boolean = false
     var lastGravestone: String? = null
     var lastScore: Int = 0
     var topTen: MutableList<ScoreEntry> = ArrayList()
+    val journal: MutableList<JournalEntry> = ArrayList()
+
+    /** Presentation settings supplied by the front-end (may be null in tests). */
+    var uiSettings: UiSettings? = null
 
     // ----- transient UI state ------------------------------------------
     private var aboutPage = 0
+    private var journalPage = 0
     private var noticeTitle = ""
     private val noticeLines = ArrayList<String>()
     private var noticeNext: Phase = Phase.TRAVEL
@@ -160,6 +167,10 @@ class Game(
             id == "manage:topten" -> phase = Phase.TOP_TEN
             id == "manage:newleader" -> { newRun(occupation, travelMonth); phase = Phase.PROFESSION }
             id == "manage:sound" -> soundEnabled = !soundEnabled
+            id == "manage:difficulty" -> cycleDifficulty()
+            id == "manage:textsize" -> uiSettings?.let { it.textScaleIndex = (it.textScaleIndex + 1) % 3 }
+            id == "manage:contrast" -> uiSettings?.let { it.highContrast = !it.highContrast }
+            id == "manage:scanlines" -> uiSettings?.let { it.scanlines = !it.scanlines }
             id == "manage:back" -> phase = Phase.TITLE
             id == "topten:back" -> phase = Phase.TITLE
             id.startsWith("prof:") -> {
@@ -185,6 +196,9 @@ class Game(
             id.startsWith("choice:") -> handleChoice(id.substringAfter("choice:"))
             id == "notice:continue" -> phase = noticeNext
             id == "map:back" -> phase = Phase.TRAVEL
+            id == "journal:prev" -> journalPage = (journalPage - 1).coerceAtLeast(0)
+            id == "journal:next" -> journalPage = min(journalPage + 1, journalLastPage())
+            id == "journal:back" -> phase = Phase.TRAVEL
             id == "hunt:up" -> huntField?.move(0, -1)
             id == "hunt:down" -> huntField?.move(0, 1)
             id == "hunt:left" -> huntField?.move(-1, 0)
@@ -238,7 +252,11 @@ class Game(
         Item.WHEEL, Item.AXLE, Item.TONGUE -> 1
     }
 
-    private fun priceOf(item: Item): Double = if (storeAtFort) item.fortPrice else item.basePrice
+    private fun priceOf(item: Item): Double {
+        val base = if (storeAtFort) item.fortPrice else item.basePrice
+        // Bankers are shrewd traders and get a modest discount at forts.
+        return if (storeAtFort && occupation == Occupation.BANKER) base * 0.9 else base
+    }
 
     private fun tapCost(item: Item): Double = when (item) {
         Item.OXEN -> priceOf(item)                 // per yoke
@@ -303,6 +321,7 @@ class Game(
         if (!storeAtFort) {
             // Leaving Independence: begin the journey.
             phase = Phase.TRAVEL
+            addJournal("We bought our supplies and left Independence for Oregon.")
             showNotice(
                 "Heading Out",
                 listOf(
@@ -328,6 +347,7 @@ class Game(
             "continue" -> continueOnTrail()
             "supplies" -> showNotice("Your Supplies", suppliesLines(), Phase.TRAVEL)
             "map" -> phase = Phase.MAP
+            "journal" -> { journalPage = 0; phase = Phase.JOURNAL }
             "pace" -> cyclePace()
             "rations" -> cycleRations()
             "rest" -> startRest()
@@ -336,8 +356,7 @@ class Game(
         }
     }
 
-    private fun cyclePace() {
-        pace = when (pace) {
+    private fun cyclePace() {        pace = when (pace) {
             Pace.STEADY -> Pace.STRENUOUS
             Pace.STRENUOUS -> Pace.GRUELING
             Pace.GRUELING -> Pace.STEADY
@@ -366,6 +385,30 @@ class Game(
         )
     }
 
+    private fun cycleDifficulty() {
+        difficulty = when (difficulty) {
+            Difficulty.EASY -> Difficulty.NORMAL
+            Difficulty.NORMAL -> Difficulty.HARD
+            Difficulty.HARD -> Difficulty.EASY
+        }
+        showNotice(
+            "Difficulty",
+            listOf(
+                "Difficulty is now ${difficulty.displayName}.",
+                "Trouble on the trail strikes more often on Hard and",
+                "less often on Easy. Your score is unaffected."
+            ),
+            Phase.MANAGEMENT
+        )
+    }
+
+    /** Records a dated line in the traveler's journal. */
+    private fun addJournal(text: String) {
+        val dateText = "${date.monthName} ${date.day}"
+        journal.add(JournalEntry(dateText, text))
+        if (journal.size > 400) journal.removeAt(0)
+    }
+
     private fun startRest() {
         // Rest for a few days: heal, consume food, pass time.
         val days = 3
@@ -378,6 +421,7 @@ class Game(
         aliveMembers().forEach { it.heal(12) }
         val healed = aliveMembers().joinToString(", ") { "${it.name} (${it.state.displayName})" }
         report += "\n\nRest helps. Your party's health: $healed."
+        addJournal("Rested for $days days to recover.")
         showNotice("Resting", listOf(report), Phase.TRAVEL)
     }
 
@@ -459,8 +503,10 @@ class Game(
         if (checkIllness(msgs)) return stopOrDeath()
 
         // Random event.
-        if (rng.chance(0.12)) {
+        if (rng.chance(difficulty.eventChance)) {
+            val before = msgs.size
             rollEvent(msgs)
+            msgs.getOrNull(before)?.let { addJournal(it) }
             return stopOrDeath()
         }
 
@@ -549,6 +595,7 @@ class Game(
             if (inventory.food <= 20) chance += 0.02
             if (weather.tempF < 40 && inventory.clothing < aliveCount) chance += 0.02
             if (m.health < 50) chance += 0.015
+            chance *= difficulty.illnessScale
             if (!rng.chance(chance)) continue
             any = true
             val illness = Data.illnesses[rng.nextInt(Data.illnesses.size)]
@@ -557,9 +604,11 @@ class Game(
             m.condition = illness
             if (!m.alive) {
                 msgs.add("${m.name} has died of $illness.")
+                addJournal("${m.name} died of $illness.")
                 deathCause = illness
             } else {
                 msgs.add("${m.name} has come down with $illness.")
+                addJournal("${m.name} came down with $illness.")
             }
         }
         return any
@@ -597,6 +646,9 @@ class Game(
                 if (inventory.useSpare(part)) {
                     msgs.add("A wagon ${part.name.lowercase()} breaks, but you")
                     msgs.add("have a spare and replace it on the spot.")
+                } else if (occupation == Occupation.CARPENTER && rng.chance(0.5)) {
+                    msgs.add("A wagon ${part.name.lowercase()} breaks, but your")
+                    msgs.add("carpentry skills repair it without a spare part.")
                 } else {
                     val delay = rng.nextInt(10, 20)
                     inventory.food = max(0, inventory.food - 8)
@@ -797,6 +849,7 @@ class Game(
                 msgs.add("without incident.")
             }
         }
+        addJournal("Riders on the trail; we chose to $action.")
         showNotice(choiceTitle, msgs, Phase.TRAVEL)
     }
 
@@ -815,6 +868,7 @@ class Game(
         lines.addAll(lm.blurb)
         msgs.clear()
         lines.forEach { msgs.add(it) }
+        addJournal("Reached ${lm.name}.")
         val next = if (lm.kind == LandmarkKind.RIVER) Phase.RIVER else Phase.LANDMARK
         showNotice("Landmark", lines, next)
         pendingSound = Sound.GOOD
@@ -842,6 +896,7 @@ class Game(
         miles = (miles - lm.cutoffMiles).coerceAtLeast(floor)
         landmarkIndex = targetIdx - 1
         pendingSound = Sound.GOOD
+        addJournal("Took the ${lm.cutoffLabel?.removePrefix("Take the ")} to save ${lm.cutoffMiles} miles.")
         showNotice(
             "Taking the Cutoff",
             listOf(
@@ -937,6 +992,7 @@ class Game(
                 return
             }
         }
+        addJournal("Crossed the ${lm.name}.")
         showNotice("River Crossing", msgs, Phase.TRAVEL)
     }
 
@@ -1021,6 +1077,7 @@ class Game(
 
     private fun arriveOregon(extra: List<String> = emptyList()) {
         lastScore = computeScore()
+        addJournal("Arrived safely in the Willamette Valley!")
         topTen.add(ScoreEntry(party.firstOrNull()?.name ?: "Traveler", lastScore, occupation.displayName))
         topTen = topTen.sortedByDescending { it.points }.take(10).toMutableList()
         scores.saveScores(topTen)
@@ -1058,6 +1115,7 @@ class Game(
         val leader = party.firstOrNull()?.name ?: "Traveler"
         val epitaph = "Here lies $leader, died of $cause on the Oregon Trail."
         lastGravestone = epitaph
+        addJournal("$leader died of $cause.")
         scores.saveGravestone(epitaph)
         pendingSound = Sound.DEATH
         phase = Phase.DEATH
@@ -1101,10 +1159,14 @@ class Game(
 
     private fun endHunt() {
         val field = huntField ?: return
-        val meat = field.finish()
+        val raw = field.finish()
+        val meat = if (occupation == Occupation.FARMER) {
+            (raw * 1.5).toInt().coerceAtMost(field.carryLimit)
+        } else raw
         inventory.food += meat
         date.plusDays(huntDays)
         consumeFood()
+        addJournal("Hunted and brought back $meat pounds of meat.")
         val lines = listOf(
             "You return to the wagon with $meat pounds",
             "of meat from ${field.kills} animal(s).",
@@ -1173,15 +1235,32 @@ class Game(
     // ====================================================================
 
     private fun computeScore(): Int {
-        var base = 1500
-        base += aliveCount * 400
-        base += inventory.oxen * 30
-        base += inventory.food / 5
-        base += inventory.clothing * 15
-        base += inventory.ammo / 2
-        base += (inventory.wheels + inventory.axles + inventory.tongues) * 20
-        base += (inventory.cash / 10).toInt()
-        return base * occupation.multiplier
+        val parts = scoreParts()
+        return parts.last().second
+    }
+
+    /** Returns labelled score components; the final entry is the total. */
+    private fun scoreParts(): List<Pair<String, Int>> {
+        val survivors = aliveCount * 400
+        val oxen = inventory.oxen * 30
+        val food = inventory.food / 5
+        val clothing = inventory.clothing * 15
+        val ammo = inventory.ammo / 2
+        val spares = (inventory.wheels + inventory.axles + inventory.tongues) * 20
+        val cash = (inventory.cash / 10).toInt()
+        val subtotal = 1500 + survivors + oxen + food + clothing + ammo + spares + cash
+        val total = subtotal * occupation.multiplier
+        return listOf(
+            "Survivors ($aliveCount x 400)" to survivors,
+            "Oxen (${inventory.oxen} x 30)" to oxen,
+            "Food (${inventory.food} lb)" to food,
+            "Clothing (${inventory.clothing})" to clothing,
+            "Ammunition (${inventory.ammo})" to ammo,
+            "Spare parts" to spares,
+            "Cash" to cash,
+            "Arrival bonus" to 1500,
+            "Subtotal x${occupation.multiplier} (${occupation.displayName})" to total
+        )
     }
 
     // ====================================================================
@@ -1258,6 +1337,7 @@ class Game(
             Phase.LANDMARK -> renderLandmark(screen)
             Phase.RIVER -> renderRiver(screen)
             Phase.MAP -> renderMap(screen)
+            Phase.JOURNAL -> renderJournal(screen)
             Phase.CHOICE -> renderChoice(screen)
             Phase.HUNTING -> renderHunting(screen)
             Phase.RAFTING -> renderRafting(screen)
@@ -1328,19 +1408,35 @@ class Game(
     }
 
     private fun renderManagement(screen: Screen) {
-        screen.center(2, "MANAGEMENT OPTIONS", Palette.BRIGHT_GREEN, bold = true)
+        screen.center(1, "MANAGEMENT OPTIONS", Palette.BRIGHT_GREEN, bold = true)
         val options = ArrayList<Pair<String, String>>()
         options.add("See the Oregon Top Ten" to "manage:topten")
         options.add("Choose a different leader" to "manage:newleader")
+        options.add("Difficulty: ${difficulty.displayName}" to "manage:difficulty")
         options.add("Sound is ${if (soundEnabled) "ON" else "OFF"}" to "manage:sound")
+        uiSettings?.let { ui ->
+            options.add("Text size: ${textScaleName(ui.textScaleIndex)}" to "manage:textsize")
+            options.add("High contrast: ${onOff(ui.highContrast)}" to "manage:contrast")
+            options.add("Scanlines: ${onOff(ui.scanlines)}" to "manage:scanlines")
+        }
         options.add("Return to the title screen" to "manage:back")
-        var y = 5
+        val step = if (rows < 26) 1 else 2
+        var y = 3
         for ((label, id) in options) {
-            screen.text(marginX + 3, y, "$label", Palette.GREEN)
-            screen.hotspot(id, marginX + 3, y, label.length)
-            y += 2
+            if (y >= rows - 1) break
+            screen.text(marginX + 2, y, label, Palette.GREEN)
+            screen.hotspot(id, marginX + 2, y, label.length)
+            y += step
         }
     }
+
+    private fun textScaleName(index: Int): String = when (index) {
+        0 -> "Small"
+        1 -> "Medium"
+        else -> "Large"
+    }
+
+    private fun onOff(value: Boolean): String = if (value) "ON" else "OFF"
 
     private fun renderTopTen(screen: Screen) {
         screen.center(1, "THE OREGON TOP TEN", Palette.BRIGHT_GREEN, bold = true)
@@ -1547,11 +1643,12 @@ class Game(
         "1. Continue on trail" to "travel:continue",
         "2. Check supplies" to "travel:supplies",
         "3. Look at map" to "travel:map",
-        "4. Change pace" to "travel:pace",
-        "5. Change food rations" to "travel:rations",
-        "6. Stop to rest" to "travel:rest",
-        "7. Attempt to trade" to "travel:trade",
-        "8. Hunt for food" to "travel:hunt"
+        "4. Look at journal" to "travel:journal",
+        "5. Change pace" to "travel:pace",
+        "6. Change food rations" to "travel:rations",
+        "7. Stop to rest" to "travel:rest",
+        "8. Attempt to trade" to "travel:trade",
+        "9. Hunt for food" to "travel:hunt"
     )
 
     private fun renderLandmark(screen: Screen) {
@@ -1619,6 +1716,47 @@ class Game(
         if (river.guideCost != null) options.add("${n++}. Hire a guide ($${"%.2f".format(river.guideCost)})" to "river:guide")
         options.add("${n++}. Wait a day" to "river:wait")
         screen.menuAt(marginX + 1, y, options)
+    }
+
+    private fun journalPageSize(): Int = max(3, (rows - 5) / 2)
+
+    private fun journalLastPage(): Int =
+        if (journal.isEmpty()) 0 else (journal.size - 1) / journalPageSize()
+
+    private fun renderJournal(screen: Screen) {
+        screen.center(0, "MY JOURNAL", Palette.BRIGHT_GREEN, bold = true)
+        if (journal.isEmpty()) {
+            screen.wrap(marginX + 1, 3, contentW - 2, "Nothing has happened yet. The trail awaits.", Palette.GREEN)
+        } else {
+            val size = journalPageSize()
+            val page = journalPage.coerceIn(0, journalLastPage())
+            val from = page * size
+            val to = min(journal.size, from + size)
+            var y = 2
+            for (i in from until to) {
+                val e = journal[i]
+                screen.text(marginX + 1, y, e.date, Palette.YELLOW)
+                y++
+                y = screen.wrap(marginX + 3, y, contentW - 4, e.text, Palette.GREEN)
+                y++
+                if (y >= rows - 2) break
+            }
+            screen.text(
+                marginX + 1, rows - 1,
+                "Page ${page + 1} of ${journalLastPage() + 1}",
+                Palette.DIM
+            )
+        }
+        val prev = "[< Prev ]"
+        val next = "[ Next >]"
+        val back = "[ Back ]"
+        val y = rows - 2
+        screen.text(marginX + 1, y, prev, Palette.BRIGHT_GREEN)
+        screen.hotspot("journal:prev", marginX + 1, y, prev.length)
+        screen.text(marginX + 12, y, next, Palette.BRIGHT_GREEN)
+        screen.hotspot("journal:next", marginX + 12, y, next.length)
+        screen.text(marginX + 23, y, back, Palette.BRIGHT_GREEN, bold = true)
+        screen.hotspot("journal:back", marginX + 23, y, back.length)
     }
 
     private fun renderMap(screen: Screen) {
@@ -1806,7 +1944,18 @@ class Game(
             Palette.GREEN)
         y++
         screen.text(marginX + 1, y, "Final score: $lastScore points", Palette.BRIGHT_YELLOW, bold = true)
-        y += 2
+        y++
+        if (rows >= 28) {
+            screen.text(marginX + 1, y, "How your score was earned:", Palette.DIM)
+            y++
+            for ((label, value) in scoreParts()) {
+                screen.text(marginX + 1, y, label.take(contentW - 8), Palette.GRAY)
+                screen.text(marginX + contentW - 6, y, value.toString().padStart(6), Palette.WHITE)
+                y++
+                if (y >= rows - 5) break
+            }
+        }
+        y++
         val options = listOf(
             "See the Oregon Top Ten" to "arrived:topten",
             "Travel the trail again" to "arrived:restart"
@@ -1833,6 +1982,7 @@ class Game(
         line("landmark", landmarkIndex)
         line("pace", pace.name)
         line("rations", rations.name)
+        line("difficulty", difficulty.name)
         line("storeAtFort", storeAtFort)
         line("sound", soundEnabled)
         line("cash", inventory.cash)
@@ -1846,6 +1996,9 @@ class Game(
         line("phase", safePhase().name)
         party.forEachIndexed { i, m ->
             line("p$i", "${enc(m.name)},${m.health},${m.alive},${enc(m.condition ?: "")}")
+        }
+        journal.forEachIndexed { i, e ->
+            line("j$i", "${enc(e.date)}|${enc(e.text)}")
         }
         return sb.toString()
     }
@@ -1869,6 +2022,11 @@ class Game(
             landmarkIndex = (map["landmark"]?.toIntOrNull() ?: 0).coerceIn(0, Data.landmarks.lastIndex)
             pace = Pace.valueOf(map["pace"] ?: pace.name)
             rations = Rations.valueOf(map["rations"] ?: rations.name)
+            difficulty = try {
+                Difficulty.valueOf(map["difficulty"] ?: "NORMAL")
+            } catch (_: Exception) {
+                Difficulty.NORMAL
+            }
             storeAtFort = map["storeAtFort"]?.toBooleanStrictOrNull() ?: false
             soundEnabled = map["sound"]?.toBooleanStrictOrNull() ?: true
             inventory.cash = map["cash"]?.toDoubleOrNull() ?: 0.0
@@ -1893,6 +2051,14 @@ class Game(
                 )
             }
             party = saved
+            journal.clear()
+            var ji = 0
+            while (true) {
+                val raw = map["j$ji"] ?: break
+                val parts = raw.split('|')
+                journal.add(JournalEntry(dec(parts[0]), dec(parts.getOrElse(1) { "" })))
+                ji++
+            }
             phase = try {
                 Phase.valueOf(map["phase"] ?: "TRAVEL")
             } catch (_: Exception) {
@@ -1921,7 +2087,8 @@ class Game(
         val INVALID_RESUME_PHASES = setOf(
             Phase.TITLE, Phase.ABOUT, Phase.MANAGEMENT, Phase.TOP_TEN,
             Phase.PROFESSION, Phase.MONTH, Phase.NAMES, Phase.DEATH,
-            Phase.ARRIVED, Phase.CHOICE, Phase.HUNTING, Phase.RAFTING, Phase.NOTICE
+            Phase.ARRIVED, Phase.CHOICE, Phase.HUNTING, Phase.RAFTING,
+            Phase.JOURNAL, Phase.NOTICE
         )
 
         val ABOUT_PAGES: List<String> = listOf(
