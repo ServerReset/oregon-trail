@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [1.2.0] - 2026-09-14
+
+### Added
+- **Runs on any screen** — ultra-compact layouts for watches and phone cover
+  screens (short labels, tappable store rows, one-row hunting/rafting controls)
+  and round-watch safe-area insetting. Verified from a 16×10 watch grid up to a
+  120-column unfolded foldable, including folding and unfolding mid-journey.
+- **Rest for a chosen number of days** (1, 2, 3 or 5), as in the original.
+- **Write your own epitaph** on the death screen; it is saved as the gravestone.
+- Manifest declares optional touchscreen/watch features and resizeable screens.
+- Tests now cover watch/cover viewports and exercise the rest, trade and riders
+  choice screens across all fuzzed sizes.
+
+### Fixed
+- Choice options (`rest:`, `riders:`, `trade:`) were registered as tap targets
+  but never routed to the choice handler, so tapping them directly did nothing.
+- Hunting/rafting fields now size themselves for very short screens.
+
 ## [1.1.0] - 2026-09-14
 
 ### Added

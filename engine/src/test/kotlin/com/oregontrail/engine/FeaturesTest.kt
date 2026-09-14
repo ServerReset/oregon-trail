@@ -27,6 +27,49 @@ class FeaturesTest {
     }
 
     @Test
+    fun resting_for_a_chosen_number_of_days_heals_and_advances_time() {
+        val g = newGame(4L)
+        g.intro()
+        assertTrue(g.phase == Phase.TRAVEL)
+        val before = g.date.toString()
+        g.onTap("travel:rest")
+        assertEquals(Phase.CHOICE, g.phase)
+        g.onTap("rest:5")
+        assertEquals(Phase.NOTICE, g.phase)
+        assertTrue(g.date.toString() != before, "date should advance while resting")
+        assertEquals(5, g.journal.last().text.substringAfter("Rested for ").substringBefore(" ").toInt())
+    }
+
+    @Test
+    fun the_player_can_write_an_epitaph() {
+        val store = InMemoryScoreStore()
+        val g = Game(DefaultRng(2L), store)
+        g.setViewport(48, 34)
+        g.onTap("title:travel"); g.onTap("prof:2"); g.onTap("month:0"); g.onTap("names:go")
+        g.onTap("store:inc:OXEN")
+        g.onTap("store:leave"); g.onTap("notice:continue")
+        var guard = 0
+        while (guard++ < 300 && g.phase != Phase.DEATH) {
+            when (g.phase) {
+                Phase.TRAVEL -> g.onTap("travel:continue")
+                Phase.NOTICE -> g.onTap("notice:continue")
+                Phase.CHOICE -> g.onTap("choice:continue")
+                Phase.RIVER -> g.onTap("river:caulk")
+                Phase.LANDMARK -> g.onTap("land:continue")
+                Phase.HUNTING -> g.onTap("hunt:leave")
+                else -> break
+            }
+        }
+        assertEquals(Phase.DEATH, g.phase)
+        g.onTap("death:epitaph")
+        assertTrue(g.requestedEpitaphEdit)
+        g.setEpitaph("Gone to Oregon")
+        assertFalse(g.requestedEpitaphEdit)
+        assertEquals("Gone to Oregon", g.lastGravestone)
+        assertEquals("Gone to Oregon", store.loadGravestone())
+    }
+
+    @Test
     fun graves_from_previous_runs_appear_at_landmarks() {
         val store = InMemoryScoreStore()
         store.addGrave(Grave("Old Jed", "cholera", "kansas", "Here lies Old Jed, died of cholera."))

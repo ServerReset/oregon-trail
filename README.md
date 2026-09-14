@@ -67,7 +67,24 @@ or by opening the APK on the device.
 - **Difficulty and accessibility** — Easy/Normal/Hard changes how often trouble
   strikes; text size, a high-contrast palette and CRT scanlines can be toggled
   on the Management screen and are remembered.
-- **Save / resume** — the journey survives rotation and process death.
+- **Save / resume** — the journey survives rotation, folding and process death.
+- **Runs anywhere** — phones, tablets, foldables and flippable cover screens,
+  and even small round watches. The terminal recomputes its character grid on
+  every size change, drops to ultra-compact layouts with short labels on tiny
+  screens, and insets itself inside the inscribed square on round displays.
+
+## Device support
+
+| Device                         | Behaviour                                              |
+|--------------------------------|--------------------------------------------------------|
+| Phone / tablet portrait        | Wide terminal, artwork, full menus                     |
+| Landscape / unfolded foldable  | Extra columns for extra rows, everything stays on screen |
+| Folded cover screen (e.g. 260×512) | Ultra-compact layout, short labels, tappable store rows |
+| Round watch                    | Content inset to a centred square, one-row controls    |
+| Multi-window / split screen    | Re-lays out live without losing the run                |
+
+Open or close the phone mid-journey and play continues where it left off
+(the activity handles configuration changes and the run is saved on pause).
 
 ## Controls
 
@@ -81,6 +98,8 @@ Everything is touch. Menu entries and buttons are tappable on the terminal.
 | Hunting     | On-screen `^ < > v` D-pad to move/aim, `SHOOT`, `Return to trail` |
 | Rafting     | `<< LEFT` / `RIGHT >>` to steer                            |
 | Journal     | `[< Prev ]` / `[ Next >]` / `[ Back ]`                 |
+| Rest        | Choose 1, 2, 3 or 5 days                               |
+| Death       | Write your own epitaph                                 |
 | Map         | Tap `[ Back ]`                                        |
 
 ## Architecture

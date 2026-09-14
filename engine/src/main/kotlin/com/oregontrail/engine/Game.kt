@@ -48,8 +48,8 @@ class Game(
     var rows: Int = 30
 
     fun setViewport(cols: Int, rows: Int) {
-        this.cols = cols.coerceAtLeast(20)
-        this.rows = rows.coerceAtLeast(16)
+        this.cols = cols.coerceAtLeast(16)
+        this.rows = rows.coerceAtLeast(10)
     }
 
     // ----- persistent settings -----------------------------------------
@@ -104,6 +104,10 @@ class Game(
     internal var deathCause = ""
 
     var requestedNameEdit: Int? = null
+        private set
+
+    /** True when the front-end should prompt for a gravestone epitaph. */
+    var requestedEpitaphEdit: Boolean = false
         private set
 
     init {
@@ -195,6 +199,8 @@ class Game(
             id.startsWith("land:") -> handleLandmarkMenu(id.substringAfter("land:"))
             id.startsWith("river:") -> handleRiver(id.substringAfter("river:"))
             id.startsWith("choice:") -> handleChoice(id.substringAfter("choice:"))
+            id.startsWith("riders:") || id.startsWith("trade:") || id.startsWith("rest:") ->
+                handleChoice(id)
             id == "notice:continue" -> phase = noticeNext
             id == "map:back" -> phase = Phase.TRAVEL
             id == "journal:prev" -> journalPage = (journalPage - 1).coerceAtLeast(0)
@@ -209,6 +215,7 @@ class Game(
             id == "raft:left" -> raftField?.moveLeft()
             id == "raft:right" -> raftField?.moveRight()
             id == "death:topten" -> phase = Phase.TOP_TEN
+            id == "death:epitaph" -> requestedEpitaphEdit = true
             id == "death:restart" -> { newRun(occupation, travelMonth); phase = Phase.PROFESSION }
             id == "arrived:topten" -> phase = Phase.TOP_TEN
             id == "arrived:restart" -> { newRun(occupation, travelMonth); phase = Phase.PROFESSION }
@@ -227,6 +234,23 @@ class Game(
     /** Called by the front-end after a text dialog closes. */
     fun clearNameRequest() {
         requestedNameEdit = null
+    }
+
+    /** Sets the gravestone epitaph typed by the player and clears the request. */
+    fun setEpitaph(text: String) {
+        val trimmed = text.trim().take(140)
+        if (trimmed.isNotEmpty()) {
+            lastGravestone = trimmed
+            scores.saveGravestone(trimmed)
+            if (graves.isNotEmpty()) {
+                graves[graves.size - 1] = graves.last().copy(text = trimmed)
+            }
+        }
+        requestedEpitaphEdit = false
+    }
+
+    fun clearEpitaphRequest() {
+        requestedEpitaphEdit = false
     }
 
     fun huntTick() {
@@ -410,19 +434,32 @@ class Game(
         if (journal.size > JOURNAL_LIMIT) journal.removeAt(0)
     }
 
+    /** The original let you choose how long to rest. */
     private fun startRest() {
-        // Rest for a few days: heal, consume food, pass time.
-        val days = 3
-        var report = "You camp and rest for $days days."
+        choiceTitle = "Rest"
+        choiceLines.clear()
+        choiceLines.add("How long should the party rest?")
+        choiceLines.add("Longer rest heals more, but eats food and costs time.")
+        choiceOptions.clear()
+        choiceOptions.add("1 day" to "rest:1")
+        choiceOptions.add("2 days" to "rest:2")
+        choiceOptions.add("3 days" to "rest:3")
+        choiceOptions.add("5 days" to "rest:5")
+        choiceNext = Phase.TRAVEL
+        phase = Phase.CHOICE
+    }
+
+    private fun rest(days: Int) {
+        var report = "You camp and rest for $days day(s)."
         repeat(days) {
             date.plusDays(1)
             rollWeather()
             consumeFood()
         }
-        aliveMembers().forEach { it.heal(12) }
+        aliveMembers().forEach { it.heal(days * 4) }
         val healed = aliveMembers().joinToString(", ") { "${it.name} (${it.state.displayName})" }
         report += "\n\nRest helps. Your party's health: $healed."
-        addJournal("Rested for $days days to recover.")
+        addJournal("Rested for $days day(s) to recover.")
         showNotice("Resting", listOf(report), Phase.TRAVEL)
     }
 
@@ -1068,8 +1105,8 @@ class Game(
 
     private fun startRaft() {
         raftField = RaftField(
-            min(contentW - 2, 40).coerceAtLeast(14),
-            min(rows - 10, 16).coerceIn(6, 16),
+            min(contentW, 40).coerceIn(10, 40),
+            min(rows - 5, 16).coerceIn(4, 16),
             rng
         )
         phase = Phase.RAFTING
@@ -1164,8 +1201,8 @@ class Game(
             pendingSound = Sound.BAD
             return
         }
-        val fieldW = min(cols - 2, 64).coerceIn(20, 64)
-        val fieldH = min(rows - 11, 16).coerceIn(6, 16)
+        val fieldW = min(cols, 64).coerceIn(10, 64)
+        val fieldH = min(rows - 8, 16).coerceIn(4, 16)
         huntField = HuntField(fieldW, fieldH, rng, huntPool())
         huntReturn = returnPhase
         huntDays = 1
@@ -1209,6 +1246,7 @@ class Game(
         when {
             id.startsWith("riders:") -> handleRiders(id.substringAfter("riders:"))
             id.startsWith("trade:") -> handleTradeResult(id)
+            id.startsWith("rest:") -> rest(id.substringAfter("rest:").toIntOrNull() ?: 3)
             else -> phase = choiceNext
         }
     }
@@ -1498,7 +1536,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "1.1.0"
+        const val VERSION = "1.2.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400

@@ -98,15 +98,24 @@ class TerminalView @JvmOverloads constructor(
 
     private fun recomputeGrid(w: Int, h: Int) {
         val density = resources.displayMetrics.density
-        val pad = 3f * density
+        val round = resources.configuration.isScreenRound
+        val basePad = 3f * density
+        // On a round watch, keep all text inside the inscribed square.
+        val pad = if (round) {
+            maxOf(basePad, 0.16f * minOf(w, h))
+        } else {
+            basePad
+        }
         val contentW = (w - 2 * pad).coerceAtLeast(1f)
-        val contentH = h.toFloat()
+        val contentH = (if (round) (h - 2 * pad) else h.toFloat()).coerceAtLeast(1f)
 
         // Target a readable character width, then derive the column count.
         // Very wide (often landscape) screens get more columns, which keeps the
-        // glyphs a comfortable size while still yielding enough rows.
+        // glyphs a comfortable size while still yielding enough rows. Tiny
+        // screens (watches, cover displays) drop to fewer columns so glyphs stay
+        // legible.
         val desiredCellW = 9f * density * textScale
-        var c = (contentW / desiredCellW).roundToInt().coerceIn(28, 110)
+        val c = (contentW / desiredCellW).roundToInt().coerceIn(16, 120)
 
         // Measure the monospace advance ratio for this typeface.
         paint.textSize = 100f
@@ -118,11 +127,11 @@ class TerminalView @JvmOverloads constructor(
         lineH = (fm.descent - fm.ascent)
         baseline = -fm.ascent
 
-        var r = (contentH / lineH).toInt().coerceIn(16, 70)
+        val r = (contentH / lineH).toInt().coerceIn(10, 80)
         cols = c
         rows = r
         marginX = pad
-        marginY = ((contentH - r * lineH) / 2f).coerceAtLeast(0f)
+        marginY = ((contentH - r * lineH) / 2f).coerceAtLeast(0f) + (if (round) pad else 0f)
     }
 
     override fun onDraw(canvas: Canvas) {

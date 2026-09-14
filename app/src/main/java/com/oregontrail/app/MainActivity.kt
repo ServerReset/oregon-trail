@@ -84,6 +84,7 @@ class MainActivity : AppCompatActivity() {
         }
         game.onTap(id)
         handleNameRequest()
+        handleEpitaphRequest()
         applyUi()
         render()
         if (game.phase == Phase.HUNTING || game.phase == Phase.RAFTING) {
@@ -131,6 +132,33 @@ class MainActivity : AppCompatActivity() {
             }
             .setOnCancelListener {
                 game.clearNameRequest()
+                render()
+            }
+            .show()
+    }
+
+    private fun handleEpitaphRequest() {
+        if (!game.requestedEpitaphEdit) return
+        val input = EditText(this).apply {
+            setText(game.lastGravestone ?: "")
+            setSelection(text.length)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            filters = arrayOf(InputFilter.LengthFilter(140))
+            hint = "Epitaph"
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Write an epitaph")
+            .setView(input)
+            .setPositiveButton("OK") { _, _ ->
+                game.setEpitaph(input.text.toString())
+                render()
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                game.clearEpitaphRequest()
+                render()
+            }
+            .setOnCancelListener {
+                game.clearEpitaphRequest()
                 render()
             }
             .show()
