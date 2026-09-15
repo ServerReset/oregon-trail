@@ -126,6 +126,14 @@ internal fun Game.overlaySky(screen: Screen, top: Int, bottom: Int) {
         val ty = (bottom - 1).coerceAtLeast(top)
         val tx = ((frame * 3) % (cols + 4)) - 2
         screen.putIfBlank(tx, ty, 'o', Palette.BROWN)
+        // Now and then a shooting star streaks across.
+        if (frame % 41 < 3 && cols >= 24) {
+            val sx = ((frame * 5) % (cols + 12)) - 6
+            val sy = top
+            screen.putIfBlank(sx, sy, '\\', Palette.BRIGHT_WHITE)
+            screen.putIfBlank(sx + 1, sy, '-', Palette.WHITE)
+            screen.putIfBlank(sx + 2, sy, '-', Palette.DIM)
+        }
     }
 }
 
@@ -246,6 +254,7 @@ internal fun Game.renderManagement(screen: Screen) {
         short.add("New leader" to "manage:newleader")
         short.add("Diff ${difficulty.displayName.take(4)}" to "manage:difficulty")
         short.add("Sound ${onOff(soundEnabled)}" to "manage:sound")
+        uiSettings?.let { ui -> short.add("Hap ${onOff(ui.haptics)}" to "manage:haptics") }
         uiSettings?.let { ui ->
             short.add("Text ${textScaleName(ui.textScaleIndex).take(1)}" to "manage:textsize")
             short.add("Theme ${themeName(ui.themeIndex).take(6)}" to "manage:theme")
@@ -264,6 +273,9 @@ internal fun Game.renderManagement(screen: Screen) {
     options.add("Choose a different leader" to "manage:newleader")
     options.add("Difficulty: ${difficulty.displayName}" to "manage:difficulty")
     options.add("Sound is ${if (soundEnabled) "ON" else "OFF"}" to "manage:sound")
+    uiSettings?.let { ui ->
+        options.add("Haptics: ${onOff(ui.haptics)}" to "manage:haptics")
+    }
     uiSettings?.let { ui ->
         options.add("Text size: ${textScaleName(ui.textScaleIndex)}" to "manage:textsize")
         options.add("Theme: ${themeName(ui.themeIndex)}" to "manage:theme")
@@ -291,9 +303,9 @@ internal fun Game.textScaleName(index: Int): String = when (index) {
 }
 
 internal fun Game.themeName(index: Int): String = when (index) {
-    1 -> "Material Dark"
-    2 -> "Material Light"
-    else -> "Classic Green"
+    2 -> "Material You"
+    1 -> "Classic"
+    else -> "Terminal"
 }
 
 internal fun Game.onOff(value: Boolean): String = if (value) "ON" else "OFF"

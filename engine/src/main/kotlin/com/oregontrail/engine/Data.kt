@@ -37,8 +37,11 @@ interface UiSettings {
     var textScaleIndex: Int      // 0 = small, 1 = medium, 2 = large
     var highContrast: Boolean
     var scanlines: Boolean
+    var haptics: Boolean
+        get() = true
+        set(_) {}
 
-    /** 0 = Retro green terminal, 1 = Material You dynamic colors. */
+    /** 0 = Terminal (green on black), 1 = Classic (colour on black), 2 = Material You. */
     var themeIndex: Int
         get() = 0
         set(_) {}

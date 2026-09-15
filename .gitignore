@@ -26,3 +26,7 @@ keystore.properties
 # OS
 .DS_Store
 *.log
+
+# Python tooling
+__pycache__/
+*.pyc

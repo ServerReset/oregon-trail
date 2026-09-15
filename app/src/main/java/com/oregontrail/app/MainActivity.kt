@@ -133,6 +133,11 @@ class MainActivity : AppCompatActivity() {
         render()
     }
 
+    /** Whether the system is in light mode (used by Material You). */
+    private fun isSystemLight(): Boolean =
+        (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_NO
+
     /** A seed that is the same for everyone on a given day. */
     private fun dailySeed(): Long {
         val c = java.util.Calendar.getInstance()
@@ -197,10 +202,11 @@ class MainActivity : AppCompatActivity() {
         }
         terminal.highContrast = ui.highContrast
         terminal.scanlinesEnabled = ui.scanlines
+        terminal.hapticsEnabled = ui.haptics
         terminal.colors = when (ui.themeIndex) {
-            1 -> MaterialYouTheme(this, light = false)
-            2 -> MaterialYouTheme(this, light = true)
-            else -> RetroPalette
+            1 -> RetroPalette
+            2 -> MaterialYouTheme(this, light = isSystemLight())
+            else -> TerminalTheme
         }
         val bg = terminal.colors.defaultBackground
         window.statusBarColor = bg

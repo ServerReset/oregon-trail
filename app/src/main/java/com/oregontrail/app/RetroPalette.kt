@@ -5,7 +5,7 @@ import android.graphics.Color
 import android.os.Build
 import com.oregontrail.engine.Palette
 
-/** A colour scheme for the terminal: the retro CRT or a Material You theme. */
+/** A colour scheme for the terminal. */
 interface ThemeColors {
     val name: String
 
@@ -20,12 +20,41 @@ interface ThemeColors {
     fun isBoldDefault(p: Palette): Boolean
 }
 
-/** The classic green phosphor terminal. */
+/**
+ * Terminal mode: a single green phosphor on black. Hues are kept in the green
+ * family so the whole display feels like an old teleprinter.
+ */
+object TerminalTheme : ThemeColors {
+    const val BLACK: Int = 0xFF000000.toInt()
+
+    override val name: String = "Terminal"
+    override val dark: Boolean = true
+    override val defaultBackground: Int = BLACK
+
+    override fun foreground(p: Palette, highContrast: Boolean): Int = when (p) {
+        Palette.BLACK -> BLACK
+        Palette.DIM -> 0xFF1E8E1E.toInt()
+        Palette.GRAY -> 0xFF2FB02F.toInt()
+        Palette.DEFAULT, Palette.GREEN -> 0xFF33FF33.toInt()
+        Palette.BRIGHT_GREEN, Palette.BRIGHT_WHITE, Palette.WHITE -> 0xFFB6FFB6.toInt()
+        Palette.YELLOW, Palette.BRIGHT_YELLOW, Palette.BROWN -> 0xFF9BFF33.toInt()
+        Palette.CYAN, Palette.BLUE -> 0xFF4FE0A0.toInt()
+        Palette.RED, Palette.MAGENTA -> 0xFF33FF99.toInt()
+    }
+
+    override fun ambientBackground(ambient: Palette, highContrast: Boolean): Int =
+        if (ambient == Palette.BLACK) BLACK else 0xFF031003.toInt()
+
+    override fun isBoldDefault(p: Palette): Boolean =
+        p == Palette.BRIGHT_GREEN || p == Palette.BRIGHT_YELLOW || p == Palette.BRIGHT_WHITE
+}
+
+/** Classic mode: full-colour ASCII art on black. */
 object RetroPalette : ThemeColors {
 
-    const val BACKGROUND: Int = 0xFF08130A.toInt()
+    const val BACKGROUND: Int = 0xFF000000.toInt()
 
-    override val name: String = "Classic Green"
+    override val name: String = "Classic"
     override val dark: Boolean = true
     override val defaultBackground: Int = BACKGROUND
 
@@ -43,7 +72,7 @@ object RetroPalette : ThemeColors {
         }
         return when (p) {
             Palette.DEFAULT -> 0xFF7CFF7C.toInt()
-            Palette.BLACK -> 0xFF08130A.toInt()
+            Palette.BLACK -> BACKGROUND
             Palette.DIM -> 0xFF3E8E3E.toInt()
             Palette.RED -> 0xFFFF6B5E.toInt()
             Palette.GREEN -> 0xFF7CFF7C.toInt()
@@ -59,16 +88,15 @@ object RetroPalette : ThemeColors {
         }
     }
 
-    /** Dark background tints used for the ambient mood. */
+    /** Near-black background tints used for the ambient mood. */
     fun bg(ambient: Palette, highContrast: Boolean = false): Int {
         if (highContrast) return 0xFF000000.toInt()
         return when (ambient) {
-            Palette.BLACK -> BACKGROUND
-            Palette.BRIGHT_WHITE -> 0xFF243024.toInt() // lightning flash
-            Palette.GREEN, Palette.BRIGHT_GREEN -> 0xFF0A1C0E.toInt()
-            Palette.BLUE, Palette.CYAN -> 0xFF08101F.toInt()
-            Palette.BROWN, Palette.YELLOW -> 0xFF1A1208.toInt()
-            Palette.RED, Palette.MAGENTA -> 0xFF1A0A0A.toInt()
+            Palette.BRIGHT_WHITE -> 0xFF303030.toInt() // lightning flash
+            Palette.GREEN, Palette.BRIGHT_GREEN -> 0xFF031403.toInt()
+            Palette.BLUE, Palette.CYAN -> 0xFF020617.toInt()
+            Palette.BROWN, Palette.YELLOW -> 0xFF160C02.toInt()
+            Palette.RED, Palette.MAGENTA -> 0xFF170202.toInt()
             else -> BACKGROUND
         }
     }
@@ -81,11 +109,11 @@ object RetroPalette : ThemeColors {
 
 /**
  * Material You: colours derived from the system wallpaper on Android 12+, with
- * a Material 3 baseline on older devices. Supports a dark or light scheme.
+ * a Material 3 baseline on older devices. Follows the system light/dark mode.
  */
 class MaterialYouTheme(private val context: Context, val light: Boolean = false) : ThemeColors {
 
-    override val name: String = if (light) "Material Light" else "Material Dark"
+    override val name: String = "Material You"
     override val dark: Boolean = !light
 
     private fun sys(resId: Int, fallback: Int): Int =

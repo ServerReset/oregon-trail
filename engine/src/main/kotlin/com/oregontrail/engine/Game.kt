@@ -301,6 +301,7 @@ class Game(
             id == "manage:topten" -> phase = Phase.TOP_TEN
             id == "manage:newleader" -> { newRun(occupation, travelMonth); phase = Phase.PROFESSION }
             id == "manage:sound" -> soundEnabled = !soundEnabled
+            id == "manage:haptics" -> uiSettings?.let { it.haptics = !it.haptics }
             id == "manage:difficulty" -> cycleDifficulty()
             id == "manage:textsize" -> uiSettings?.let { it.textScaleIndex = (it.textScaleIndex + 1) % 3 }
             id == "manage:contrast" -> uiSettings?.let { it.highContrast = !it.highContrast }
@@ -2056,7 +2057,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "2.3.0"
+        const val VERSION = "2.4.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400

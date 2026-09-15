@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.4.0] - 2026-09-15
+
+### Added
+- **Refreshed theme model**: the three schemes are now **Terminal** (green
+  phosphor on black), **Classic** (full-colour ASCII art on black) and
+  **Material You** (wallpaper-driven colours). Material You now follows the
+  system light/dark mode automatically instead of having separate entries.
+- **Haptics toggle**: Management → Haptics turns the tap vibration on or off,
+  and the choice is remembered between launches.
+- **Shooting stars**: on fair nights a comet now streaks across the sky.
+
+### Changed
+- Theme, text size, contrast, scanlines and haptics settings all persist
+  together and are driven from the engine's `UiSettings`, so headless tests
+  can exercise them too.
+- Tests now cover the three-way theme cycle and the haptics toggle (102 total).
+
 ## [2.3.0] - 2026-09-14
 
 ### Added

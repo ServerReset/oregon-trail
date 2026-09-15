@@ -86,13 +86,13 @@ class TerminalView @JvmOverloads constructor(
         val count = screen?.hotspots?.size ?: 0
         if (count == 0) return
         selectedIndex = ((selectedIndex + delta) % count + count) % count
-        performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+        if (hapticsEnabled) performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
         invalidate()
     }
 
     private fun activateSelected() {
         val id = screen?.hotspots?.getOrNull(selectedIndex)?.id ?: return
-        performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+        if (hapticsEnabled) performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
         tapListener?.invoke(id)
     }
 
@@ -134,7 +134,10 @@ class TerminalView @JvmOverloads constructor(
         }
 
     /** The active colour scheme: retro green or Material You. */
-    var colors: ThemeColors = RetroPalette
+    var colors: ThemeColors = TerminalTheme
+
+    /** Whether taps vibrate. */
+    var hapticsEnabled: Boolean = true
         set(value) {
             field = value
             invalidate()
@@ -300,7 +303,7 @@ class TerminalView @JvmOverloads constructor(
                 if (id != null) {
                     screen?.hotspots?.indexOfFirst { it.id == id && it.contains(cx, cy) }
                         ?.takeIf { it >= 0 }?.let { selectedIndex = it }
-                    performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                    if (hapticsEnabled) performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
                     tapListener?.invoke(id)
                     if (isRepeatable(id)) {
                         repeatId = id
