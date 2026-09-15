@@ -122,6 +122,10 @@ internal fun Game.overlaySky(screen: Screen, top: Int, bottom: Int) {
         val bird = if (frame % 2 == 0) 'v' else '^'
         screen.putIfBlank(bx, by, bird, Palette.DIM)
         screen.putIfBlank(bx + 2, by, bird, Palette.DIM)
+        // A tumbleweed rolls along the ground.
+        val ty = (bottom - 1).coerceAtLeast(top)
+        val tx = ((frame * 3) % (cols + 4)) - 2
+        screen.putIfBlank(tx, ty, 'o', Palette.BROWN)
     }
 }
 
@@ -244,10 +248,12 @@ internal fun Game.renderManagement(screen: Screen) {
         short.add("Sound ${onOff(soundEnabled)}" to "manage:sound")
         uiSettings?.let { ui ->
             short.add("Text ${textScaleName(ui.textScaleIndex).take(1)}" to "manage:textsize")
-            short.add("Theme ${if (ui.themeIndex == 1) "M3" else "Retro"}" to "manage:theme")
+            short.add("Theme ${themeName(ui.themeIndex).take(6)}" to "manage:theme")
             short.add("Contr ${onOff(ui.highContrast)}" to "manage:contrast")
             short.add("Scan ${onOff(ui.scanlines)}" to "manage:scanlines")
         }
+        short.add("Export" to "manage:export")
+        short.add("Import" to "manage:import")
         short.add("Back" to "manage:back")
         renderMenuColumns(screen, 1, short)
         return
@@ -264,6 +270,8 @@ internal fun Game.renderManagement(screen: Screen) {
         options.add("High contrast: ${onOff(ui.highContrast)}" to "manage:contrast")
         options.add("Scanlines: ${onOff(ui.scanlines)}" to "manage:scanlines")
     }
+    options.add("Export saves to a file" to "manage:export")
+    options.add("Import saves from a file" to "manage:import")
     options.add("Return to the title screen" to "manage:back")
     val step = if (rows < 26) 1 else 2
     var y = 3
@@ -282,7 +290,11 @@ internal fun Game.textScaleName(index: Int): String = when (index) {
     else -> "Large"
 }
 
-internal fun Game.themeName(index: Int): String = if (index == 1) "Material You" else "Retro Green"
+internal fun Game.themeName(index: Int): String = when (index) {
+    1 -> "Material Dark"
+    2 -> "Material Light"
+    else -> "Classic Green"
+}
 
 internal fun Game.onOff(value: Boolean): String = if (value) "ON" else "OFF"
 
@@ -516,6 +528,17 @@ internal fun Game.renderTravel(screen: Screen) {
             if (blink()) "*** LOW SUPPLIES - HUNT OR BUY FOOD ***" else "",
             Palette.RED, bold = true
         )
+        y++
+    }
+    // Animated trail progress bar with a bobbing wagon marker.
+    if (y < rows - 1) {
+        val barW = min(contentW - 16, 26).coerceAtLeast(8)
+        val base = (miles.toLong() * barW / Data.TOTAL_MILES).toInt().coerceIn(0, barW - 1)
+        val pos = (base + (frame % 2)).coerceIn(0, barW - 1)
+        val sb = StringBuilder("[")
+        for (i in 0 until barW) sb.append(if (i < pos) '=' else if (i == pos) '>' else '-')
+        sb.append("]  $miles/${Data.TOTAL_MILES} mi")
+        screen.text(marginX + 1, y, sb.toString().take(contentW - 1), Palette.CYAN)
         y++
     }
 
@@ -1158,7 +1181,7 @@ internal fun Game.renderLoad(screen: Screen) {
 
     screen.center(0, "SAVED GAMES", Palette.BRIGHT_GREEN, bold = true)
     screen.text(marginX + 1, 1, "Page ${page + 1}/${lastPage + 1}  -  ${saveSlots.size} saves", Palette.DIM)
-    screen.text(marginX + 1, 2, "[ren] rename   [del] delete   > load", Palette.DIM)
+    screen.text(marginX + 1, 2, "[ren] rename  [sv] save over  [del] delete", Palette.DIM)
     if (saveSlots.isEmpty()) {
         screen.wrap(
             marginX + 1, 4, contentW - 2,
@@ -1170,19 +1193,23 @@ internal fun Game.renderLoad(screen: Screen) {
         var y = 4
         for (slot in saveSlots.subList(from, to)) {
             if (y >= rows - 3) break
-            val label = slot.label.take(contentW - 16)
+            val label = slot.label.take(contentW - 10)
             screen.text(marginX + 2, y, ">", Palette.BRIGHT_YELLOW, bold = true)
             screen.text(marginX + 4, y, label, Palette.BRIGHT_GREEN, bold = true)
             screen.hotspot("slot:load:${slot.id}", marginX + 1, y, label.length + 4)
             val ren = "[ren]"
-            val del = "[del]"
-            val rx = marginX + contentW - 11
+            val rx = marginX + contentW - 6
             screen.text(rx, y, ren, Palette.CYAN)
             screen.hotspot("slot:rename:${slot.id}", rx, y, ren.length)
-            screen.text(rx + 6, y, del, Palette.RED)
-            screen.hotspot("slot:del:${slot.id}", rx + 6, y, del.length)
             y++
-            screen.text(marginX + 4, y, slot.detail.take(contentW - 8), Palette.GRAY)
+            val sv = "[sv]"
+            val del = "[del]"
+            screen.text(marginX + 4, y, slot.detail.take(contentW - 18), Palette.GRAY)
+            val ax = marginX + contentW - 10
+            screen.text(ax, y, sv, Palette.CYAN)
+            screen.hotspot("slot:overwrite:${slot.id}", ax, y, sv.length)
+            screen.text(ax + 5, y, del, Palette.RED)
+            screen.hotspot("slot:del:${slot.id}", ax + 5, y, del.length)
             y += 2
         }
         if (lastPage > 0) {

@@ -242,7 +242,7 @@ class TerminalView @JvmOverloads constructor(
             }
         }
 
-        if (scanlinesEnabled) {
+        if (scanlinesEnabled && colors.dark) {
             var yy = 0f
             while (yy < height) {
                 canvas.drawRect(0f, yy, width.toFloat(), yy + 1f, scanPaint)
@@ -250,9 +250,11 @@ class TerminalView @JvmOverloads constructor(
             }
         }
 
-        vignette?.let {
-            vignettePaint.shader = it
-            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), vignettePaint)
+        if (colors.dark) {
+            vignette?.let {
+                vignettePaint.shader = it
+                canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), vignettePaint)
+            }
         }
     }
 

@@ -138,6 +138,9 @@ class Game(
     /** Set when the player asks to rename a slot; the front-end shows a dialog. */
     var requestedRenameId: String? = null
         private set
+    /** Set when the player asks to overwrite a slot with the current game. */
+    var requestedOverwriteId: String? = null
+        private set
     /** Seed for the Trail of the Day, supplied by the front-end. */
     var dailySeed: Long = 0L
     /** Set when the player asks to continue the autosave. */
@@ -287,6 +290,7 @@ class Game(
             id.startsWith("slot:load:") -> requestedLoadId = id.substringAfter("slot:load:")
             id.startsWith("slot:del:") -> requestedDeleteId = id.substringAfter("slot:del:")
             id.startsWith("slot:rename:") -> requestedRenameId = id.substringAfter("slot:rename:")
+            id.startsWith("slot:overwrite:") -> requestedOverwriteId = id.substringAfter("slot:overwrite:")
             id == "slots:prev" -> loadPage = (loadPage - 1).coerceAtLeast(0)
             id == "slots:next" -> loadPage++
             id == "title:end" -> { /* handled by front-end by finishing activity */ }
@@ -301,7 +305,9 @@ class Game(
             id == "manage:textsize" -> uiSettings?.let { it.textScaleIndex = (it.textScaleIndex + 1) % 3 }
             id == "manage:contrast" -> uiSettings?.let { it.highContrast = !it.highContrast }
             id == "manage:scanlines" -> uiSettings?.let { it.scanlines = !it.scanlines }
-            id == "manage:theme" -> uiSettings?.let { it.themeIndex = if (it.themeIndex == 1) 0 else 1 }
+            id == "manage:theme" -> uiSettings?.let { it.themeIndex = (it.themeIndex + 1) % 3 }
+            id == "manage:export" -> { /* handled by the front-end (file export) */ }
+            id == "manage:import" -> { /* handled by the front-end (file import) */ }
             id == "manage:back" -> phase = managementReturn
             id == "pause:open" -> openPause()
             id == "pause:resume" -> phase = pauseReturn
@@ -645,6 +651,10 @@ class Game(
 
     fun clearRenameRequest() {
         requestedRenameId = null
+    }
+
+    fun clearOverwriteRequest() {
+        requestedOverwriteId = null
     }
 
     fun clearSaveRequest() {
@@ -1907,9 +1917,10 @@ class Game(
         Phase.BARLOW -> Palette.BROWN
         Phase.HUNTING -> Palette.GREEN
         Phase.TRAVEL, Phase.LANDMARK, Phase.RIVER -> when (weather.kind) {
+            WeatherKind.THUNDERSTORM ->
+                if (frame % 9 == 0 || frame % 9 == 1) Palette.BRIGHT_WHITE else Palette.BLUE
             WeatherKind.SNOW, WeatherKind.BLIZZARD, WeatherKind.COLD,
-            WeatherKind.HEAVY_RAIN, WeatherKind.RAIN, WeatherKind.THUNDERSTORM,
-            WeatherKind.HAIL -> Palette.BLUE
+            WeatherKind.HEAVY_RAIN, WeatherKind.RAIN, WeatherKind.HAIL -> Palette.BLUE
             WeatherKind.HOT -> Palette.BROWN
             WeatherKind.CLEAR -> Palette.GREEN
             else -> Palette.BLACK
@@ -2045,7 +2056,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "2.2.0"
+        const val VERSION = "2.3.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400

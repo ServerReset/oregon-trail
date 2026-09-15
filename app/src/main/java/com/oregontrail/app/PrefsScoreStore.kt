@@ -131,6 +131,39 @@ class PrefsScoreStore(context: Context) : ScoreStore {
         writeSlots(listSlots().map { if (it.id == id) it.copy(label = clean) else it })
     }
 
+    /** Replaces a slot's contents with the current game (used by "save over"). */
+    fun overwriteSlot(id: String, label: String, detail: String, data: String) {
+        val clean = label.replace('|', '/').replace('\n', ' ').take(24).ifBlank { "Saved game" }
+        val slots = listSlots().map {
+            if (it.id == id) {
+                SaveSlot(it.id, clean, detail.replace('|', '/').take(48), System.currentTimeMillis(), data)
+            } else it
+        }
+        writeSlots(slots)
+    }
+
+    // ----- export / import -------------------------------------------
+
+    fun exportAll(): String = com.oregontrail.engine.SaveBundle.encode(listSlots(), loadState())
+
+    /** Imports a bundle, merging slots by id. Returns the number of new slots. */
+    fun importAll(text: String): Int {
+        val bundle = com.oregontrail.engine.SaveBundle.decode(text) ?: return 0
+        val existing = listSlots().toMutableList()
+        val ids = existing.map { it.id }.toMutableSet()
+        var added = 0
+        for (slot in bundle.slots) {
+            if (ids.add(slot.id)) {
+                existing.add(slot)
+                added++
+            }
+        }
+        writeSlots(existing)
+        val auto = bundle.autosave
+        if (auto != null) saveState(auto)
+        return added
+    }
+
     fun loadSlotData(id: String): String? = listSlots().firstOrNull { it.id == id }?.data
 
     private fun writeSlots(slots: List<SaveSlot>) {

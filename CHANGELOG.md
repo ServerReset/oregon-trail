@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.3.0] - 2026-09-14
+
+### Added
+- **Three themes**: Classic Green, Material Dark and Material Light (all
+  Material schemes use the wallpaper's dynamic colours on Android 12+).
+  Scanlines and the CRT vignette only apply to dark themes.
+- **Save overwrite UX**: saving under an existing name offers to overwrite,
+  and each slot has a `[sv]` action on the saved-games screen to save the
+  current journey over it.
+- **Export / import**: Management → Export/Import writes and reads all save
+  slots (and the autosave) through the system file picker, using a portable
+  text bundle (`SaveBundle`).
+- **More animation**: an animated trail progress bar with a bobbing wagon
+  marker, lightning flashes during thunderstorms, and a tumbleweed rolling
+  across fair-weather plains.
+- 5 new tests (101 total), including a `SaveBundle` round-trip with tricky
+  characters.
+
 ## [2.2.0] - 2026-09-14
 
 ### Added

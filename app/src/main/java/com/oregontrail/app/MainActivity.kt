@@ -14,6 +14,7 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -34,6 +35,39 @@ class MainActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private var tone: ToneGenerator? = null
     private var lastDump: String? = null
+
+    private val exportLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+            if (uri == null) return@registerForActivityResult
+            try {
+                contentResolver.openOutputStream(uri)?.use { out ->
+                    out.write(store.exportAll().toByteArray(Charsets.UTF_8))
+                }
+                Toast.makeText(this, "Saves exported", Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {
+                Toast.makeText(this, "Export failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private val importLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri == null) return@registerForActivityResult
+            try {
+                val text = contentResolver.openInputStream(uri)?.use {
+                    it.readBytes().toString(Charsets.UTF_8)
+                } ?: ""
+                val added = store.importAll(text)
+                refreshSlots()
+                render()
+                Toast.makeText(
+                    this,
+                    if (added > 0) "Imported $added save(s)" else "No new saves found",
+                    Toast.LENGTH_LONG
+                ).show()
+            } catch (_: Exception) {
+                Toast.makeText(this, "Import failed", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     private val animator = object : Runnable {
         override fun run() {
@@ -132,6 +166,8 @@ class MainActivity : AppCompatActivity() {
         // Save the current position before leaving the pause menu to the title.
         if (id == "pause:title") store.saveState(game.save())
         game.onTap(id)
+        if (id == "manage:export") exportLauncher.launch("oregon-trail-saves.txt")
+        if (id == "manage:import") importLauncher.launch(arrayOf("text/*", "application/octet-stream", "*/*"))
         handleNameRequest()
         handleEpitaphRequest()
         handleAutosaveRequest()
@@ -140,6 +176,7 @@ class MainActivity : AppCompatActivity() {
         handleSaveRequest()
         handleLoadRequest()
         handleRenameRequest()
+        handleOverwriteRequest()
         handleDeleteRequest()
         refreshSlots()
         game.pendingUnlock?.let { name ->
@@ -160,11 +197,18 @@ class MainActivity : AppCompatActivity() {
         }
         terminal.highContrast = ui.highContrast
         terminal.scanlinesEnabled = ui.scanlines
-        terminal.colors = if (ui.themeIndex == 1) MaterialYouTheme(this) else RetroPalette
+        terminal.colors = when (ui.themeIndex) {
+            1 -> MaterialYouTheme(this, light = false)
+            2 -> MaterialYouTheme(this, light = true)
+            else -> RetroPalette
+        }
         val bg = terminal.colors.defaultBackground
         window.statusBarColor = bg
         window.navigationBarColor = bg
         window.decorView.setBackgroundColor(bg)
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        controller.isAppearanceLightStatusBars = !terminal.colors.dark
+        controller.isAppearanceLightNavigationBars = !terminal.colors.dark
     }
 
     private fun handleNameRequest() {
@@ -248,6 +292,8 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, "Quick loaded", Toast.LENGTH_SHORT).show()
     }
 
+    private fun detailFor(): String = "${game.date}, ${game.miles} mi, ${game.occupation.displayName}"
+
     private fun handleSaveRequest() {
         if (!game.requestedSave) return
         val suggestion = "${game.party.firstOrNull()?.name ?: "Wagon"} - " +
@@ -260,13 +306,10 @@ class MainActivity : AppCompatActivity() {
         }
         MaterialAlertDialogBuilder(this)
             .setTitle("Save game")
+            .setMessage("Type a name. Using an existing name overwrites that save.")
             .setView(input)
             .setPositiveButton("Save") { _, _ ->
-                val detail = "${game.date}, ${game.miles} mi, ${game.occupation.displayName}"
-                store.saveSlot(input.text.toString(), detail, game.save())
-                refreshSlots()
-                game.clearSaveRequest()
-                render()
+                saveWithOverwriteCheck(input.text.toString())
             }
             .setNegativeButton("Cancel") { _, _ ->
                 game.clearSaveRequest()
@@ -274,6 +317,63 @@ class MainActivity : AppCompatActivity() {
             }
             .setOnCancelListener {
                 game.clearSaveRequest()
+                render()
+            }
+            .show()
+    }
+
+    /** Saves under [label], asking to overwrite if a slot with that name exists. */
+    private fun saveWithOverwriteCheck(label: String) {
+        val existing = store.listSlots().firstOrNull { it.label.equals(label.trim(), ignoreCase = true) }
+        if (existing == null) {
+            store.saveSlot(label, detailFor(), game.save())
+            game.clearSaveRequest()
+            refreshSlots()
+            render()
+            Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
+        } else {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Overwrite saved game")
+                .setMessage("A save named '${existing.label}' already exists. Replace it?")
+                .setPositiveButton("Overwrite") { _, _ ->
+                    store.overwriteSlot(existing.id, existing.label, detailFor(), game.save())
+                    game.clearSaveRequest()
+                    refreshSlots()
+                    render()
+                    Toast.makeText(this, "Overwritten", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Cancel") { _, _ ->
+                    game.clearSaveRequest()
+                    render()
+                }
+                .setOnCancelListener {
+                    game.clearSaveRequest()
+                    render()
+                }
+                .show()
+        }
+    }
+
+    private fun handleOverwriteRequest() {
+        val id = game.requestedOverwriteId ?: return
+        val slot = game.saveSlots.firstOrNull { it.id == id }
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Overwrite saved game")
+            .setMessage("Replace '${slot?.label ?: "this save"}' with your current journey?")
+            .setPositiveButton("Overwrite") { _, _ ->
+                if (id == AUTO_ID) store.saveState(game.save())
+                else store.overwriteSlot(id, slot?.label ?: "Saved game", detailFor(), game.save())
+                game.clearOverwriteRequest()
+                refreshSlots()
+                render()
+                Toast.makeText(this, "Overwritten", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                game.clearOverwriteRequest()
+                render()
+            }
+            .setOnCancelListener {
+                game.clearOverwriteRequest()
                 render()
             }
             .show()

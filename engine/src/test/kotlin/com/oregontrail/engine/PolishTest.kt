@@ -3,6 +3,7 @@ package com.oregontrail.engine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Tap affordances, save-slot paging/renaming and status warnings. */
@@ -21,7 +22,7 @@ class PolishTest {
     }
 
     @Test
-    fun the_theme_setting_toggles_between_retro_and_material_you() {
+    fun the_theme_setting_cycles_classic_and_material() {
         class Settings : UiSettings {
             override var textScaleIndex: Int = 1
             override var highContrast: Boolean = false
@@ -36,11 +37,79 @@ class PolishTest {
 
         g.onTap("manage:theme")
         assertEquals(1, settings.themeIndex)
-        assertTrue(g.render().toText().contains("Material You"))
+        assertTrue(g.render().toText().contains("Material Dark"))
+
+        g.onTap("manage:theme")
+        assertEquals(2, settings.themeIndex)
+        assertTrue(g.render().toText().contains("Material Light"))
 
         g.onTap("manage:theme")
         assertEquals(0, settings.themeIndex)
-        assertTrue(g.render().toText().contains("Retro Green"))
+        assertTrue(g.render().toText().contains("Classic Green"))
+    }
+
+    @Test
+    fun save_bundle_round_trips_slots_and_autosave() {
+        val slots = listOf(
+            SaveSlot("a", "Named save", "Wednesday, March 1, 1848, 12 mi, Banker", 123L, "line1\nline2|pipe\\slash"),
+            SaveSlot("b", "Weird | name", "d\\etail\n", 456L, "data|with|pipes\nand\nnewlines")
+        )
+        val text = SaveBundle.encode(slots, "auto\nsave")
+        val bundle = SaveBundle.decode(text)
+        assertTrue(bundle != null)
+        assertEquals(2, bundle.slots.size)
+        assertEquals(slots[0], bundle.slots[0])
+        assertEquals(slots[1], bundle.slots[1])
+        assertEquals("auto\nsave", bundle.autosave)
+        assertNull(SaveBundle.decode("this is not a bundle"))
+        assertEquals(0, SaveBundle.decode("OREGON-SAVES-1\n")!!.slots.size)
+    }
+
+    @Test
+    fun load_screen_offers_overwrite() {
+        val g = newGame()
+        val snapshot = g.save()
+        g.saveSlots = listOf(SaveSlot("s1", "Slot one", "detail", 1L, snapshot))
+        g.onTap("title:load")
+        assertTrue(g.render().hotspots.any { it.id == "slot:overwrite:s1" })
+        g.onTap("slot:overwrite:s1")
+        assertEquals("s1", g.requestedOverwriteId)
+        g.clearOverwriteRequest()
+        assertNull(g.requestedOverwriteId)
+    }
+
+    @Test
+    fun management_offers_export_and_import() {
+        val g = newGame()
+        g.onTap("title:manage")
+        val s = g.render()
+        assertTrue(s.hotspots.any { it.id == "manage:export" }, "export option missing")
+        assertTrue(s.hotspots.any { it.id == "manage:import" }, "import option missing")
+    }
+
+    @Test
+    fun thunderstorm_flashes_the_sky() {
+        val g = newGame()
+        g.intro()
+        g.weather = Weather(WeatherKind.THUNDERSTORM, 70)
+        var flash = false
+        var normal = false
+        repeat(9) {
+            val a = g.render().ambient
+            if (a == Palette.BRIGHT_WHITE) flash = true else if (a == Palette.BLUE) normal = true
+            g.animate()
+        }
+        assertTrue(flash, "thunderstorms should flash")
+        assertTrue(normal, "thunderstorms should also be dark blue")
+    }
+
+    @Test
+    fun travel_shows_an_animated_progress_bar() {
+        val g = newGame()
+        g.intro()
+        val text = g.render().toText()
+        assertTrue(text.contains("[") && text.contains(">") && text.contains("/2040"),
+            "the travel screen should show a progress bar")
     }
 
     @Test

@@ -9,6 +9,9 @@ import com.oregontrail.engine.Palette
 interface ThemeColors {
     val name: String
 
+    /** True for dark backgrounds (scanlines and vignette apply). */
+    val dark: Boolean
+
     /** The base background colour (also used for the system bars). */
     val defaultBackground: Int
 
@@ -22,7 +25,8 @@ object RetroPalette : ThemeColors {
 
     const val BACKGROUND: Int = 0xFF08130A.toInt()
 
-    override val name: String = "Retro Green"
+    override val name: String = "Classic Green"
+    override val dark: Boolean = true
     override val defaultBackground: Int = BACKGROUND
 
     fun fg(p: Palette, highContrast: Boolean = false): Int {
@@ -60,6 +64,7 @@ object RetroPalette : ThemeColors {
         if (highContrast) return 0xFF000000.toInt()
         return when (ambient) {
             Palette.BLACK -> BACKGROUND
+            Palette.BRIGHT_WHITE -> 0xFF243024.toInt() // lightning flash
             Palette.GREEN, Palette.BRIGHT_GREEN -> 0xFF0A1C0E.toInt()
             Palette.BLUE, Palette.CYAN -> 0xFF08101F.toInt()
             Palette.BROWN, Palette.YELLOW -> 0xFF1A1208.toInt()
@@ -76,11 +81,12 @@ object RetroPalette : ThemeColors {
 
 /**
  * Material You: colours derived from the system wallpaper on Android 12+, with
- * a Material 3 dark baseline on older devices.
+ * a Material 3 baseline on older devices. Supports a dark or light scheme.
  */
-class MaterialYouTheme(private val context: Context) : ThemeColors {
+class MaterialYouTheme(private val context: Context, val light: Boolean = false) : ThemeColors {
 
-    override val name: String = "Material You"
+    override val name: String = if (light) "Material Light" else "Material Dark"
+    override val dark: Boolean = !light
 
     private fun sys(resId: Int, fallback: Int): Int =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -93,20 +99,49 @@ class MaterialYouTheme(private val context: Context) : ThemeColors {
             fallback
         }
 
-    private val primary = sys(android.R.color.system_accent1_200, 0xFFD0BCFF.toInt())
-    private val primaryBright = sys(android.R.color.system_accent1_100, 0xFFEADDFF.toInt())
-    private val secondary = sys(android.R.color.system_accent2_200, 0xFFCCC2DC.toInt())
-    private val tertiary = sys(android.R.color.system_accent3_200, 0xFFEFB8C8.toInt())
-    private val onBackground = sys(android.R.color.system_neutral1_100, 0xFFE6E1E5.toInt())
-    private val outline = sys(android.R.color.system_neutral2_400, 0xFF938F99.toInt())
-    private val surface = sys(android.R.color.system_neutral1_900, 0xFF1C1B1F.toInt())
-    private val error = 0xFFF2B8B5.toInt()
+    private val primary = if (light) {
+        sys(android.R.color.system_accent1_600, 0xFF6750A4.toInt())
+    } else {
+        sys(android.R.color.system_accent1_200, 0xFFD0BCFF.toInt())
+    }
+    private val primaryStrong = if (light) {
+        sys(android.R.color.system_accent1_700, 0xFF54408D.toInt())
+    } else {
+        sys(android.R.color.system_accent1_100, 0xFFEADDFF.toInt())
+    }
+    private val secondary = if (light) {
+        sys(android.R.color.system_accent2_600, 0xFF625B71.toInt())
+    } else {
+        sys(android.R.color.system_accent2_200, 0xFFCCC2DC.toInt())
+    }
+    private val tertiary = if (light) {
+        sys(android.R.color.system_accent3_600, 0xFF7D5260.toInt())
+    } else {
+        sys(android.R.color.system_accent3_200, 0xFFEFB8C8.toInt())
+    }
+    private val onBackground = if (light) {
+        sys(android.R.color.system_neutral1_900, 0xFF1C1B1F.toInt())
+    } else {
+        sys(android.R.color.system_neutral1_100, 0xFFE6E1E5.toInt())
+    }
+    private val outline = if (light) {
+        sys(android.R.color.system_neutral2_600, 0xFF79747E.toInt())
+    } else {
+        sys(android.R.color.system_neutral2_400, 0xFF938F99.toInt())
+    }
+    private val surface = if (light) {
+        sys(android.R.color.system_neutral1_10, 0xFFFFFBFE.toInt())
+    } else {
+        sys(android.R.color.system_neutral1_900, 0xFF1C1B1F.toInt())
+    }
+    private val error = if (light) 0xFFB3261E.toInt() else 0xFFF2B8B5.toInt()
 
     override val defaultBackground: Int = surface
 
     override fun foreground(p: Palette, highContrast: Boolean): Int = when (p) {
-        Palette.DEFAULT, Palette.GREEN, Palette.WHITE, Palette.BRIGHT_WHITE -> onBackground
-        Palette.BRIGHT_GREEN -> primaryBright
+        Palette.DEFAULT, Palette.GREEN -> onBackground
+        Palette.WHITE, Palette.BRIGHT_WHITE -> onBackground
+        Palette.BRIGHT_GREEN -> primaryStrong
         Palette.BLUE, Palette.CYAN -> secondary
         Palette.YELLOW, Palette.BROWN, Palette.BRIGHT_YELLOW -> tertiary
         Palette.RED, Palette.MAGENTA -> error
@@ -115,6 +150,7 @@ class MaterialYouTheme(private val context: Context) : ThemeColors {
     }
 
     override fun ambientBackground(ambient: Palette, highContrast: Boolean): Int {
+        if (ambient == Palette.BRIGHT_WHITE) return blend(surface, onBackground, 0.4)
         val tint = when (ambient) {
             Palette.BLUE, Palette.CYAN -> secondary
             Palette.BROWN, Palette.YELLOW -> tertiary

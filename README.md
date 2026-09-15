@@ -84,21 +84,21 @@ Debug and release APKs are also attached to each CI run as artifacts.
 - **Pause menu** — press Back or tap `[||]` for camp-at-night pause with save,
   quick save/load, options and quit.
 - **Trail of the Day** — a date-seeded challenge, the same trail for everyone.
-- **Themes** — the default dark green retro terminal, or a **Material You**
-  theme that borrows the system wallpaper's dynamic colours (Android 12+);
-  switch it on the Management screen. Dialogs use Material 3 and pick up the
-  dynamic colours too.
+- **Themes** — **Classic Green**, **Material Dark** or **Material Light**
+  (Material schemes borrow the system wallpaper's dynamic colours on Android
+  12+); switch it on the Management screen. Dialogs are Material 3.
 - **Coloured animations** — snow, hail, rain and storms each bring their own
   colour.
 - **Animated ASCII** — drifting rain and snow, flowing rivers, a sun with
   turning rays, drifting clouds and birds, curling campfire smoke, twinkling
-  stars, a blinking prompt and a screen-change reveal.
+  stars, a blinking prompt, an animated progress bar, lightning flashes, a
+  rolling tumbleweed and a screen-change reveal.
 - **Event illustrations** — ASCII scenes for breakdowns, bandits, snakes,
   wolves, teepees, fruit, fire, riders and stranded wagons.
 - **Weather ambience** — the background tint shifts with weather and terrain.
 - **Save states** — name and keep multiple saved games (paged list with
-  rename and delete), a **Quick save** entry under the autosave, and a
-  Continue option on the title.
+  rename, **save-over** and delete), a **Quick save** entry under the
+  autosave, a Continue option on the title, and **export/import** to a file.
 - **Obvious controls** — menu rows show a `>` marker with generous tap
   targets, low supplies blink a warning, and status lines are colour-coded.
 - **Achievements and statistics** — twelve milestones to unlock and a
