@@ -4,25 +4,14 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.text.InputFilter
-import android.text.InputType
-import android.view.View
 import android.view.WindowManager
-import android.widget.EditText
 import android.widget.FrameLayout
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.oregontrail.engine.DefaultRng
 import com.oregontrail.engine.Game
 import com.oregontrail.engine.Phase
-import com.oregontrail.engine.SaveSlot
-import com.oregontrail.engine.Sound
 import com.oregontrail.engine.*
 
 class MainActivity : AppCompatActivity() {

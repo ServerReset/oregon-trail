@@ -27,9 +27,9 @@ enum class Occupation(
 
 /** Overall difficulty, which scales how often trouble finds you. */
 enum class Difficulty(val displayName: String, val eventChance: Double, val illnessScale: Double) {
-    EASY("Easy", 0.08, 0.7),
-    NORMAL("Normal", 0.12, 1.0),
-    HARD("Hard", 0.17, 1.4)
+    EASY("Easy", 0.05, 0.6),
+    NORMAL("Normal", 0.16, 2.5),
+    HARD("Hard", 0.22, 3.2)
 }
 
 /** Presentation settings owned by the front-end. */

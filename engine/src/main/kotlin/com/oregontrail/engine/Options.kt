@@ -7,16 +7,13 @@ enum class TravelMonth(val displayName: String, val monthIndex: Int) {
     JUNE("June", 6),
     JULY("July", 7);
 
-    companion object {
-        val seasonByIndex: Map<Int, TravelMonth> = entries.associateBy { it.monthIndex }
-    }
 }
 
 /** How hard the party pushes each day. */
 enum class Pace(val displayName: String, val milesPerDay: Int, val wear: Double) {
-    STEADY("Steady", 14, 1.0),
-    STRENUOUS("Strenuous", 19, 1.3),
-    GRUELING("Grueling", 24, 1.8)
+    STEADY("Steady", 19, 1.0),
+    STRENUOUS("Strenuous", 25, 1.3),
+    GRUELING("Grueling", 32, 1.8)
 }
 
 /** How much the party eats each day. */

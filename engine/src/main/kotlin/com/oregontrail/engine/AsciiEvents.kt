@@ -57,11 +57,6 @@ internal object AsciiEvents {
         "  \\___/",
         "  O   O"
     )
-    val snowflake: List<String> = listOf(
-        "  *",
-        " */\\*",
-        "  *"
-    )
     val prairieDog: List<String> = listOf(
         "  (o.o)",
         "  /|_|\\",

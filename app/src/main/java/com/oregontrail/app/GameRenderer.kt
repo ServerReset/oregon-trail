@@ -1,6 +1,5 @@
 package com.oregontrail.app
 
-import com.oregontrail.engine.Phase
 import com.oregontrail.engine.*
 
 internal fun MainActivity.render() {

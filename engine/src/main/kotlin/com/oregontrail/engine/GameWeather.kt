@@ -47,7 +47,7 @@ internal fun Game.weatherSpeedFactor(kind: WeatherKind): Double = when (kind) {
 
 
 internal fun Game.terrainFactor(kind: LandmarkKind): Double = when (kind) {
-        LandmarkKind.MOUNTAINS -> 0.75
+        LandmarkKind.MOUNTAINS -> 0.82
         LandmarkKind.RIVER -> 1.0
         else -> 1.0
     }

@@ -4,7 +4,6 @@ import android.text.InputFilter
 import android.widget.EditText
 import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.oregontrail.engine.SaveSlot
 import com.oregontrail.engine.*
 
 /** Pseudo-id for the autosave shown in the saved-games list. */

@@ -4,7 +4,7 @@ package com.oregontrail.engine
 internal fun Game.checkIllness(msgs: MutableList<String>): Boolean {
         var any = false
         for (m in aliveMembers()) {
-            var chance = 0.012
+            var chance = 0.008
             if (rations != Rations.FILLING) chance += 0.012
             if (rations == Rations.BARE_BONES) chance += 0.02
             if (pace == Pace.GRUELING) chance += 0.01
@@ -15,7 +15,7 @@ internal fun Game.checkIllness(msgs: MutableList<String>): Boolean {
             if (!rng.chance(chance)) continue
             any = true
             val illness = Data.illnesses[rng.nextInt(Data.illnesses.size)]
-            val severity = rng.nextInt(8, 22)
+            val severity = rng.nextInt(12, 30)
             m.hurt(severity)
             m.condition = illness
             if (!m.alive) {

@@ -10,25 +10,11 @@ class Inventory(
     var axles: Int = 0,
     var tongues: Int = 0
 ) {
-    fun spareCount(part: Part): Int = when (part) {
-        Part.WHEEL -> wheels
-        Part.AXLE -> axles
-        Part.TONGUE -> tongues
-    }
-
     fun useSpare(part: Part): Boolean {
         return when (part) {
             Part.WHEEL -> if (wheels > 0) { wheels--; true } else false
             Part.AXLE -> if (axles > 0) { axles--; true } else false
             Part.TONGUE -> if (tongues > 0) { tongues--; true } else false
-        }
-    }
-
-    fun addSpare(part: Part) {
-        when (part) {
-            Part.WHEEL -> wheels++
-            Part.AXLE -> axles++
-            Part.TONGUE -> tongues++
         }
     }
 

@@ -1,11 +1,9 @@
 package com.oregontrail.app
 
 import android.content.Context
-import android.util.Base64
 import com.oregontrail.engine.Data
 import com.oregontrail.engine.GameStats
 import com.oregontrail.engine.Grave
-import com.oregontrail.engine.SaveSlot
 import com.oregontrail.engine.ScoreEntry
 import com.oregontrail.engine.ScoreStore
 

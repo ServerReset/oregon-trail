@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.15.0] - 2026-09-15
+
+### Changed
+- **Major balance pass**, tuned with a new headless `BalanceTest` that plays
+  hundreds of full games through the real engine and reports arrival rates,
+  survivors, days and scores:
+  - Illness is now rarer but more dangerous, and resting heals more slowly, so
+    disease is a real threat again instead of a rest-and-forget nuisance.
+  - Travel paces are faster (19/25/32 miles/day), keeping the crossing near a
+    realistic ~150-210 days.
+  - Difficulty now spreads properly: an Easy crossing rarely loses anyone,
+    Normal usually arrives with a few losses, Hard is a genuine gamble.
+  - Occupation identity is restored: the Farmer (least money) is the hardest to
+    bring through but scores far more; the Banker is the safest with the lowest
+    score, and the Carpenter sits between.
+  - The `BalanceTest` locks these in with assertions (easy ≥ normal ≥ hard,
+    normal arrival in a sane band, Farmer outscores Carpenter outscores Banker).
+
+### Removed
+- Dead code: unused `snowflake` art, `seasonByIndex`, `Inventory.spareCount` /
+  `addSpare`, and the unused `River.canFord` / `canCaulk` flags.
+- 53 more unused imports found by a repo-wide sweep.
+
 ## [2.14.0] - 2026-09-15
 
 ### Added

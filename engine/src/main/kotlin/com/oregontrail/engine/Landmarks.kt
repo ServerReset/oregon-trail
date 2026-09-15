@@ -6,9 +6,7 @@ enum class LandmarkKind { START, RIVER, FORT, LANDMARK, MOUNTAINS, END }
 data class River(
     val widthYards: Int,
     val ferryCost: Double?,
-    val guideCost: Double?,
-    val canFord: Boolean = true,
-    val canCaulk: Boolean = true
+    val guideCost: Double?
 )
 
 /** A point along the trail. */

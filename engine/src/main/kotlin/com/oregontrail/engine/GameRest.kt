@@ -25,7 +25,7 @@ internal fun Game.rest(days: Int) {
             rollWeather()
             consumeFood()
         }
-        aliveMembers().forEach { it.heal(days * 4) }
+        aliveMembers().forEach { it.heal(days * 2) }
         oxHealth = (oxHealth + days * 5).coerceAtMost(100)
         val healed = aliveMembers().joinToString(", ") { "${it.name} (${it.state.displayName})" }
         report += "\n\nRest helps. Your party's health: $healed."

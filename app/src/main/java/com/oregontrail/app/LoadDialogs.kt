@@ -2,7 +2,6 @@ package com.oregontrail.app
 
 import android.text.InputFilter
 import android.widget.EditText
-import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.oregontrail.engine.*
 
