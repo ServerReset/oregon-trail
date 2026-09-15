@@ -14,11 +14,11 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.oregontrail.engine.DefaultRng
 import com.oregontrail.engine.Game
 import com.oregontrail.engine.Phase
@@ -181,7 +181,7 @@ class MainActivity : AppCompatActivity() {
             filters = arrayOf(InputFilter.LengthFilter(12))
             hint = "Name"
         }
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("Name your traveler")
             .setView(input)
             .setPositiveButton("OK") { _, _ ->
@@ -208,7 +208,7 @@ class MainActivity : AppCompatActivity() {
             filters = arrayOf(InputFilter.LengthFilter(140))
             hint = "Epitaph"
         }
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("Write an epitaph")
             .setView(input)
             .setPositiveButton("OK") { _, _ ->
@@ -258,7 +258,7 @@ class MainActivity : AppCompatActivity() {
             filters = arrayOf(InputFilter.LengthFilter(24))
             hint = "Save name"
         }
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("Save game")
             .setView(input)
             .setPositiveButton("Save") { _, _ ->
@@ -316,7 +316,7 @@ class MainActivity : AppCompatActivity() {
             filters = arrayOf(InputFilter.LengthFilter(24))
             hint = "Save name"
         }
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("Rename saved game")
             .setView(input)
             .setPositiveButton("Rename") { _, _ ->
@@ -339,7 +339,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleDeleteRequest() {
         val id = game.requestedDeleteId ?: return
         val slot = game.saveSlots.firstOrNull { it.id == id }
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("Delete saved game")
             .setMessage(slot?.label ?: "this save")
             .setPositiveButton("Delete") { _, _ ->

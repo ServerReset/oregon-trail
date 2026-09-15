@@ -86,7 +86,8 @@ Debug and release APKs are also attached to each CI run as artifacts.
 - **Trail of the Day** — a date-seeded challenge, the same trail for everyone.
 - **Themes** — the default dark green retro terminal, or a **Material You**
   theme that borrows the system wallpaper's dynamic colours (Android 12+);
-  switch it on the Management screen.
+  switch it on the Management screen. Dialogs use Material 3 and pick up the
+  dynamic colours too.
 - **Coloured animations** — snow, hail, rain and storms each bring their own
   colour.
 - **Animated ASCII** — drifting rain and snow, flowing rivers, a sun with

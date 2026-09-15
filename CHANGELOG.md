@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.2.0] - 2026-09-14
+
+### Added
+- **Material 3 dialogs** — the app now uses Material Components with a
+  Material 3 dark theme, so the name/epitaph/save/rename/delete dialogs are
+  proper Material surfaces. When Material You is selected (and the device
+  supports it) the dialogs also pick up the wallpaper's dynamic colours via
+  `DynamicColors`.
+
 ## [2.1.0] - 2026-09-14
 
 ### Added
