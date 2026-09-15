@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.8.0] - 2026-09-15
+
+### Added
+- **Three new trail events**: wild horses (a good omen that spurs the oxen on),
+  a prairie fire (scorches supplies) and a mirage (wastes a little time).
+- **Weather on the ground**: snow settles in drifts and rain pools into puddles
+  along the base of the travel and landmark scenes.
+- **A module-size guard test** that fails the build if any Kotlin source file
+  grows past 150 lines, keeping the refactor honest.
+
 ## [2.7.0] - 2026-09-15
 
 ### Added

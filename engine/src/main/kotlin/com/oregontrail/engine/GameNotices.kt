@@ -30,6 +30,9 @@ fun Game.eventArtFor(eventId: String): List<String>? = when (eventId) {
         "rainbow" -> AsciiEvents.rainbow
         "hot_springs" -> AsciiEvents.spring
         "abandoned_wagon" -> AsciiEvents.brokenWagon
+        "wild_horses" -> AsciiEvents.horses
+        "prairie_fire" -> AsciiEvents.fireArt
+        "mirage" -> AsciiEvents.spring
         else -> null
     }
 

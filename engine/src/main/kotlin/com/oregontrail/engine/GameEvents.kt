@@ -12,13 +12,15 @@ internal fun Game.eventPool(m: Int): List<String> {
             "breakdown", "breakdown", "ox_lame", "ox_wander", "child_lost",
             "child_arm", "unsafe_water", "heavy_rain", "hail", "bandits",
             "wild_animals", "fire", "fog", "indians", "thief", "fruit", "riders",
-            "stranded", "berries", "prairie_dogs", "rainbow", "abandoned_wagon"
+            "stranded", "berries", "prairie_dogs", "rainbow", "abandoned_wagon",
+            "wild_horses", "prairie_fire", "mirage"
         )
         val mountains = listOf(
             "breakdown", "ox_lame", "ox_wander", "unsafe_water", "heavy_rain",
             "hail", "bandits", "wild_animals", "fire", "fog", "snakebite",
             "cold", "blizzard", "indians", "riders", "stranded",
-            "berries", "prairie_dogs", "rainbow", "hot_springs"
+            "berries", "prairie_dogs", "rainbow", "hot_springs",
+            "wild_horses", "mirage"
         )
         return if (m > 900) mountains else plains
     }
@@ -48,6 +50,9 @@ internal fun Game.applyEvent(event: String, msgs: MutableList<String>) {
             "rainbow" -> evRainbow(msgs)
             "hot_springs" -> evHotSprings(msgs)
             "abandoned_wagon" -> evAbandonedWagon(msgs)
+            "wild_horses" -> evWildHorses(msgs)
+            "prairie_fire" -> evPrairieFire(msgs)
+            "mirage" -> evMirage(msgs)
             "stranded" -> startStrandedChoice()
             "riders" -> startRidersChoice()
         }

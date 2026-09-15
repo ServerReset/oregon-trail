@@ -102,3 +102,13 @@ internal fun Game.evBlizzard(msgs: MutableList<String>) {
             aliveMembers().forEach { it.hurt(rng.nextInt(6, 14)) }
         }
 }
+
+/** A prairie fire scorches the dry grass and the spare stores. */
+internal fun Game.evPrairieFire(msgs: MutableList<String>) {
+    inventory.food = max(0, inventory.food - rng.nextInt(15, 35))
+    inventory.ammo = max(0, inventory.ammo - 10)
+    val lost = rng.nextInt(2, 8)
+    miles -= lost
+    msgs.add("A prairie fire sweeps the dry grass and")
+    msgs.add("scorches the wagon's stores. You lose $lost miles.")
+}

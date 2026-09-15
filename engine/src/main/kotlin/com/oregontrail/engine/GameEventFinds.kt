@@ -90,3 +90,19 @@ internal fun Game.evAbandonedWagon(msgs: MutableList<String>) {
         msgs.add("You come upon an abandoned wagon and")
         msgs.add("salvage a spare ${part.name.lowercase()}.")
 }
+
+/** A band of wild horses races the wagon — a good omen. */
+internal fun Game.evWildHorses(msgs: MutableList<String>) {
+    val gain = rng.nextInt(3, 9)
+    miles += gain
+    msgs.add("A band of wild horses races alongside the")
+    msgs.add("wagon, spooking the oxen on for $gain miles.")
+}
+
+/** A false lake on the plains wastes a little time. */
+internal fun Game.evMirage(msgs: MutableList<String>) {
+    val lost = rng.nextInt(3, 7)
+    miles -= lost
+    msgs.add("A shining lake shimmers ahead — only a")
+    msgs.add("mirage. You waste $lost miles chasing water.")
+}

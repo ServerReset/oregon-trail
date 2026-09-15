@@ -62,4 +62,22 @@ private fun newGame(seed: Long = 1L): Game {
         assertNotEquals(riverArt(0), riverArt(2))
         assertTrue(riverArt(0).any { it.contains('~') })
     }
+
+    @Test
+    fun snow_settles_on_the_ground_band() {
+        val g = newGame()
+        g.weather = Weather(WeatherKind.BLIZZARD, -5)
+        val s = g.render()
+        assertTrue(s.toText().contains('*'), "a blizzard should settle snow")
+    }
+
+    @Test
+    fun the_new_events_are_safe_and_reported() {
+        val g = newGame()
+        assertTrue(g.debugFireEvent("wild_horses").isNotEmpty())
+        assertTrue(g.debugFireEvent("mirage").isNotEmpty())
+        val food = g.inventory.food
+        assertTrue(g.debugFireEvent("prairie_fire").isNotEmpty())
+        assertTrue(g.inventory.food <= food, "a prairie fire should cost supplies")
+    }
 }

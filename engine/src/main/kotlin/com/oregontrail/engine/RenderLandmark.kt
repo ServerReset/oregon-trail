@@ -50,6 +50,7 @@ internal fun Game.renderLandmark(screen: Screen) {
         overlaySky(screen, artTop, artBottom)
         overlayWeather(screen, artTop, artBottom)
         overlayWildlife(screen, artTop, artBottom)
+        overlayGround(screen, artTop, artBottom)
     }
     y = screen.wrap(marginX + 1, y, contentW - 2, lm.blurb.joinToString(" "), Palette.GREEN)
     // A little postcard for travellers who linger.

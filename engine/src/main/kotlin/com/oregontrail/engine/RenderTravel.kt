@@ -72,6 +72,7 @@ internal fun Game.renderTravel(screen: Screen) {
         overlaySky(screen, sceneTop, sceneBottom)
         overlayWeather(screen, sceneTop, sceneBottom)
         overlayWildlife(screen, sceneTop, sceneBottom)
+        overlayGround(screen, sceneTop, sceneBottom)
     }
 
     val remaining = rows - y - 1
