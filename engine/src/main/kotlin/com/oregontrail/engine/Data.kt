@@ -67,6 +67,7 @@ object Achievements {
     const val GOOD_SAMARITAN = "good_samaritan"
     const val HISTORIAN = "historian"
     const val BARGAINER = "bargainer"
+    const val RAINBOW = "rainbow"
 
     val all: List<Achievement> = listOf(
         Achievement(REACHED_OREGON, "Oregon or Bust", "Reach the Willamette Valley."),
@@ -83,7 +84,8 @@ object Achievements {
         Achievement(SURVIVOR, "Sole Survivor", "Reach Oregon with only one traveler alive."),
         Achievement(GOOD_SAMARITAN, "Good Samaritan", "Share your food with a stranded family."),
         Achievement(HISTORIAN, "Student of the Trail", "Read the history at five landmarks."),
-        Achievement(BARGAINER, "Wheeler-Dealer", "Haggle a trader into a better deal.")
+        Achievement(BARGAINER, "Wheeler-Dealer", "Haggle a trader into a better deal."),
+        Achievement(RAINBOW, "Over the Rainbow", "See a rainbow on the trail.")
     )
 
     fun name(id: String): String = all.firstOrNull { it.id == id }?.name ?: id
@@ -133,7 +135,14 @@ object Talk {
         "\"We saw a wagon train strung out for a mile,\" says a boy, wide-eyed.",
         "An emigrant reads from her diary: \"Rain again. The road is a river of mud.\"",
         "A preacher holds a Sunday service and blesses the wagons.",
-        "\"Independence Rock by the Fourth of July,\" says a captain, \"or you'll winter in the mountains.\""
+        "\"Independence Rock by the Fourth of July,\" says a captain, \"or you'll winter in the mountains.\"",
+        "A blacksmith sharpens plow blades for a dollar and tells you to grease your axles.",
+        "\"Mind the dust storms,\" says a teamster. \"They'll steal the breath from you.\"",
+        "Two children play at yoking a dog to a handcart while their mother laughs.",
+        "\"I traded my watch for a sack of flour,\" admits a banker, shamefaced.",
+        "A grandmother stitches by the fire and hums a tune from Ohio.",
+        "\"The mountains are beautiful and they will kill you,\" says a quiet old man.",
+        "A fiddler strikes up a reel and for one evening the whole camp forgets the trail."
     )
 
     /** Occasional useful rumors, tied to gameplay. */
@@ -141,7 +150,27 @@ object Talk {
         "\"The river ahead is running high. Be careful.\"",
         "\"Bandits have been seen near the next ford.\"",
         "\"There's a ferry at the crossing, but it costs dear.\"",
-        "\"Rest your oxen before the mountains. You'll thank me.\""
+        "\"Rest your oxen before the mountains. You'll thank me.\"",
+        "\"Wild berries grow along the streams past the next bluff.\"",
+        "\"We found a spare wheel in an abandoned wagon. Look for one.\"",
+        "\"A warm spring lies off the road. It'll ease aching bones.\"",
+        "\"Buy clothing before the passes. Cold takes the poorly dressed.\""
+    )
+}
+
+/** Occasional trail wisdom offered when the party rests. */
+object TrailTips {
+    val list: List<String> = listOf(
+        "Boil your drinking water. Cholera lurks in the clearest stream.",
+        "Grease the wheel hubs at every river. Dry axles split.",
+        "Feed the oxen before yourself. They pull the wagon.",
+        "Start early. The afternoon sun is a hammer on the plains.",
+        "Keep the wagons close at night. Stragglers are easy prey.",
+        "Swap news with every train you meet. Word travels faster than wheels.",
+        "Do not ford a rising river. An hour's wait beats a lost wagon.",
+        "Dry your clothes when the sun breaks. Damp bedding breeds fever.",
+        "Mark each grave you pass, and say the name aloud.",
+        "Mend the harness in camp, not on the road."
     )
 }
 

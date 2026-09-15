@@ -343,6 +343,25 @@ object Ascii {
         "  *"
     )
 
+    val prairieDog: List<String> = listOf(
+        "  (o.o)",
+        "  /|_|\\",
+        "   / \\"
+    )
+
+    val rainbow: List<String> = listOf(
+        "    ,---.",
+        "  ,'     '.",
+        " /  ,---.  \\",
+        "' -'     '- '"
+    )
+
+    val spring: List<String> = listOf(
+        "  ~ ~ ~ ~",
+        " ~ ~ ~ ~ ~",
+        "  ~ ~ ~ ~"
+    )
+
     // ------------------------------------------------------------------
     // Hunting field props (roguelike style)
     // ------------------------------------------------------------------

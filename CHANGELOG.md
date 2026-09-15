@@ -4,6 +4,30 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.5.0] - 2026-09-15
+
+### Added
+- **Richer sound effects**: 15 distinct cues (menu select, page turns,
+  milestones, river crossings, trades, resting, hunting hits, injuries,
+  achievements and a little arrival fanfare), each played as a short tone
+  sequence. Important moments also buzz when haptics are on.
+- **More animation**: a lone deer, wolf or buffalo crosses the plains, calm
+  rivers sparkle in the sun, campfire embers wink, and birds drift across the
+  title screen.
+- **New trail events and flavor**: berries, prairie dogs, rainbows, hot
+  springs and abandoned wagons, plus 8 new bits of camp chatter, 4 more
+  rumors and a set of "trail wisdom" tips offered when you rest.
+- **Over the Rainbow** achievement.
+
+### Changed
+- **Watch / cover-screen pass**: the compact title shows a full two-column
+  menu, compact travel gained a bobbing progress bar and a weather glyph, and
+  long notice text no longer collides with the `[>]` prompt on tiny screens.
+  Folding or unfolding keeps the run alive (configuration changes no longer
+  restart the activity).
+- 12 new tests (114 total), covering the new events, sounds, animations and
+  tiny foldable-cover viewports.
+
 ## [2.4.1] - 2026-09-15
 
 ### Added

@@ -91,6 +91,51 @@ class LayoutTest {
     }
 
     @Test
+    fun cover_screens_and_watches_render_safely() {
+        // Folded-phone cover displays (tall and narrow) and a watch-like square.
+        val coverSizes = listOf(20 to 40, 22 to 44, 24 to 36, 26 to 48, 30 to 24, 96 to 20)
+        for ((w, h) in coverSizes) {
+            val g = Game(DefaultRng(31L * w + h), InMemoryScoreStore())
+            g.setViewport(w, h)
+            val title = g.render()
+            assertTrue(title.hotspots.any { it.id == "title:travel" }, "title@${w}x$h")
+            assertHotspotsInside(title, w, h, "title@${w}x$h")
+
+            g.onTap("title:travel"); g.onTap("prof:0"); g.onTap("month:0"); g.onTap("names:go")
+            assertHotspotsInside(g.render(), w, h, "store@${w}x$h")
+            g.onTap("store:inc:OXEN"); g.onTap("store:leave"); g.onTap("notice:continue")
+            val travel = g.render()
+            assertTrue(travel.hotspots.any { it.id == "travel:continue" }, "travel@${w}x$h")
+            assertHotspotsInside(travel, w, h, "travel@${w}x$h")
+
+            g.onTap("travel:journal")
+            assertHotspotsInside(g.render(), w, h, "journal@${w}x$h")
+            g.onTap("journal:back")
+            g.onTap("travel:map")
+            assertHotspotsInside(g.render(), w, h, "map@${w}x$h")
+            g.onTap("map:back")
+
+            g.onTap("pause:open")
+            assertHotspotsInside(g.render(), w, h, "pause@${w}x$h")
+        }
+    }
+
+    @Test
+    fun compact_notice_text_does_not_overlap_the_prompt() {
+        val g = Game(DefaultRng(1L), InMemoryScoreStore())
+        g.setViewport(20, 10)
+        g.onTap("title:travel"); g.onTap("prof:0"); g.onTap("month:0"); g.onTap("names:go")
+        g.onTap("store:inc:OXEN"); g.onTap("store:leave")
+        assertTrue(g.phase == Phase.NOTICE, "expected the heading-out notice")
+        val lines = g.render().toLines()
+        assertTrue(lines.size >= 10)
+        assertTrue(
+            lines[9].trim() == "[>]",
+            "the continue prompt row should hold only the marker, was '${lines[9]}'"
+        )
+    }
+
+    @Test
     fun journal_and_management_render_on_small_screens() {
         for (w in widths) {
             val g = Game(DefaultRng(11L), InMemoryScoreStore())

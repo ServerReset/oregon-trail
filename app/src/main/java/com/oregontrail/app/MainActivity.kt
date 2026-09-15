@@ -494,20 +494,89 @@ class MainActivity : AppCompatActivity() {
     private fun playPendingSound() {
         val s = game.pendingSound ?: return
         game.pendingSound = null
+        hapticFor(s)
         if (!game.soundEnabled) return
+        playSound(s)
+    }
+
+    /** A little tune per event, played as a sequence of short tones. */
+    private fun sequenceFor(s: Sound): List<Pair<Int, Int>> = when (s) {
+        Sound.CLICK -> listOf(ToneGenerator.TONE_PROP_BEEP to 30)
+        Sound.SELECT -> listOf(ToneGenerator.TONE_PROP_BEEP to 45)
+        Sound.PAGE -> listOf(ToneGenerator.TONE_PROP_BEEP to 25)
+        Sound.GOOD -> listOf(
+            ToneGenerator.TONE_PROP_ACK to 80,
+            ToneGenerator.TONE_PROP_BEEP to 80
+        )
+        Sound.BAD -> listOf(ToneGenerator.TONE_PROP_NACK to 170)
+        Sound.SHOOT -> listOf(ToneGenerator.TONE_CDMA_PIP to 50)
+        Sound.HIT -> listOf(
+            ToneGenerator.TONE_CDMA_PIP to 40,
+            ToneGenerator.TONE_PROP_ACK to 60
+        )
+        Sound.INJURY -> listOf(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD to 220)
+        Sound.MILESTONE -> listOf(
+            ToneGenerator.TONE_PROP_BEEP to 70,
+            ToneGenerator.TONE_PROP_ACK to 90
+        )
+        Sound.RIVER -> listOf(
+            ToneGenerator.TONE_CDMA_PIP to 40,
+            ToneGenerator.TONE_CDMA_PIP to 40
+        )
+        Sound.TRADE -> listOf(
+            ToneGenerator.TONE_PROP_BEEP to 55,
+            ToneGenerator.TONE_PROP_BEEP to 55
+        )
+        Sound.REST -> listOf(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE to 190)
+        Sound.DEATH -> listOf(
+            ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD to 380,
+            ToneGenerator.TONE_PROP_NACK to 260
+        )
+        Sound.ARRIVAL -> listOf(
+            ToneGenerator.TONE_PROP_ACK to 130,
+            ToneGenerator.TONE_PROP_BEEP to 130,
+            ToneGenerator.TONE_PROP_ACK to 200
+        )
+        Sound.UNLOCK -> listOf(
+            ToneGenerator.TONE_PROP_BEEP to 60,
+            ToneGenerator.TONE_CDMA_PIP to 60,
+            ToneGenerator.TONE_PROP_ACK to 130
+        )
+    }
+
+    private var soundToken = 0
+
+    private fun playSound(s: Sound) {
         val gen = tone ?: return
-        val (type, duration) = when (s) {
-            Sound.CLICK -> ToneGenerator.TONE_PROP_BEEP to 40
-            Sound.GOOD -> ToneGenerator.TONE_PROP_ACK to 120
-            Sound.BAD -> ToneGenerator.TONE_PROP_NACK to 180
-            Sound.SHOOT -> ToneGenerator.TONE_CDMA_PIP to 60
-            Sound.DEATH -> ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD to 500
-            Sound.ARRIVAL -> ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE to 400
+        val token = ++soundToken
+        var delay = 0L
+        for ((type, duration) in sequenceFor(s)) {
+            handler.postDelayed({
+                if (token != soundToken) return@postDelayed
+                try {
+                    gen.startTone(type, duration)
+                } catch (_: Exception) {
+                    // Ignore audio failures.
+                }
+            }, delay)
+            delay += duration.toLong() + 35L
+        }
+    }
+
+    /** A matching vibration for the important moments. */
+    private fun hapticFor(s: Sound) {
+        if (!ui.haptics) return
+        val constant = when (s) {
+            Sound.BAD, Sound.INJURY -> android.view.HapticFeedbackConstants.LONG_PRESS
+            Sound.DEATH, Sound.ARRIVAL -> android.view.HapticFeedbackConstants.LONG_PRESS
+            Sound.HIT, Sound.SHOOT -> android.view.HapticFeedbackConstants.KEYBOARD_TAP
+            Sound.MILESTONE, Sound.UNLOCK -> android.view.HapticFeedbackConstants.CLOCK_TICK
+            else -> return
         }
         try {
-            gen.startTone(type, duration)
+            window.decorView.performHapticFeedback(constant)
         } catch (_: Exception) {
-            // Ignore audio failures.
+            // Haptics are best-effort.
         }
     }
 

@@ -147,6 +147,46 @@ internal fun Game.overlaySmoke(screen: Screen, artTop: Int, artH: Int) {
         val x = cx + ((i % 3) - 1)
         screen.putIfBlank(x, y, if (i % 2 == 0) '.' else 'o', Palette.GRAY)
     }
+    // Now and then a spark winks out of the flames.
+    if (frame % 6 < 2) {
+        screen.putIfBlank(cx + (frame % 3 - 1), artTop + artH - 2, '*', Palette.YELLOW)
+    }
+}
+
+/** A lone wild animal crossing the plains now and then. */
+internal fun Game.overlayWildlife(screen: Screen, top: Int, bottom: Int) {
+    if (bottom - top < 2 || cols < 18) return
+    val period = 150
+    val phase = frame % period
+    if (phase > 70) return
+    val spawn = frame / period
+    val kinds = listOf('d', 'w', 'b')
+    val glyph = kinds[((spawn % kinds.size) + kinds.size) % kinds.size]
+    val color = when (glyph) {
+        'b' -> Palette.BROWN
+        'w' -> Palette.GRAY
+        else -> Palette.YELLOW
+    }
+    val x = phase * (cols + 4) / 70 - 2
+    val y = (bottom - 1).coerceAtLeast(top)
+    val bob = if (frame % 2 == 0) 1 else 0
+    screen.putIfBlank(x, y, glyph, color)
+    screen.putIfBlank(x + 1, y, glyph, color)
+    if (bob == 1) screen.putIfBlank(x, y - 1, '.', color)
+}
+
+/** Sunlight sparkling on a calm river. */
+internal fun Game.overlayWater(screen: Screen, top: Int, bottom: Int) {
+    if (bottom - top < 2) return
+    val kind = weather.kind
+    if (kind != WeatherKind.CLEAR && kind != WeatherKind.HOT) return
+    val bandH = bottom - top
+    for (i in 0 until 6) {
+        if ((i + frame / 2) % 3 != 0) continue
+        val x = (i * 29 + frame / 3) % cols
+        val y = top + (i * 17 + frame) % bandH
+        if (screen.cell(x, y)?.ch == ' ') screen.put(x, y, '*', Palette.BRIGHT_WHITE)
+    }
 }
 
 /** Draws a menu with a bright marker and a forgiving tap target on each row. */
@@ -171,6 +211,13 @@ internal fun Game.renderTitle(screen: Screen) {
     if (ultraCompact) {
         renderTitleCompact(screen)
         return
+    }
+    // Birds drift across the sky even on the title screen.
+    if (contentW >= 20) {
+        val bx = ((frame * 2) % (cols + 6)) - 3
+        val bird = if (frame % 2 == 0) 'v' else '^'
+        screen.putIfBlank(bx, 0, bird, Palette.DIM)
+        screen.putIfBlank(bx + 2, 0, bird, Palette.DIM)
     }
     val art = ArrayList<String>()
     if (contentW >= 36 && rows >= 30) {
@@ -562,6 +609,7 @@ internal fun Game.renderTravel(screen: Screen) {
         y += Ascii.height(scene) + 1
         overlaySky(screen, sceneTop, sceneBottom)
         overlayWeather(screen, sceneTop, sceneBottom)
+        overlayWildlife(screen, sceneTop, sceneBottom)
     }
 
     val remaining = rows - y - 1
@@ -589,8 +637,15 @@ internal fun Game.renderTravel(screen: Screen) {
 private fun Game.renderTravelCompact(screen: Screen) {
     val next = nextLandmark()
     val toNext = if (next != null) "${(next.mile - miles).coerceAtLeast(0)}mi" else "end"
+    val wx = when (weather.kind) {
+        WeatherKind.SNOW, WeatherKind.BLIZZARD, WeatherKind.COLD -> '*'
+        WeatherKind.RAIN, WeatherKind.HEAVY_RAIN, WeatherKind.THUNDERSTORM,
+        WeatherKind.HAIL -> '/'
+        WeatherKind.CLEAR, WeatherKind.HOT -> 'o'
+        else -> '~'
+    }
     val status = listOf(
-        "${date.monthName.take(3)} ${date.day}  ${weather.kind.displayName.take(8)}",
+        "${date.monthName.take(3)} ${date.day}  $wx${weather.kind.displayName.take(7)}",
         "${miles}/${Data.TOTAL_MILES}mi  next $toNext",
         "fd${inventory.food} ammo${inventory.ammo} \$${"%.0f".format(inventory.cash)}"
     )
@@ -600,6 +655,17 @@ private fun Game.renderTravelCompact(screen: Screen) {
         y++
     }
     val options = ultraTravelOptions()
+    val menuRows = (options.size + 1) / 2
+    // A compact progress bar with a bobbing wagon, when there is room.
+    if (rows - y > menuRows) {
+        val barW = (cols - 2).coerceIn(6, 30)
+        val base = (miles.toLong() * barW / Data.TOTAL_MILES).toInt().coerceIn(0, barW - 1)
+        val pos = (base + (frame % 2)).coerceIn(0, barW - 1)
+        val sb = StringBuilder()
+        for (i in 0 until barW) sb.append(if (i < pos) '=' else if (i == pos) '>' else '-')
+        screen.text(0, y, sb.toString().take(cols), Palette.CYAN)
+        y++
+    }
     val half = (options.size + 1) / 2
     val col2 = max(8, contentW / 2)
     options.forEachIndexed { i, (label, id) ->
@@ -720,6 +786,7 @@ internal fun Game.renderLandmark(screen: Screen) {
         y += Ascii.height(art) + 1
         overlaySky(screen, artTop, artBottom)
         overlayWeather(screen, artTop, artBottom)
+        overlayWildlife(screen, artTop, artBottom)
     }
     y = screen.wrap(marginX + 1, y, contentW - 2, lm.blurb.joinToString(" "), Palette.GREEN)
     y++
@@ -804,11 +871,13 @@ internal fun Game.renderRiver(screen: Screen) {
     var y = 2
     if (rows >= 26) {
         val art = riverArt(frame)
+        val artTop = y
         Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.CYAN)
         val artBottom = y + Ascii.height(art)
         y += Ascii.height(art) + 1
-        overlaySky(screen, y - Ascii.height(art) - 1, artBottom)
-        overlayWeather(screen, y - Ascii.height(art) - 1, artBottom)
+        overlaySky(screen, artTop, artBottom)
+        overlayWeather(screen, artTop, artBottom)
+        overlayWater(screen, artTop, artBottom)
     }
     y = screen.wrap(marginX + 1, y, contentW - 2, lm.blurb.joinToString(" "), Palette.GREEN)
     screen.text(marginX + 1, y, "The river is ${riverState(river)}.", Palette.CYAN)
@@ -1444,10 +1513,13 @@ internal fun Game.renderPause(screen: Screen) {
 internal fun Game.renderNotice(screen: Screen) {
     if (ultraCompact) {
         screen.center(0, noticeTitle.uppercase().take(cols), Palette.BRIGHT_GREEN, bold = true)
-        var y = 1
-        for (line in noticeLines) {
-            if (y >= rows - 1) break
-            y = screen.wrap(0, y, cols, line, Palette.GREEN)
+        // Wrap first, then draw only what fits above the [>] marker so long
+        // prose never overlaps the continue prompt on a tiny screen.
+        val wrapped = ArrayList<String>()
+        for (line in noticeLines) wrapped.addAll(wrapString(line, cols))
+        val budget = (rows - 2).coerceAtLeast(1)
+        wrapped.take(budget).forEachIndexed { i, line ->
+            screen.text(0, 1 + i, line.take(cols), Palette.GREEN)
         }
         val label = "[>]"
         screen.text(0, rows - 1, label, Palette.BRIGHT_GREEN, bold = true)

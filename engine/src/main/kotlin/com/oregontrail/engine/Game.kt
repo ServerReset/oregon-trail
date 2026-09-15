@@ -291,11 +291,12 @@ class Game(
             id.startsWith("slot:del:") -> requestedDeleteId = id.substringAfter("slot:del:")
             id.startsWith("slot:rename:") -> requestedRenameId = id.substringAfter("slot:rename:")
             id.startsWith("slot:overwrite:") -> requestedOverwriteId = id.substringAfter("slot:overwrite:")
-            id == "slots:prev" -> loadPage = (loadPage - 1).coerceAtLeast(0)
-            id == "slots:next" -> loadPage++
+            id == "slots:prev" -> { loadPage = (loadPage - 1).coerceAtLeast(0); pendingSound = Sound.PAGE }
+            id == "slots:next" -> { loadPage++; pendingSound = Sound.PAGE }
             id == "title:end" -> { /* handled by front-end by finishing activity */ }
             id == "about:next" -> {
                 aboutPage++
+                pendingSound = Sound.PAGE
                 if (aboutPage >= ABOUT_PAGES.size) phase = Phase.TITLE
             }
             id == "manage:topten" -> phase = Phase.TOP_TEN
@@ -346,8 +347,8 @@ class Game(
             id.startsWith("stranded:") -> handleStranded(id.substringAfter("stranded:"))
             id == "notice:continue" -> phase = noticeNext
             id == "map:back" -> phase = Phase.TRAVEL
-            id == "journal:prev" -> journalPage = (journalPage - 1).coerceAtLeast(0)
-            id == "journal:next" -> journalPage = min(journalPage + 1, journalLastPage())
+            id == "journal:prev" -> { journalPage = (journalPage - 1).coerceAtLeast(0); pendingSound = Sound.PAGE }
+            id == "journal:next" -> { journalPage = min(journalPage + 1, journalLastPage()); pendingSound = Sound.PAGE }
             id == "journal:back" -> phase = Phase.TRAVEL
             id == "hunt:up" -> huntField?.move(0, -1)
             id == "hunt:down" -> huntField?.move(0, 1)
@@ -539,8 +540,8 @@ class Game(
         when (action) {
             "continue" -> continueOnTrail()
             "supplies" -> showNotice("Your Supplies", suppliesLines(), Phase.TRAVEL)
-            "map" -> phase = Phase.MAP
-            "journal" -> { journalPage = 0; phase = Phase.JOURNAL }
+            "map" -> { pendingSound = Sound.PAGE; phase = Phase.MAP }
+            "journal" -> { pendingSound = Sound.PAGE; journalPage = 0; phase = Phase.JOURNAL }
             "save" -> requestedSave = true
             "pace" -> cyclePace()
             "rations" -> cycleRations()
@@ -638,7 +639,7 @@ class Game(
             scores.saveAchievements(achievements)
             pendingUnlock = Achievements.name(id)
             addJournal("Achievement: ${Achievements.name(id)}")
-            pendingSound = Sound.GOOD
+            pendingSound = Sound.UNLOCK
         }
     }
 
@@ -727,6 +728,7 @@ class Game(
         choiceOptions.add("5 days" to "rest:5")
         choiceNext = Phase.TRAVEL
         phase = Phase.CHOICE
+        pendingSound = Sound.SELECT
     }
 
     private fun rest(days: Int) {
@@ -740,8 +742,10 @@ class Game(
         oxHealth = (oxHealth + days * 5).coerceAtMost(100)
         val healed = aliveMembers().joinToString(", ") { "${it.name} (${it.state.displayName})" }
         report += "\n\nRest helps. Your party's health: $healed."
+        report += "\n\nTrail wisdom: ${TrailTips.list[rng.nextInt(TrailTips.list.size)]}"
         addJournal("Rested for $days day(s) to recover.")
         showNotice("Resting", listOf(report), Phase.TRAVEL)
+        pendingSound = Sound.REST
     }
 
     private fun attemptTrade() {
@@ -766,6 +770,7 @@ class Game(
         choiceOptions.add("Decline" to "trade:no")
         choiceNext = Phase.TRAVEL
         phase = Phase.CHOICE
+        pendingSound = Sound.TRADE
     }
 
     // ====================================================================
@@ -981,12 +986,13 @@ class Game(
             "breakdown", "breakdown", "ox_lame", "ox_wander", "child_lost",
             "child_arm", "unsafe_water", "heavy_rain", "hail", "bandits",
             "wild_animals", "fire", "fog", "indians", "thief", "fruit", "riders",
-            "stranded"
+            "stranded", "berries", "prairie_dogs", "rainbow", "abandoned_wagon"
         )
         val mountains = listOf(
             "breakdown", "ox_lame", "ox_wander", "unsafe_water", "heavy_rain",
             "hail", "bandits", "wild_animals", "fire", "fog", "snakebite",
-            "cold", "blizzard", "indians", "riders", "stranded"
+            "cold", "blizzard", "indians", "riders", "stranded",
+            "berries", "prairie_dogs", "rainbow", "hot_springs"
         )
         return if (m > 900) mountains else plains
     }
@@ -1150,6 +1156,36 @@ class Game(
                 msgs.add("You find bushes heavy with wild fruit")
                 msgs.add("and gather $gained pounds of food.")
             }
+            "berries" -> {
+                val gained = rng.nextInt(6, 18)
+                inventory.food += gained
+                msgs.add("The children find wild berries along")
+                msgs.add("the creek and gather $gained pounds.")
+            }
+            "prairie_dogs" -> {
+                msgs.add("A colony of prairie dogs whistles from")
+                msgs.add("their burrows. The children laugh.")
+            }
+            "rainbow" -> {
+                unlock(Achievements.RAINBOW)
+                msgs.add("A rainbow arcs across the sky after the")
+                msgs.add("rain. The whole train takes heart.")
+            }
+            "hot_springs" -> {
+                aliveMembers().forEach { it.heal(rng.nextInt(3, 7)) }
+                msgs.add("You find a warm mineral spring and let")
+                msgs.add("the party soak. Everyone feels better.")
+            }
+            "abandoned_wagon" -> {
+                val part = Part.entries[rng.nextInt(Part.entries.size)]
+                when (part) {
+                    Part.WHEEL -> inventory.wheels += 1
+                    Part.AXLE -> inventory.axles += 1
+                    Part.TONGUE -> inventory.tongues += 1
+                }
+                msgs.add("You come upon an abandoned wagon and")
+                msgs.add("salvage a spare ${part.name.lowercase()}.")
+            }
             "stranded" -> startStrandedChoice()
             "riders" -> startRidersChoice()
         }
@@ -1279,7 +1315,7 @@ class Game(
         addJournal("Reached ${lm.name}.")
         val next = if (lm.kind == LandmarkKind.RIVER) Phase.RIVER else Phase.LANDMARK
         showNotice("Landmark", lines, next)
-        pendingSound = Sound.GOOD
+        pendingSound = Sound.MILESTONE
     }
 
     private fun handleLandmarkMenu(action: String) {
@@ -1302,6 +1338,7 @@ class Game(
         val fact = Facts.forLandmark(lm.id)
             ?: "This stretch of the trail is remembered by the families who crossed it."
         factsRead++
+        pendingSound = Sound.PAGE
         if (factsRead >= 5) unlock(Achievements.HISTORIAN)
         addJournal("Read about ${lm.name}.")
         showNotice("History of ${shortLandmarkTitle(lm)}", listOf(fact), Phase.LANDMARK)
@@ -1352,6 +1389,7 @@ class Game(
             lines.add(Talk.rumors[rng.nextInt(Talk.rumors.size)])
         }
         showNotice(lm.name, lines, Phase.LANDMARK)
+        pendingSound = Sound.SELECT
     }
 
     // ====================================================================
@@ -1368,7 +1406,7 @@ class Game(
                 val risk = 0.25 + if (inventory.oxen < 4) 0.2 else 0.0 + weatherRisk()
                 if (rng.chance(1 - risk)) {
                     msgs.add("You ford the ${lm.name.split(" ").first()} safely.")
-                    pendingSound = Sound.GOOD
+                    pendingSound = Sound.RIVER
                 } else {
                     supplyLoss(msgs, 30, 1)
                     msgs.add("The wagon is nearly swept away!")
@@ -1384,7 +1422,7 @@ class Game(
                 if (rng.chance(1 - risk)) {
                     msgs.add("You caulk the wagon and float across.")
                     msgs.add("It takes $days day(s) but works perfectly.")
-                    pendingSound = Sound.GOOD
+                    pendingSound = Sound.RIVER
                 } else {
                     supplyLoss(msgs, 40, 1)
                     msgs.add("The wagon tips and water pours in!")
@@ -1404,6 +1442,7 @@ class Game(
                 unlock(Achievements.FERRYMAN)
                 msgs.add("You pay $${"%.2f".format(cost)} for the ferry and")
                 msgs.add("cross the river without trouble.")
+                pendingSound = Sound.RIVER
             }
             "guide" -> {
                 val cost = river.guideCost ?: return
@@ -1416,6 +1455,7 @@ class Game(
                 date.plusDays(1)
                 msgs.add("A local guide leads your wagon across")
                 msgs.add("a safe ford for $${"%.2f".format(cost)}.")
+                pendingSound = Sound.RIVER
             }
             "wait" -> {
                 date.plusDays(1)
@@ -1635,14 +1675,16 @@ class Game(
         huntReturn = returnPhase
         huntDays = 1
         phase = Phase.HUNTING
+        pendingSound = Sound.SELECT
     }
 
     private fun huntShoot() {
         val field = huntField ?: return
         if (inventory.ammo <= 0) { pendingSound = Sound.BAD; return }
+        val before = field.kills
         if (field.shoot()) {
             inventory.ammo -= 1
-            pendingSound = Sound.SHOOT
+            pendingSound = if (field.kills > before) Sound.HIT else Sound.SHOOT
         }
     }
 
@@ -1811,6 +1853,11 @@ class Game(
         "riders" -> Ascii.horses
         "stranded" -> Ascii.brokenWagon
         "heavy_rain", "hail", "thunderstorm" -> Ascii.cloud
+        "berries", "fruit" -> Ascii.bush
+        "prairie_dogs" -> Ascii.prairieDog
+        "rainbow" -> Ascii.rainbow
+        "hot_springs" -> Ascii.spring
+        "abandoned_wagon" -> Ascii.brokenWagon
         else -> null
     }
 
@@ -2057,7 +2104,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "2.4.1"
+        const val VERSION = "2.5.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400
@@ -2104,4 +2151,7 @@ private fun <T> List<T>.randomOrNull(rng: Rng): T? =
     if (isEmpty()) null else this[rng.nextInt(size)]
 
 /** Named sound cues the front-end may play. */
-enum class Sound { CLICK, GOOD, BAD, SHOOT, DEATH, ARRIVAL }
+enum class Sound {
+    CLICK, SELECT, PAGE, GOOD, BAD, SHOOT, HIT, INJURY, MILESTONE,
+    RIVER, TRADE, REST, DEATH, ARRIVAL, UNLOCK
+}

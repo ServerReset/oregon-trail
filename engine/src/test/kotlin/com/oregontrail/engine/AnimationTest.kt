@@ -143,4 +143,48 @@ class AnimationTest {
         val b1 = g.frame % 2 == 0
         assertNotEquals(b0, b1)
     }
+
+    @Test
+    fun wildlife_crosses_the_scene_and_moves() {
+        val g = newGame()
+        repeat(35) { g.animate() }
+        val a = Screen(40, 20)
+        g.overlayWildlife(a, 2, 14)
+        assertTrue(
+            (0 until 40).any { x ->
+                (2 until 14).any { y -> a.cell(x, y)?.ch?.let { it in "dwb" } == true }
+            },
+            "a critter should be on the ground band"
+        )
+        g.animate()
+        val b = Screen(40, 20)
+        g.overlayWildlife(b, 2, 14)
+        assertNotEquals(a.toText(), b.toText(), "the critter should move")
+    }
+
+    @Test
+    fun calm_water_sparkles() {
+        val g = newGame()
+        g.weather = Weather(WeatherKind.CLEAR, 70)
+        val s = Screen(40, 20)
+        var sparkle = false
+        for (f in 0 until 8) {
+            val scr = Screen(40, 20)
+            g.overlayWater(scr, 2, 12)
+            if ((0 until 40).any { x -> (2 until 12).any { y -> scr.cell(x, y)?.ch == '*' } }) {
+                sparkle = true
+            }
+            g.animate()
+        }
+        assertTrue(sparkle, "a sunny river should sparkle")
+    }
+
+    @Test
+    fun the_title_screen_is_alive() {
+        val g = Game(DefaultRng(2L), InMemoryScoreStore())
+        g.setViewport(48, 30)
+        val f0 = g.render().toText()
+        g.animate()
+        assertNotEquals(f0, g.render().toText(), "the title should animate")
+    }
 }
