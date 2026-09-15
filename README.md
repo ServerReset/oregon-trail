@@ -147,19 +147,35 @@ Everything is touch. Menu entries and buttons are tappable on the terminal.
 
 ## Architecture
 
-The project is deliberately split so the rules are portable and testable:
+The project is deliberately split so the rules are portable and testable. No
+source file is longer than ~150 lines; each one holds a single screen, rule or
+piece of the model:
 
 ```
 :engine   Pure Kotlin/JVM library — no Android dependencies.
-          Rng, Model, Data (trail/items), Terminal (screen + tap targets),
-          Ascii (art + block font), Hunting, Rafting, Persistence,
-          Game (rules/state machine) and GameRender (all screen drawing).
-:app      Android front-end.
-          TerminalView  — adaptive monospace canvas that recomputes its grid
-                          for any screen size/orientation and maps taps to
-                          engine hotspots.
-          MainActivity  — immersive fullscreen, sound, name dialog, minigame
-                          ticker, SharedPreferences persistence.
+          Phase/Sound           small enums used by the front-end.
+          GameState/GameSession the mutable state of a journey and session.
+          Game                  the class that ties them together.
+          GameInput/GameTravel/GameSimulation/GameWeather/GameDay/GameIllness
+                                the day loop, weather and illness rules.
+          GameStore/GameEvents/GameEventHazards/GameEventFinds/GameEncounters
+          GameLandmarks/GameRiver/GameEnding/GameDeath/GameHunting
+          GameTrade/GameJournal/GameScore/GameNotices  the rule modules.
+          GameSave/GameViewport/GameRequests/GameDebug/GameTicks/GamePause
+                                plumbing and small helpers.
+          Render*.kt            one file per screen (title, travel, store…).
+          Data/LandmarkData*/NameData/IllnessData/Meta/TrailLore/Items
+                                the trail's content.
+          Ascii/AsciiScenery/AsciiLandmarks/AsciiSky/AsciiEvents  the art.
+          Screen/ScreenExtra/Cell/Palette/Hotspot  the terminal contract.
+          Hunting/HuntingTick/HuntView/Rafting/Barlow/Persistence/SaveBundle
+:app      Android front-end (no file over ~150 lines).
+          TerminalView/TerminalGrid/TerminalPainter/TerminalInput
+                                the adaptive monospace canvas.
+          MainActivity/GameRenderer/GameInputHost/SystemUi/SaveFileHost
+                                the activity and its hosts.
+          ThemeColors/TerminalThemes/MaterialYouTheme  the colour schemes.
+          SoundPlayer, dialogs (TextDialogs/SaveDialogs/LoadDialogs), settings.
 ```
 
 The engine exposes just three calls to any front-end: `render(): Screen`,

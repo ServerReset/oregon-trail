@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.6.0] - 2026-09-15
+
+### Changed
+- **Major internal refactor, no behaviour change.** The two 1,500–2,100 line
+  engine files (`Game.kt`, `GameRender.kt`) and the 600+ line `MainActivity`
+  were split into focused modules — one file per screen, rule area or model
+  concern. Every source and test file is now **under ~150 lines**.
+  - Rendering: 26 `Render*.kt` files (core helpers, art, overlays, and one per
+    screen).
+  - Rules: `GameTravel`, `GameSimulation`, `GameWeather`, `GameDay`,
+    `GameIllness`, `GameStore`, `GameEvents` (+ hazard/find/encounter files),
+    `GameLandmarks`, `GameRiver`, `GameEnding`, `GameDeath`, `GameHunting`,
+    `GameTrade`, `GameJournal`, `GameScore`, `GameNotices`, `GameSave`.
+  - State moved to `GameState` / `GameSession`; the app split into
+    `TerminalView` + `TerminalGrid`/`TerminalPainter`/`TerminalInput`, and
+    `MainActivity` + renderer/input/theme/dialog/sound hosts.
+  - Tests split by scenario into small test classes (still 114 tests, all
+    green). README documents the new layout.
+
 ## [2.5.0] - 2026-09-15
 
 ### Added
