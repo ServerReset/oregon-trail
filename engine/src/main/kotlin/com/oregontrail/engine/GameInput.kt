@@ -53,6 +53,16 @@ fun Game.onTap(id: String) {
             id == "topten:back" -> phase = Phase.TITLE
             id.startsWith("prof:") -> {
                 occupation = Occupation.entries[id.substringAfter("prof:").toInt()]
+                // The run was created for the default Banker; apply this
+                // leader's starting funds and clear the wagon.
+                inventory.cash = occupation.startingMoney.toDouble()
+                inventory.oxen = 0
+                inventory.food = 0
+                inventory.clothing = 0
+                inventory.ammo = 0
+                inventory.wheels = 0
+                inventory.axles = 0
+                inventory.tongues = 0
                 phase = Phase.MONTH
             }
             id.startsWith("month:") -> {

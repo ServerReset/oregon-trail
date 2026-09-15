@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.16.0] - 2026-09-15
+
+### Added
+- **Balance report**: `./gradlew balanceReport` plays hundreds of full games
+  with a headless bot and writes `docs/BALANCE.md` (arrival rate, survivors,
+  days, score, end supplies and causes of death for every occupation and
+  difficulty). The README explains it.
+
+### Fixed
+- **Starting money was never applied**: choosing the Farmer or Carpenter still
+  gave the Banker's $1,600, so occupations had no economic identity. Picking a
+  leader now sets that leader's funds and empties the wagon.
+- **Resting no longer dodges illness**: people can fall sick in camp, so
+  resting is a real trade-off instead of a free cure.
+
+### Changed
+- Rebalanced the economy and illness around the report: food is a little
+  cheaper ($0.18/lb), the Farmer starts with $700 (still the least), the Banker
+  with $1,400 (still the most), and rare **acute** illnesses can now take a
+  traveller before they can rest it off. Difficulty now bites: an optimal bot
+  keeps ~4.2 alive on Normal/Banker versus ~2.8 on Hard, and the Farmer is the
+  hardest (and highest-scoring) leader.
+
 ## [2.15.0] - 2026-09-15
 
 ### Changed

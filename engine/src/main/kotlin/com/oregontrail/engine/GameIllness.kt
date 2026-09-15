@@ -15,7 +15,9 @@ internal fun Game.checkIllness(msgs: MutableList<String>): Boolean {
             if (!rng.chance(chance)) continue
             any = true
             val illness = Data.illnesses[rng.nextInt(Data.illnesses.size)]
-            val severity = rng.nextInt(12, 30)
+            // Most cases are survivable, but some are acute and can kill even a
+            // careful traveller before they can rest it off.
+            val severity = if (rng.chance(0.09)) rng.nextInt(30, 55) else rng.nextInt(12, 30)
             m.hurt(severity)
             m.condition = illness
             if (!m.alive) {

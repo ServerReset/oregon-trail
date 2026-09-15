@@ -8,7 +8,14 @@ package com.oregontrail.engine
  */
 class TestPilot(private val seed: Long, private val occupation: Occupation, private val difficulty: Difficulty) {
 
-    data class Outcome(val arrived: Boolean, val survived: Int, val score: Int, val days: Int, val phase: Phase)
+    private var hunts = 0
+    private var rests = 0
+
+    data class Outcome(
+        val arrived: Boolean, val survived: Int, val score: Int, val days: Int, val phase: Phase,
+        val food: Int, val ammo: Int, val cash: Int, val oxen: Int, val clothing: Int,
+        val hunts: Int, val rests: Int, val deathCauses: List<String>
+    )
 
     fun play(): Outcome {
         val g = Game(DefaultRng(seed), InMemoryScoreStore())
@@ -20,6 +27,8 @@ class TestPilot(private val seed: Long, private val occupation: Occupation, priv
         g.onTap("month:0")
         g.onTap("names:go")
         outfit(g)
+        hunts = 0
+        rests = 0
         var guard = 0
         while (guard++ < 5000) {
             when (g.phase) {
@@ -37,18 +46,23 @@ class TestPilot(private val seed: Long, private val occupation: Occupation, priv
                 else -> break
             }
         }
+        val causes = g.party.filter { !it.alive }.map { it.condition ?: g.deathCause }
         return Outcome(
             g.phase == Phase.ARRIVED, g.party.count { it.alive }, g.lastScore,
-            g.daysOnTrail(), g.phase
+            g.daysOnTrail(), g.phase,
+            g.inventory.food, g.inventory.ammo, g.inventory.cash.toInt(), g.inventory.oxen,
+            g.inventory.clothing, hunts, rests, causes
         )
     }
 
     private fun outfit(g: Game) {
         buy(g, "OXEN", 3)
-        buy(g, "FOOD", if (occupation == Occupation.FARMER) 18 else 30)
         buy(g, "CLOTHING", 6)
-        buy(g, "AMMUNITION", 4)
+        buy(g, "AMMUNITION", 5)
         buy(g, "WHEEL", 1); buy(g, "AXLE", 1); buy(g, "TONGUE", 1)
+        // Spend most of what is left on food, keeping a small reserve for
+        // ferries and fort restocking.
+        repeat(80) { if (g.inventory.cash > 90.0) g.onTap("store:inc:FOOD") }
         g.onTap("store:leave")
         if (g.phase == Phase.NOTICE) g.onTap("notice:continue")
     }
@@ -58,10 +72,18 @@ class TestPilot(private val seed: Long, private val occupation: Occupation, priv
     }
 
     private fun travel(g: Game) {
-        if (g.inventory.food < 180 && g.inventory.ammo >= 20) { g.onTap("travel:hunt"); return }
+        val hunger = if (occupation == Occupation.FARMER) 380 else 280
+        if (g.inventory.food < hunger && g.inventory.ammo >= 12) {
+            hunts++; g.onTap("travel:hunt"); return
+        }
         val hurt = g.party.any { it.alive && it.health < 45 } || g.oxHealth < 40
-        if (hurt && g.inventory.food > 60) { g.onTap("travel:rest"); return }
-        if (g.inventory.food < 300 && g.rations != Rations.MEAGER) { g.onTap("travel:rations"); return }
+        if (hurt && g.inventory.food > 60) { rests++; g.onTap("travel:rest"); return }
+        val want = when {
+            g.inventory.food > 1200 -> Rations.FILLING
+            g.inventory.food > 400 -> Rations.MEAGER
+            else -> Rations.BARE_BONES
+        }
+        if (g.rations != want) { g.onTap("travel:rations"); return }
         g.onTap("travel:continue")
     }
 
@@ -88,10 +110,10 @@ class TestPilot(private val seed: Long, private val occupation: Occupation, priv
     private fun landmark(g: Game) {
         val lm = Data.landmarkAt(g.landmarkIndex)
         if (lm.id == "dalles") { g.onTap("dalles:portage"); return }
-        if (lm.kind == LandmarkKind.FORT && g.inventory.cash > 150 && g.inventory.food < 600) {
+        if (lm.kind == LandmarkKind.FORT && g.inventory.cash > 120 && g.inventory.food < 900) {
             g.onTap("land:buy")
-            buy(g, "FOOD", 8)
-            g.onTap("store:leave")
+            repeat(40) { if (g.phase == Phase.STORE && g.inventory.cash > 70.0) g.onTap("store:inc:FOOD") }
+            if (g.phase == Phase.STORE) g.onTap("store:leave")
             return
         }
         g.onTap("land:continue")

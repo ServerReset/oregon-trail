@@ -31,7 +31,7 @@ enum class Item(
     val max: Int
 ) {
     OXEN("Oxen", "yoke", 20.0, 25.0, 1, 12),
-    FOOD("Food", "pound", 0.20, 0.25, 50, 3000),
+    FOOD("Food", "pound", 0.18, 0.22, 50, 3000),
     CLOTHING("Clothing", "set", 10.0, 12.5, 1, 99),
     AMMUNITION("Ammunition", "box", 2.0, 2.5, 1, 99),
     WHEEL("Spare wheel", "wheel", 10.0, 12.5, 1, 9),

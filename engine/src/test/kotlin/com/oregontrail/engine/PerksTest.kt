@@ -39,8 +39,9 @@ private fun newGame(seed: Long = 1L, store: ScoreStore = InMemoryScoreStore()): 
         g.intro(buy = false)     // still at the store, as Banker
         g.storeAtFort = true
         val before = g.inventory.cash
-        g.onTap("store:inc:FOOD") // 50 lb at fort price 0.25, -10% => 11.25
-        assertEquals(11.25, before - g.inventory.cash, 0.001)
+        g.onTap("store:inc:FOOD") // 50 lb at the fort price, less the Banker's 10%
+        val expected = Item.FOOD.fortPrice * 50 * 0.9
+        assertEquals(expected, before - g.inventory.cash, 0.001)
         assertEquals(50, g.inventory.food)
     }
 

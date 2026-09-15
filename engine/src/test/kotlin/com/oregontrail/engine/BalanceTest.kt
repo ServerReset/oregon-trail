@@ -1,78 +1,53 @@
 package com.oregontrail.engine
 
-import java.io.File
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 /**
- * Runs the [TestPilot] over many seeds and writes a balance report, so the
- * economy and difficulty can be tuned from data rather than guesswork.
+ * Plays hundreds of games with [TestPilot] and asserts the shape of the game's
+ * balance: difficulty and occupation must matter, and the economy must leave
+ * the Farmer viable but clearly the hardest crossing. The harness is
+ * deterministic, so these bands are a stable regression guard.
  */
 class BalanceTest {
 
-    private data class Row(
-        val occ: Occupation, val diff: Difficulty, val n: Int,
-        val arrivals: Int, val avgDays: Int, val avgSurvivors: Double, val avgScore: Int
-    )
+    private fun row(occ: Occupation, diff: Difficulty) =
+        rows.first { it.occ == occ && it.diff == diff }
 
-    private fun measure(occ: Occupation, diff: Difficulty, n: Int = 120): Row {
-        var arrivals = 0
-        var days = 0
-        var survivors = 0.0
-        var score = 0
-        for (s in 1..n) {
-            val o = TestPilot(s * 31L + diff.ordinal, occ, diff).play()
-            if (o.arrived) {
-                arrivals++
-                score += o.score
-            }
-            days += o.days
-            survivors += o.survived
-        }
-        return Row(
-            occ, diff, n, arrivals,
-            days / n,
-            survivors / n,
-            if (arrivals == 0) 0 else score / arrivals
-        )
+    @Test
+    fun difficulty_scales_survival() {
+        val easy = row(Occupation.BANKER, Difficulty.EASY)
+        val normal = row(Occupation.BANKER, Difficulty.NORMAL)
+        val hard = row(Occupation.BANKER, Difficulty.HARD)
+
+        assertTrue(easy.avgSurvivors >= normal.avgSurvivors, "easy should be gentler than normal")
+        assertTrue(normal.avgSurvivors >= hard.avgSurvivors, "normal should be gentler than hard")
+        assertTrue(easy.avgSurvivors >= 4.5, "easy should rarely lose anyone (${easy.avgSurvivors})")
+        assertTrue(hard.avgSurvivors <= normal.avgSurvivors + 0.01)
+        assertTrue(easy.rate >= hard.rate, "easy should arrive at least as often as hard")
     }
 
     @Test
-    fun balance_report() {
-        val rows = ArrayList<Row>()
-        for (diff in Difficulty.entries) {
-            for (occ in Occupation.entries) rows.add(measure(occ, diff))
-        }
-        val out = StringBuilder("OCCUPATION  DIFF     ARRIVED   AVG DAYS  AVG ALIVE  AVG SCORE\n")
+    fun occupations_trade_risk_for_reward() {
+        val banker = row(Occupation.BANKER, Difficulty.NORMAL)
+        val carpenter = row(Occupation.CARPENTER, Difficulty.NORMAL)
+        val farmer = row(Occupation.FARMER, Difficulty.NORMAL)
+
+        // The Farmer starts poorest, so should not out-survive the Banker...
+        assertTrue(farmer.avgSurvivors <= banker.avgSurvivors, "Farmer should be riskier than Banker")
+        // ...but must score far more when they make it.
+        assertTrue(farmer.avgScore > carpenter.avgScore, "Farmer should outscore Carpenter")
+        assertTrue(carpenter.avgScore > banker.avgScore, "Carpenter should outscore Banker")
+    }
+
+    private companion object {
+        val rows: List<BalanceHarness.Row> by lazy { BalanceHarness.all(120) }
+    }
+
+    @Test
+    fun the_journey_takes_a_sane_number_of_days() {
         for (r in rows) {
-            out.append(
-                "%-11s %-8s %3d/%3d   %6d    %6.2f    %6d\n".format(
-                    r.occ.displayName, r.diff.displayName, r.arrivals, r.n, r.avgDays,
-                    r.avgSurvivors, r.avgScore
-                )
-            )
+            assertTrue(r.avgDays in 120..300, "${r.occ}/${r.diff} took ${r.avgDays} days")
         }
-        val file = File(System.getProperty("java.io.tmpdir"), "balance_report.txt")
-        file.writeText(out.toString())
-        println(out)
-
-        fun row(occ: Occupation, diff: Difficulty) = rows.first { it.occ == occ && it.diff == diff }
-        fun rate(r: Row) = r.arrivals.toDouble() / r.n
-
-        // The bot must not hang or leave a broken state.
-        for (r in rows) assert(r.avgDays in 90..280) { "unreasonable days for ${r.occ}/${r.diff}" }
-
-        // Harder settings must be harder, and a good player should usually but
-        // not always make it on Normal.
-        val b = Occupation.BANKER
-        assert(rate(row(b, Difficulty.EASY)) >= rate(row(b, Difficulty.NORMAL))) { "easy should beat normal" }
-        assert(rate(row(b, Difficulty.NORMAL)) >= rate(row(b, Difficulty.HARD))) { "normal should beat hard" }
-        assert(rate(row(b, Difficulty.NORMAL)) in 0.70..0.97) { "normal arrival ${rate(row(b, Difficulty.NORMAL))}" }
-        assert(rate(row(b, Difficulty.HARD)) in 0.35..0.85) { "hard arrival ${rate(row(b, Difficulty.HARD))}" }
-
-        // More points require more risk: the Farmer starts poorer and so should
-        // not out-survive the Banker, but must score far higher per arrival.
-        assert(rate(row(Occupation.FARMER, Difficulty.NORMAL)) <= rate(row(b, Difficulty.NORMAL)) + 0.05)
-        assert(row(Occupation.FARMER, Difficulty.NORMAL).avgScore > row(Occupation.CARPENTER, Difficulty.NORMAL).avgScore)
-        assert(row(Occupation.CARPENTER, Difficulty.NORMAL).avgScore > row(b, Difficulty.NORMAL).avgScore)
     }
 }

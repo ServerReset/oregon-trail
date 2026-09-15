@@ -20,13 +20,16 @@ internal fun Game.startRest() {
 
 internal fun Game.rest(days: Int) {
         var report = "You camp and rest for $days day(s)."
+        val sick = ArrayList<String>()
         repeat(days) {
             date.plusDays(1)
             rollWeather()
             consumeFood()
+            checkIllness(sick) // people can fall ill in camp too
         }
         aliveMembers().forEach { it.heal(days * 2) }
         oxHealth = (oxHealth + days * 5).coerceAtMost(100)
+        if (sick.isNotEmpty()) report += "\n\n" + sick.joinToString("\n")
         val healed = aliveMembers().joinToString(", ") { "${it.name} (${it.state.displayName})" }
         report += "\n\nRest helps. Your party's health: $healed."
         report += "\n\nTrail wisdom: ${TrailTips.list[rng.nextInt(TrailTips.list.size)]}"
@@ -36,6 +39,7 @@ internal fun Game.rest(days: Int) {
             report += "\n\nAround the fire: ${CampStories.forMember(storyteller, rng)}"
         }
         addJournal("Rested for $days day(s) to recover.")
+        if (aliveCount == 0) { dieOf(deathCause.ifEmpty { "disease" }); return }
         showNotice("Resting", listOf(report), Phase.TRAVEL)
         pendingSound = Sound.REST
     }

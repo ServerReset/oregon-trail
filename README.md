@@ -190,6 +190,20 @@ The engine exposes just three calls to any front-end: `render(): Screen`,
 `onTap(id: String)`, and `huntTick()`. That keeps it easy to add a desktop,
 terminal or web front-end later.
 
+## Balance
+
+The economy and difficulty are tuned with a headless bot that plays hundreds
+of full games through the real engine, and the results are locked in by
+`BalanceTest`. Generate the report with:
+
+```bash
+./gradlew balanceReport      # writes docs/BALANCE.md
+```
+
+`docs/BALANCE.md` shows arrival rate, average survivors, journey length, final
+score and end-of-trail supplies for every occupation and difficulty, plus the
+most common causes of death. Use it to sanity-check any rules change.
+
 ## Building
 
 ```bash
