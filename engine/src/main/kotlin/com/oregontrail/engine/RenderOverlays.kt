@@ -26,58 +26,6 @@ internal fun Game.overlayWeather(screen: Screen, top: Int, bottom: Int) {
     }
 }
 
-/** A sun with turning rays, drifting clouds and the odd bird. */
-internal fun Game.overlaySky(screen: Screen, top: Int, bottom: Int) {
-    if (bottom <= top) return
-    val kind = weather.kind
-    val fair = kind == WeatherKind.CLEAR || kind == WeatherKind.HOT ||
-        kind == WeatherKind.CLOUDY || kind == WeatherKind.WINDY
-    if (fair && cols >= 14) {
-        val sx = (cols - 7).coerceAtLeast(1)
-        screen.putIfBlank(sx + 1, top, if (frame % 2 == 0) '\\' else '/', Palette.BRIGHT_YELLOW)
-        screen.putIfBlank(sx + 5, top, if (frame % 2 == 0) '/' else '\\', Palette.BRIGHT_YELLOW)
-        screen.text(sx, top + 1, "-(o)-", Palette.BRIGHT_YELLOW)
-        screen.putIfBlank(sx + 1, top + 2, if (frame % 2 == 0) '/' else '\\', Palette.BRIGHT_YELLOW)
-        screen.putIfBlank(sx + 5, top + 2, if (frame % 2 == 0) '\\' else '/', Palette.BRIGHT_YELLOW)
-    }
-    val cloudy = kind == WeatherKind.CLOUDY || kind == WeatherKind.RAIN ||
-        kind == WeatherKind.HEAVY_RAIN || kind == WeatherKind.THUNDERSTORM ||
-        kind == WeatherKind.WINDY || kind == WeatherKind.SNOW || kind == WeatherKind.BLIZZARD
-    if (cloudy) {
-        val n = if (kind == WeatherKind.HEAVY_RAIN || kind == WeatherKind.THUNDERSTORM ||
-            kind == WeatherKind.BLIZZARD
-        ) 3 else 2
-        val bandH = bottom - top
-        for (i in 0 until n) {
-            val x = ((i * 23 + frame) % (cols + 8)) - 4
-            val y = top + (i * 3) % bandH
-            screen.putIfBlank(x, y, '(', Palette.GRAY)
-            screen.putIfBlank(x + 1, y, '.', Palette.GRAY)
-            screen.putIfBlank(x + 2, y, '.', Palette.GRAY)
-            screen.putIfBlank(x + 3, y, ')', Palette.GRAY)
-        }
-    }
-    if (fair && cols >= 20) {
-        val bx = ((frame * 2) % (cols + 6)) - 3
-        val by = (top + 1).coerceAtMost(bottom - 1)
-        val bird = if (frame % 2 == 0) 'v' else '^'
-        screen.putIfBlank(bx, by, bird, Palette.DIM)
-        screen.putIfBlank(bx + 2, by, bird, Palette.DIM)
-        // A tumbleweed rolls along the ground.
-        val ty = (bottom - 1).coerceAtLeast(top)
-        val tx = ((frame * 3) % (cols + 4)) - 2
-        screen.putIfBlank(tx, ty, 'o', Palette.BROWN)
-        // Now and then a shooting star streaks across.
-        if (frame % 41 < 3 && cols >= 24) {
-            val sx = ((frame * 5) % (cols + 12)) - 6
-            val sy = top
-            screen.putIfBlank(sx, sy, '\\', Palette.BRIGHT_WHITE)
-            screen.putIfBlank(sx + 1, sy, '-', Palette.WHITE)
-            screen.putIfBlank(sx + 2, sy, '-', Palette.DIM)
-        }
-    }
-}
-
 /** Smoke curling up from the campfire. */
 internal fun Game.overlaySmoke(screen: Screen, artTop: Int, artH: Int) {
     if (artH <= 2) return

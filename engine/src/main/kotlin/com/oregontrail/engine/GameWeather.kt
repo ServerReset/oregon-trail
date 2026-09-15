@@ -51,3 +51,16 @@ internal fun Game.terrainFactor(kind: LandmarkKind): Double = when (kind) {
         LandmarkKind.RIVER -> 1.0
         else -> 1.0
     }
+
+/** Frames in one in-game day (about 45 seconds at the app's tick rate). */
+internal const val DAY_FRAMES = 160
+
+/** Where we are in the current day: 0.0 dawn .. 0.5 noon .. 1.0 night. */
+internal fun Game.dayPhase(): Double = (frame % DAY_FRAMES).toDouble() / DAY_FRAMES
+
+/** Background mood for fair weather, drifting from day to dusk to night. */
+internal fun Game.duskAmbient(): Palette = when {
+    dayPhase() > 0.88 -> Palette.BLUE
+    dayPhase() < 0.6 -> Palette.GREEN
+    else -> Palette.BROWN
+}

@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.14.0] - 2026-09-15
+
+### Added
+- **A living sky**: the sun now arcs across the travel/landmark/river scenes and
+  sinks toward the west as an in-game day passes (about 45 seconds). The
+  ambient background shifts from day to golden hour to night, birds and the
+  tumbleweed vanish after dark, and stars and shooting stars appear at night.
+- **Arrival career line**: the arrival screen shows lifetime landmarks and
+  postcards alongside your final score.
+- **Landmark postmark** on the arrival notice, plus more camp chatter and
+  rumors.
+
 ## [2.13.0] - 2026-09-15
 
 ### Added

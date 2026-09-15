@@ -38,6 +38,14 @@ internal fun Game.renderArrived(screen: Screen) {
     y++
     screen.text(marginX + 1, y, "Final score: $lastScore points", Palette.BRIGHT_YELLOW, bold = true)
     y++
+    if (rows >= 24) {
+        screen.text(
+            marginX + 1, y,
+            "Career: ${stats.landmarksVisited} landmarks - ${stats.postcardsSent} postcards",
+            Palette.DIM
+        )
+        y++
+    }
     if (rows >= 28) {
         screen.text(marginX + 1, y, "How your score was earned:", Palette.DIM)
         y++

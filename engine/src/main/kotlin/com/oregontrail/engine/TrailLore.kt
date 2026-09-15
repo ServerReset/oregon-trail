@@ -50,7 +50,10 @@ object Talk {
         "\"I traded my watch for a sack of flour,\" admits a banker, shamefaced.",
         "A grandmother stitches by the fire and hums a tune from Ohio.",
         "\"The mountains are beautiful and they will kill you,\" says a quiet old man.",
-        "A fiddler strikes up a reel and for one evening the whole camp forgets the trail."
+        "A fiddler strikes up a reel and for one evening the whole camp forgets the trail.",
+        "\"We saw a herd of antelope a mile wide,\" says a hunter, shaking his head.",
+        "A boy trades a marble for a biscuit and calls it the best deal of his life.",
+        "\"Write it down,\" urges a schoolteacher. \"Someone should remember all this.\""
     )
 
     /** Occasional useful rumors, tied to gameplay. */
@@ -62,7 +65,9 @@ object Talk {
         "\"Wild berries grow along the streams past the next bluff.\"",
         "\"We found a spare wheel in an abandoned wagon. Look for one.\"",
         "\"A warm spring lies off the road. It'll ease aching bones.\"",
-        "\"Buy clothing before the passes. Cold takes the poorly dressed.\""
+        "\"Buy clothing before the passes. Cold takes the poorly dressed.\"",
+        "\"Firewood is scarce past the mountains. Gather it early.\"",
+        "\"Keep a lantern lit for stragglers. The trail is dark at night.\""
     )
 }
 

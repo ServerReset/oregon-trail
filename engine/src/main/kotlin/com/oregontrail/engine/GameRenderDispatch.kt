@@ -65,7 +65,7 @@ internal fun Game.ambientFor(): Palette = when (phase) {
             WeatherKind.SNOW, WeatherKind.BLIZZARD, WeatherKind.COLD,
             WeatherKind.HEAVY_RAIN, WeatherKind.RAIN, WeatherKind.HAIL -> Palette.BLUE
             WeatherKind.HOT -> Palette.BROWN
-            WeatherKind.CLEAR -> Palette.GREEN
+            WeatherKind.CLEAR, WeatherKind.CLOUDY, WeatherKind.WINDY -> duskAmbient()
             else -> Palette.BLACK
         }
         else -> Palette.BLACK

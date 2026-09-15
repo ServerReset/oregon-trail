@@ -18,6 +18,8 @@ internal fun Game.advanceToLandmark(msgs: MutableList<String>) {
             lines.add("You pass the graves of earlier travelers:")
             here.take(3).forEach { lines.add(it.text) }
         }
+        lines.add("")
+        lines.add("[ postmark: ${lm.name} ]")
         msgs.clear()
         lines.forEach { msgs.add(it) }
         addJournal("Reached ${lm.name}.")

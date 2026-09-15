@@ -79,6 +79,9 @@ Debug and release APKs are also attached to each CI run as artifacts.
   ferries and tolls are flagged when you cannot afford them.
 - **Campfire stories and trail wisdom** — resting heals the party and settles
   in for a story told by one of your travelers.
+- **A living sky** — the sun arcs across the scene and sinks toward the west as
+  the day passes, the background shifts from day to golden hour to night, and
+  stars (and the odd shooting star) come out after dark.
 - **Disease and death** — party members sicken and die; you get a gravestone
   and a full epitaph. Graves left by earlier journeys appear when you reach
   the same stretch of trail.
