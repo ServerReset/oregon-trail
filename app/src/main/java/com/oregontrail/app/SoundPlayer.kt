@@ -13,13 +13,13 @@ class SoundPlayer {
 
     private val handler = Handler(Looper.getMainLooper())
     private var tone: ToneGenerator? = try {
-        ToneGenerator(AudioManager.STREAM_MUSIC, 60)
+        ToneGenerator(AudioManager.STREAM_MUSIC, 85)
     } catch (_: Exception) {
         null
     }
     /** A little tune per event, played as a sequence of short tones. */
     private fun sequenceFor(s: Sound): List<Pair<Int, Int>> = when (s) {
-        Sound.CLICK -> listOf(ToneGenerator.TONE_PROP_BEEP to 30)
+        Sound.CLICK -> listOf(ToneGenerator.TONE_PROP_BEEP to 45)
         Sound.SELECT -> listOf(ToneGenerator.TONE_PROP_BEEP to 45)
         Sound.PAGE -> listOf(ToneGenerator.TONE_PROP_BEEP to 25)
         Sound.GOOD -> listOf(

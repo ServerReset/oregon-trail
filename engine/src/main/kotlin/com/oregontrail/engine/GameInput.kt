@@ -31,8 +31,9 @@ fun Game.onTap(id: String) {
             }
             id == "manage:topten" -> phase = Phase.TOP_TEN
             id == "manage:newleader" -> { newRun(occupation, travelMonth); phase = Phase.PROFESSION }
-            id == "manage:sound" -> soundEnabled = !soundEnabled
+            id == "manage:sound" -> { soundEnabled = !soundEnabled; uiSettings?.soundEnabled = soundEnabled }
             id == "manage:haptics" -> uiSettings?.let { it.haptics = !it.haptics }
+            id == "manage:testsound" -> pendingSound = Sound.GOOD
             id == "manage:difficulty" -> cycleDifficulty()
             id == "manage:textsize" -> uiSettings?.let { it.textScaleIndex = (it.textScaleIndex + 1) % 3 }
             id == "manage:contrast" -> uiSettings?.let { it.highContrast = !it.highContrast }

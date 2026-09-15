@@ -12,6 +12,7 @@ internal fun MainActivity.applyUi() {
         terminal.highContrast = ui.highContrast
         terminal.scanlinesEnabled = ui.scanlines
         terminal.hapticsEnabled = ui.haptics
+        game.soundEnabled = ui.soundEnabled
         terminal.colors = when (ui.themeIndex) {
             1 -> RetroPalette
             2 -> MaterialYouTheme(this, light = isSystemLight())

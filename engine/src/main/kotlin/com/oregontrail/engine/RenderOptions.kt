@@ -27,6 +27,7 @@ internal fun Game.renderManagement(screen: Screen) {
         short.add("New leader" to "manage:newleader")
         short.add("Diff ${difficulty.displayName.take(4)}" to "manage:difficulty")
         short.add("Sound ${onOff(soundEnabled)}" to "manage:sound")
+        short.add("Test sound" to "manage:testsound")
         uiSettings?.let { ui -> short.add("Hap ${onOff(ui.haptics)}" to "manage:haptics") }
         uiSettings?.let { ui ->
             short.add("Text ${textScaleName(ui.textScaleIndex).take(1)}" to "manage:textsize")
@@ -40,12 +41,13 @@ internal fun Game.renderManagement(screen: Screen) {
         renderMenuColumns(screen, 1, short)
         return
     }
-    screen.center(1, "MANAGEMENT OPTIONS", Palette.BRIGHT_GREEN, bold = true)
+    screen.center(1, "SETTINGS", Palette.BRIGHT_GREEN, bold = true)
     val options = ArrayList<Pair<String, String>>()
     options.add("See the Oregon Top Ten" to "manage:topten")
     options.add("Choose a different leader" to "manage:newleader")
     options.add("Difficulty: ${difficulty.displayName}" to "manage:difficulty")
     options.add("Sound is ${if (soundEnabled) "ON" else "OFF"}" to "manage:sound")
+    options.add("Play a test sound" to "manage:testsound")
     uiSettings?.let { ui ->
         options.add("Haptics: ${onOff(ui.haptics)}" to "manage:haptics")
     }

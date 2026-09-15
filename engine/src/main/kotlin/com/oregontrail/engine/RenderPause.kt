@@ -10,7 +10,7 @@ internal fun Game.renderPause(screen: Screen) {
         "3. Quick save" to "pause:quicksave",
         "4. Quick load" to "pause:quickload",
         "5. Load a saved game" to "pause:load",
-        "6. Management options" to "pause:manage",
+        "6. Settings" to "pause:manage",
         "7. Save and return to title" to "pause:title",
         "8. Send a postcard" to "pause:postcard",
         "9. Quit" to "pause:quit"

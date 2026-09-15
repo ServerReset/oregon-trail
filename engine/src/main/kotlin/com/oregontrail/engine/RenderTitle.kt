@@ -34,7 +34,7 @@ internal fun Game.renderTitle(screen: Screen) {
     menu.add("${n++}. See the Oregon Top Ten" to "title:topten")
     menu.add("${n++}. Achievements (${achievements.size}/${Achievements.all.size})" to "title:ach")
     menu.add("${n++}. Statistics" to "title:stats")
-    menu.add("${n++}. Choose Management Options" to "title:manage")
+    menu.add("${n++}. Settings and options" to "title:manage")
     menu.add("${n++}. End" to "title:end")
     val totalH = art.size + 2 + menu.size
     var y = ((rows - totalH) / 2).coerceAtLeast(0)
@@ -62,7 +62,7 @@ internal fun Game.renderTitleCompact(screen: Screen) {
     menu.add("${n++}. Top Ten" to "title:topten")
     menu.add("${n++}. Awards" to "title:ach")
     menu.add("${n++}. Stats" to "title:stats")
-    menu.add("${n++}. Options" to "title:manage")
+    menu.add("${n++}. Settings" to "title:manage")
     menu.add("${n++}. End" to "title:end")
     screen.center(0, "OREGON", Palette.BRIGHT_YELLOW, bold = true)
     screen.center(1, "TRAIL", Palette.BRIGHT_YELLOW, bold = true)

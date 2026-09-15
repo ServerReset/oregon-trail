@@ -58,4 +58,53 @@ private fun newGame(seed: Long = 1L, store: ScoreStore = InMemoryScoreStore()): 
         assertTrue(text.contains("Text size"))
         assertTrue(text.contains("High contrast"))
     }
+
+    @Test
+    fun settings_are_easy_to_find_and_audible() {
+        class TestSettings : UiSettings {
+            override var textScaleIndex: Int = 1
+            override var highContrast: Boolean = false
+            override var scanlines: Boolean = true
+            override var haptics: Boolean = true
+            override var soundEnabled: Boolean = true
+            override var themeIndex: Int = 0
+        }
+        val g = newGame()
+        g.uiSettings = TestSettings()
+        // The title advertises settings by name.
+        assertTrue(g.render().toText().contains("Settings and options"))
+
+        g.onTap("title:manage")
+        val settings = g.render()
+        val text = settings.toText()
+        assertTrue(text.contains("SETTINGS") )
+        assertTrue(text.contains("Sound is ON") )
+        assertTrue(text.contains("Theme:"))
+        assertTrue(settings.hotspots.any { it.id == "manage:testsound" })
+
+        // The test-sound action queues a cue.
+        g.onTap("manage:testsound")
+        assertEquals(Sound.GOOD, g.pendingSound)
+    }
+
+    @Test
+    fun the_sound_toggle_persists_through_ui_settings() {
+        class TestSettings : UiSettings {
+            override var textScaleIndex: Int = 1
+            override var highContrast: Boolean = false
+            override var scanlines: Boolean = true
+            override var haptics: Boolean = true
+            override var soundEnabled: Boolean = true
+            override var themeIndex: Int = 0
+        }
+        val ui = TestSettings()
+        val g = newGame()
+        g.uiSettings = ui
+        g.onTap("title:manage")
+        g.onTap("manage:sound")
+        assertFalse(g.soundEnabled)
+        assertFalse(ui.soundEnabled, "the sound choice should reach the persisted settings")
+        g.onTap("manage:sound")
+        assertTrue(ui.soundEnabled)
+    }
 }

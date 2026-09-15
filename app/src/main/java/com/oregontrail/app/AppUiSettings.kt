@@ -32,6 +32,12 @@ class AppUiSettings(context: Context) : UiSettings {
             prefs.edit().putBoolean(KEY_HAPTICS, value).apply()
         }
 
+    override var soundEnabled: Boolean
+        get() = prefs.getBoolean(KEY_SOUND, true)
+        set(value) {
+            prefs.edit().putBoolean(KEY_SOUND, value).apply()
+        }
+
     override var themeIndex: Int
         get() = prefs.getInt(KEY_THEME, 0)
         set(value) {
@@ -43,6 +49,7 @@ class AppUiSettings(context: Context) : UiSettings {
         private const val KEY_CONTRAST = "contrast"
         private const val KEY_SCANLINES = "scanlines"
         private const val KEY_HAPTICS = "haptics"
+        private const val KEY_SOUND = "sound"
         private const val KEY_THEME = "theme"
     }
 }

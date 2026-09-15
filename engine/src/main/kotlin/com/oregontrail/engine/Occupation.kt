@@ -41,6 +41,11 @@ interface UiSettings {
         get() = true
         set(_) {}
 
+    /** Whether action sounds play. Persisted by the front-end. */
+    var soundEnabled: Boolean
+        get() = true
+        set(_) {}
+
     /** 0 = Terminal (green on black), 1 = Classic (colour on black), 2 = Material You. */
     var themeIndex: Int
         get() = 0

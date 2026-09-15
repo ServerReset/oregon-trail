@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.17.0] - 2026-09-15
+
+### Changed
+- **Settings are now easy to find**: the title entry reads "Settings and
+  options" (and simply "Settings" on small screens), the pause entry reads
+  "Settings", and the screen is titled "SETTINGS".
+- **Sound is a persisted setting**: the Sound toggle is remembered between
+  launches (it used to reset each time).
+- **"Play a test sound"** row on the Settings screen, so you can hear the SFX
+  immediately.
+- Action tones are louder (ToneGenerator 85) and the menu blip slightly longer.
+
 ## [2.16.0] - 2026-09-15
 
 ### Added
