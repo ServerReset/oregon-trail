@@ -12,6 +12,10 @@ internal fun MainActivity.onHotspot(id: String) {
     if (id == "pause:title") store.saveState(game.save())
     game.onTap(id)
     if (game.requestedShare) share.sharePostcard()
+    if (game.requestedJournalShare) {
+        share.shareText(game.journalText(), "My Oregon Trail journal")
+        game.clearJournalShareRequest()
+    }
     if (id == "manage:export") saves.export()
     if (id == "manage:import") saves.import()
     handleNameRequest()

@@ -80,6 +80,7 @@ fun Game.onTap(id: String) {
             id == "journal:prev" -> { journalPage = (journalPage - 1).coerceAtLeast(0); pendingSound = Sound.PAGE }
             id == "journal:next" -> { journalPage = min(journalPage + 1, journalLastPage()); pendingSound = Sound.PAGE }
             id == "journal:back" -> phase = Phase.TRAVEL
+            id == "journal:share" -> requestedJournalShare = true
             id == "hunt:up" -> huntField?.move(0, -1)
             id == "hunt:down" -> huntField?.move(0, 1)
             id == "hunt:left" -> huntField?.move(-1, 0)

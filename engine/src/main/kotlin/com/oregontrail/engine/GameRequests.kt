@@ -67,3 +67,7 @@ fun Game.clearQuickSaveRequest() {
 fun Game.clearQuickLoadRequest() {
         requestedQuickLoad = false
     }
+
+fun Game.clearJournalShareRequest() {
+    requestedJournalShare = false
+}

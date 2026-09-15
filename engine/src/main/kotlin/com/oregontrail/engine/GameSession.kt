@@ -49,6 +49,8 @@ open class GameSession {
     var pendingUnlock: String? = null
     var requestedShare: Boolean = false
         internal set
+    var requestedJournalShare: Boolean = false
+        internal set
     var requestedQuickSave: Boolean = false
         internal set
     var requestedQuickLoad: Boolean = false

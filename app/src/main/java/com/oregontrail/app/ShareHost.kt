@@ -52,4 +52,18 @@ class ShareHost(private val activity: MainActivity) {
         }
         activity.game.recordPostcardSent()
     }
+
+    /** Shares plain text (used for the journal) through the system sheet. */
+    fun shareText(text: String, subject: String) {
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+        }
+        try {
+            activity.startActivity(Intent.createChooser(send, subject))
+        } catch (_: Exception) {
+            Toast.makeText(activity, "Could not share", Toast.LENGTH_SHORT).show()
+        }
+    }
 }

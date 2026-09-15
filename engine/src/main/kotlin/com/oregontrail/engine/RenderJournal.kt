@@ -56,4 +56,9 @@ internal fun Game.renderJournal(screen: Screen) {
     screen.hotspot("journal:next", marginX + 12, y, next.length)
     screen.text(marginX + 23, y, back, Palette.BRIGHT_GREEN, bold = true)
     screen.hotspot("journal:back", marginX + 23, y, back.length)
+    if (cols >= 43) {
+        val share = "[ Share ]"
+        screen.text(marginX + 34, y, share, Palette.BRIGHT_GREEN, bold = true)
+        screen.hotspot("journal:share", marginX + 34, y, share.length)
+    }
 }

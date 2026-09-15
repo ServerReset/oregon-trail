@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.13.0] - 2026-09-15
+
+### Added
+- **Shareable journal**: the journal screen has a `[ Share ]` action that sends
+  the whole dated trail diary as text through the system share sheet (on wider
+  screens).
+
 ## [2.12.0] - 2026-09-15
 
 ### Added

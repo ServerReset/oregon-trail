@@ -21,3 +21,12 @@ internal fun Game.recordStats(transform: (GameStats) -> GameStats) {
         stats = transform(stats)
         scores.saveStats(stats)
     }
+
+/** The whole journal as shareable text, oldest entry first. */
+fun Game.journalText(): String {
+    if (journal.isEmpty()) return "My Oregon Trail journal is empty."
+    val leader = party.firstOrNull()?.name ?: "Traveler"
+    val sb = StringBuilder("The Oregon Trail - $leader's journal\n\n")
+    for (e in journal) sb.append("${e.date}: ${e.text}\n")
+    return sb.toString()
+}
