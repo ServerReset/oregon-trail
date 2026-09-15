@@ -170,11 +170,14 @@ terminal or web front-end later.
 
 ```bash
 ./gradlew :engine:test          # run the unit + layout-fuzz tests
-./gradlew :app:assembleDebug    # debug APK
-./gradlew :app:assembleRelease  # release APK (needs keystore.properties)
+./gradlew :app:assembleDebug    # debug APK (signed with the release key)
+./gradlew :app:assembleRelease  # release APK
+python3 tools/gen_icons.py      # regenerate the ASCII launcher icons
 ```
 
-For a signed release build, create `keystore.properties` in the project root:
+The debug and release APKs are signed with the **same key**, so a newer build
+installs as an update over an older one without an uninstall. Locally the key
+comes from `keystore.properties` in the project root:
 
 ```properties
 storeFile=../release.keystore
@@ -183,8 +186,9 @@ keyAlias=...
 keyPassword=...
 ```
 
-If the file is absent the release build is produced signed with the debug
-key. CI can sign with your own key if you add these repository secrets:
+If `keystore.properties` is absent, both variants fall back to the debug key.
+CI decodes the release key from these repository secrets *before* building, so
+the published APKs and your local builds share one signature:
 
 | Secret | Purpose |
 |--------|---------|

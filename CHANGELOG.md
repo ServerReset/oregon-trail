@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.4.1] - 2026-09-15
+
+### Added
+- **ASCII launcher icon**: the app icon is now the in-game covered wagon
+  rendered as glowing green monospace text on black, with a `> _` shell
+  prompt. It is generated from `Ascii.kt` by `tools/gen_icons.py` so it always
+  matches the game art, and ships as an adaptive icon plus legacy PNGs.
+
+### Fixed
+- **Consistent signing**: debug and release builds (local and CI) now use the
+  same release key, so a newer APK installs as an update over an existing one
+  instead of failing with a signature mismatch. CI decodes the key from
+  repository secrets before building.
+
 ## [2.4.0] - 2026-09-15
 
 ### Added

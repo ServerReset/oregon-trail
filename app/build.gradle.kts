@@ -24,8 +24,8 @@ android {
         applicationId = "com.oregontrail.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 15
-        versionName = "2.4.0"
+        versionCode = 16
+        versionName = "2.4.1"
     }
 
     if (hasReleaseSigning) {
@@ -47,19 +47,25 @@ android {
     }
 
     buildTypes {
+        // Sign every variant (debug and release, local and CI) with the same
+        // key so a newer build installs as an update over an older one.
+        val sharedSigning = if (hasReleaseSigning) {
+            signingConfigs.getByName("release")
+        } else {
+            signingConfigs.getByName("debug")
+        }
+
+        debug {
+            signingConfig = sharedSigning
+        }
+
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Use the private release key when available; otherwise fall back to
-            // the debug key so CI can still produce an installable APK.
-            signingConfig = if (hasReleaseSigning) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = sharedSigning
         }
     }
 

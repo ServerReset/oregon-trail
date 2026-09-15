@@ -47,19 +47,19 @@ jobs:
       - name: Run engine unit tests
         run: ./gradlew :engine:test --stacktrace
 
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
-
       - name: Decode the release keystore (optional)
         env:
           KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
         run: |
           if [ -n "$KEYSTORE_B64" ]; then
             printf '%s' "$KEYSTORE_B64" | base64 -d > ci-release.keystore
-            echo "Release keystore decoded."
+            echo "Release keystore decoded; debug and release will share this key."
           else
-            echo "No keystore secret; the APK will be debug-signed."
+            echo "No keystore secret; debug and release will both use the debug key."
           fi
+
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: Build release APK
         env:
