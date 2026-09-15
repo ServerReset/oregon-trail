@@ -39,11 +39,12 @@ internal fun Game.renderLandmark(screen: Screen) {
     pauseButton(screen)
     var y = 2
     if (rows >= 26) {
-        val art = landmarkArt(lm)
+        val art = Landscape.forKind(lm.kind, miles)
         val artTop = y
-        Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.GREEN)
-        val artBottom = artTop + Ascii.height(art)
-        y += Ascii.height(art) + 1
+        val sx = ((cols - sceneWidth(art)) / 2).coerceAtLeast(0)
+        screen.drawScene(art, sx, y)
+        val artBottom = artTop + art.size
+        y += art.size + 1
         overlaySky(screen, artTop, artBottom)
         overlayWeather(screen, artTop, artBottom)
         overlayWildlife(screen, artTop, artBottom)
@@ -96,20 +97,6 @@ internal fun Game.renderLandmark(screen: Screen) {
     screen.menuAt(marginX + 1, y, options)
 }
 
-/** Picks artwork for a landmark, with special pieces for famous places. */
-internal fun Game.landmarkArt(lm: Landmark): List<String> = when (lm.id) {
-    "independence" -> AsciiLandmarks.town
-    "chimney" -> AsciiLandmarks.chimneyRock
-    "southpass" -> AsciiLandmarks.southPass
-    "dalles" -> AsciiLandmarks.dalles
-    "independence_rock" -> AsciiScenery.rock
-    else -> when (lm.kind) {
-        LandmarkKind.FORT -> AsciiScenery.fort
-        LandmarkKind.MOUNTAINS -> AsciiScenery.mountains
-        LandmarkKind.RIVER -> riverArt(frame)
-        else -> AsciiScenery.rock
-    }
-}
 
 /** Shortens a landmark name for tiny screens. */
 internal fun Game.shortLandmarkName(lm: Landmark): String = when (lm.id) {

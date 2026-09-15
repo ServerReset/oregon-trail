@@ -48,7 +48,7 @@ interface UiSettings {
 
     /** 0 = Terminal (green on black), 1 = Classic (colour on black), 2 = Material You. */
     var themeIndex: Int
-        get() = 0
+        get() = 1
         set(_) {}
 }
 

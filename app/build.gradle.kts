@@ -24,8 +24,8 @@ android {
         applicationId = "com.oregontrail.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 30
-        versionName = "2.17.0"
+        versionCode = 31
+        versionName = "2.18.0"
     }
 
     if (hasReleaseSigning) {

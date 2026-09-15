@@ -71,8 +71,9 @@ private fun Game.drawSun(screen: Screen, top: Int, bottom: Int, p: Double) {
     val span = (cols - 8).coerceAtLeast(4)
     val sx = (p * span).toInt().coerceIn(1, cols - 8)
     val arc = sin(p * PI).coerceIn(0.0, 1.0)
-    val bandH = (bottom - top).coerceAtLeast(2)
-    val sy = (bottom - 1 - (arc * (bandH - 2)).toInt()).coerceIn(top, bottom - 1)
+    // Keep the sun in the sky band so it never sits on the hills.
+    val skyH = ((bottom - top).coerceAtMost(3)).coerceAtLeast(1)
+    val sy = (top + skyH - 1 - (arc * (skyH - 1)).toInt()).coerceIn(top, top + skyH - 1)
     val color = if (arc > 0.35) Palette.BRIGHT_YELLOW else Palette.YELLOW
     screen.putIfBlank(sx + 1, sy, if (frame % 2 == 0) '\\' else '/', color)
     screen.putIfBlank(sx + 5, sy, if (frame % 2 == 0) '/' else '\\', color)

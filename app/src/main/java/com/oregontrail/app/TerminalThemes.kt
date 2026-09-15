@@ -66,15 +66,18 @@ object RetroPalette : ThemeColors {
         }
     }
 
-    /** Near-black background tints used for the ambient mood. */
+    /**
+     * Near-black background tints for the ambient mood. Kept very dark so the
+     * coloured artwork pops; the Terminal theme carries the green cast instead.
+     */
     fun bg(ambient: Palette, highContrast: Boolean = false): Int {
         if (highContrast) return 0xFF000000.toInt()
         return when (ambient) {
-            Palette.BRIGHT_WHITE -> 0xFF303030.toInt() // lightning flash
-            Palette.GREEN, Palette.BRIGHT_GREEN -> 0xFF031403.toInt()
-            Palette.BLUE, Palette.CYAN -> 0xFF020617.toInt()
-            Palette.BROWN, Palette.YELLOW -> 0xFF160C02.toInt()
-            Palette.RED, Palette.MAGENTA -> 0xFF170202.toInt()
+            Palette.BRIGHT_WHITE -> 0xFF2A2A2A.toInt() // lightning flash
+            Palette.GREEN, Palette.BRIGHT_GREEN -> 0xFF020802.toInt()
+            Palette.BLUE, Palette.CYAN -> 0xFF01030A.toInt()
+            Palette.BROWN, Palette.YELLOW -> 0xFF0A0501.toInt()
+            Palette.RED, Palette.MAGENTA -> 0xFF0A0101.toInt()
             else -> BACKGROUND
         }
     }

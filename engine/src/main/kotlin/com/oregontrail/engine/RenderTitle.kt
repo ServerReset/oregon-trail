@@ -13,16 +13,21 @@ internal fun Game.renderTitle(screen: Screen) {
         screen.putIfBlank(bx, 0, bird, Palette.DIM)
         screen.putIfBlank(bx + 2, 0, bird, Palette.DIM)
     }
-    val art = ArrayList<String>()
+    // Layered artwork: twinkling stars, the wagon, then the title letters,
+    // each layer with its own colour.
+    data class Layer(val rows: List<String>, val fg: Palette, val bold: Boolean = false)
+    val layers = ArrayList<Layer>()
     if (contentW >= 36 && rows >= 30) {
-        art.addAll(starsArt(frame))
-        art.addAll(AsciiScenery.wagon)
-        art.addAll(Ascii.blockWord("OREGON"))
-        art.addAll(Ascii.blockWord("TRAIL"))
+        layers.add(Layer(starsArt(frame), Palette.DIM))
+        layers.add(Layer(AsciiScenery.wagon, Palette.GREEN))
+        layers.add(Layer(Ascii.blockWord("OREGON"), Palette.BRIGHT_GREEN, true))
+        layers.add(Layer(Ascii.blockWord("TRAIL"), Palette.BRIGHT_YELLOW, true))
+        layers.add(Layer(listOf(""), Palette.DEFAULT))
+        layers.add(Layer(listOf(""), Palette.DEFAULT))
     } else {
-        art.addAll(AsciiScenery.wagonSmall)
-        art.add("")
-        art.add("T H E   O R E G O N   T R A I L")
+        layers.add(Layer(AsciiScenery.wagonSmall, Palette.GREEN))
+        layers.add(Layer(listOf(""), Palette.DEFAULT))
+        layers.add(Layer(listOf("T H E   O R E G O N   T R A I L"), Palette.BRIGHT_GREEN, true))
     }
     val menu = ArrayList<Pair<String, String>>()
     var n = 1
@@ -36,10 +41,15 @@ internal fun Game.renderTitle(screen: Screen) {
     menu.add("${n++}. Statistics" to "title:stats")
     menu.add("${n++}. Settings and options" to "title:manage")
     menu.add("${n++}. End" to "title:end")
-    val totalH = art.size + 2 + menu.size
+    val artH = layers.sumOf { it.rows.size }
+    val totalH = artH + 2 + menu.size
     var y = ((rows - totalH) / 2).coerceAtLeast(0)
-    Ascii.draw(screen, (cols - Ascii.width(art)) / 2, y, art, Palette.BRIGHT_GREEN)
-    y += art.size + 1
+    for (layer in layers) {
+        val ax = ((cols - (layer.rows.maxOfOrNull { it.length } ?: 0)) / 2).coerceAtLeast(0)
+        Ascii.draw(screen, ax, y, layer.rows, layer.fg, layer.bold)
+        y += layer.rows.size
+    }
+    y += 1
     val x = ((cols - (menu.maxOf { it.first.length } + 2)) / 2).coerceAtLeast(0)
     for ((label, id) in menu) {
         screen.text(x, y, ">", Palette.BRIGHT_YELLOW, bold = true)

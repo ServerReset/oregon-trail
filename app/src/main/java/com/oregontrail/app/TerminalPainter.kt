@@ -20,6 +20,7 @@ class TerminalPainter {
     private val scanPaint = Paint().apply { color = Color.argb(30, 0, 0, 0) }
     private val vignettePaint = Paint()
     private var vignette: Shader? = null
+    private val glowRadius = 2.5f
 
     fun resize(w: Int, h: Int) {
         vignette = RadialGradient(
@@ -68,6 +69,14 @@ class TerminalPainter {
                     y in highlight.y0..highlight.y1
                 paint.color = if (selected) bg else colors.foreground(cell.fg, highContrast)
                 paint.isFakeBoldText = cell.bold || colors.isBoldDefault(cell.fg)
+                // A soft phosphor bloom so the display reads as a CRT.
+                if (colors.dark && !selected) {
+                    paint.setShadowLayer(
+                        glowRadius, 0f, 0f, (paint.color and 0x00FFFFFF) or 0x55000000
+                    )
+                } else {
+                    paint.clearShadowLayer()
+                }
                 canvas.drawText(
                     cell.ch.toString(),
                     grid.marginX + x * grid.cellW,

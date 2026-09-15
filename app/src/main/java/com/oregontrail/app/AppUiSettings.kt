@@ -39,7 +39,7 @@ class AppUiSettings(context: Context) : UiSettings {
         }
 
     override var themeIndex: Int
-        get() = prefs.getInt(KEY_THEME, 0)
+        get() = prefs.getInt(KEY_THEME, 1)
         set(value) {
             prefs.edit().putInt(KEY_THEME, value.coerceIn(0, 2)).apply()
         }

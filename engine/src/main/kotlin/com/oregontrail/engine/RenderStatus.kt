@@ -44,14 +44,6 @@ internal fun Game.statusLines(): List<String> {
     )
 }
 
-internal fun Game.sceneArt(): List<String> = when (Data.landmarkAt(landmarkIndex).kind) {
-    LandmarkKind.MOUNTAINS -> AsciiScenery.mountains
-    LandmarkKind.RIVER -> riverArt(frame)
-    LandmarkKind.FORT -> AsciiScenery.fort
-    LandmarkKind.START -> AsciiScenery.wagonSmall
-    else -> if (miles > 700) AsciiScenery.rock else AsciiScenery.trees
-}
-
 internal fun Game.travelOptions(): List<Pair<String, String>> = listOf(
     "1. Continue on trail" to "travel:continue",
     "2. Check supplies" to "travel:supplies",

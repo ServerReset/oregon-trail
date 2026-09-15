@@ -20,7 +20,7 @@ internal fun Game.renderTravel(screen: Screen) {
     for (line in if (compact) compactStatusLines() else statusLines()) {
         wrapped.addAll(wrapString(line, inner))
     }
-    screen.box(marginX, y, boxW, wrapped.size + 2, Palette.GREEN, "Status")
+    screen.box(marginX, y, boxW, wrapped.size + 2, Palette.CYAN, "Status")
     wrapped.forEachIndexed { i, line ->
         val color = when {
             (line.startsWith("Food") || line.startsWith("fd")) && inventory.food <= 150 -> Palette.YELLOW
@@ -40,42 +40,37 @@ internal fun Game.renderTravel(screen: Screen) {
         y++
     }
     // Animated trail progress bar with a bobbing wagon marker.
-    if (y < rows - 1) {
-        val barW = min(contentW - 16, 26).coerceAtLeast(8)
-        val base = (miles.toLong() * barW / Data.TOTAL_MILES).toInt().coerceIn(0, barW - 1)
-        val pos = (base + (frame % 2)).coerceIn(0, barW - 1)
-        val sb = StringBuilder("[")
-        for (i in 0 until barW) {
-            sb.append(
-                when {
-                    i < pos -> '='
-                    i == pos -> '>'
-                    // Kicked-up dust trails just behind the wagon.
-                    i == pos - 1 -> if (frame % 2 == 0) ':' else '-'
-                    i == pos - 2 -> if (frame % 4 == 0) '.' else '-'
-                    else -> '-'
-                }
-            )
-        }
-        sb.append("]  $miles/${Data.TOTAL_MILES} mi")
-        screen.text(marginX + 1, y, sb.toString().take(contentW - 1), Palette.CYAN)
-        y++
-    }
+    y = drawProgressBar(screen, y)
 
-    if (!compact) {
-        val scene = sceneArt()
-        val sceneTop = y
-        Ascii.draw(screen, (cols - Ascii.width(scene)) / 2, y, scene, Palette.GREEN)
-        val sceneBottom = sceneTop + Ascii.height(scene)
-        y += Ascii.height(scene) + 1
-        overlaySky(screen, sceneTop, sceneBottom)
-        overlayWeather(screen, sceneTop, sceneBottom)
-        overlayWildlife(screen, sceneTop, sceneBottom)
-        overlayGround(screen, sceneTop, sceneBottom)
-    }
-
-    val remaining = rows - y - 1
+    // Only draw as much scenery as leaves room for the menu below it.
     val options = travelOptions()
+    if (!compact) {
+        val full = Landscape.travelScene(miles)
+        val need = options.size + 1
+        val room = (rows - y - need).coerceAtLeast(0)
+        val scene = full.take(room)
+        if (scene.isNotEmpty()) {
+            val sceneTop = y
+            val sx = ((cols - sceneWidth(full)) / 2).coerceAtLeast(0)
+            screen.drawScene(scene, sx, y)
+            val sceneBottom = sceneTop + scene.size
+            y += scene.size + 1
+            overlaySky(screen, sceneTop, sceneBottom)
+            overlayWeather(screen, sceneTop, sceneBottom)
+            overlayWildlife(screen, sceneTop, sceneBottom)
+            overlayGround(screen, sceneTop, sceneBottom)
+        }
+    }
+
+    // A footer with the day count, when there is clearly spare room.
+    if (rows >= 42) {
+        screen.text(
+            marginX + 1, rows - 1,
+            "Day ${daysOnTrail()} on the trail  -  the sun crosses the sky as you go",
+            Palette.DIM
+        )
+    }
+    val remaining = rows - y
     if (remaining >= options.size + 1) {
         screen.text(marginX + 1, y, "What would you like to do?", Palette.BRIGHT_YELLOW)
         y++

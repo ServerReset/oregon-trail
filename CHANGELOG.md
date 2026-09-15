@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.18.0] - 2026-09-15
+
+### Changed
+- **Big visual pass**:
+  - **Layered, multi-colour scenery** replaces the single-colour art: rolling
+    plains with grass, snow-capped peaks, pine forest, river banks, a town and
+    a palisade fort, each drawn with sky, rock, tree and ground colours.
+  - **Classic is now the default theme**, so the art shows in full colour out
+    of the box (Terminal and Material You remain in Settings).
+  - **Phosphor glow**: text on dark themes gets a soft CRT bloom.
+  - The near-black Classic background lets the colours pop (it was green-tinted).
+  - The **title screen** layers twinkling stars, the wagon and the OREGON/TRAIL
+    letters in different colours.
+  - The scene sizes itself so the menu always fits on small screens, the status
+    panel is framed in cyan, and a day-counter footer appears on tall screens.
+
 ## [2.17.0] - 2026-09-15
 
 ### Changed
