@@ -70,7 +70,9 @@ class PrefsScoreStore(context: Context) : ScoreStore {
         arrivals = prefs.getInt("st_arrivals", 0),
         deaths = prefs.getInt("st_deaths", 0),
         bestScore = prefs.getInt("st_best", 0),
-        totalMiles = prefs.getInt("st_miles", 0)
+        totalMiles = prefs.getInt("st_miles", 0),
+        landmarksVisited = prefs.getInt("st_landmarks", 0),
+        postcardsSent = prefs.getInt("st_postcards", 0)
     )
 
     override fun saveStats(stats: GameStats) {
@@ -80,6 +82,8 @@ class PrefsScoreStore(context: Context) : ScoreStore {
             .putInt("st_deaths", stats.deaths)
             .putInt("st_best", stats.bestScore)
             .putInt("st_miles", stats.totalMiles)
+            .putInt("st_landmarks", stats.landmarksVisited)
+            .putInt("st_postcards", stats.postcardsSent)
             .apply()
     }
 

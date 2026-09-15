@@ -3,7 +3,7 @@ package com.oregontrail.app
 import android.content.Intent
 import android.widget.Toast
 import androidx.core.content.FileProvider
-import com.oregontrail.engine.clearShareRequest
+import com.oregontrail.engine.recordPostcardSent
 import com.oregontrail.engine.postcard
 import com.oregontrail.engine.summaryText
 import java.io.File
@@ -50,6 +50,6 @@ class ShareHost(private val activity: MainActivity) {
                 Toast.makeText(activity, "Could not share the postcard", Toast.LENGTH_SHORT).show()
             }
         }
-        activity.game.clearShareRequest()
+        activity.game.recordPostcardSent()
     }
 }

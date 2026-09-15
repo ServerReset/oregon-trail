@@ -106,3 +106,23 @@ internal fun Game.evMirage(msgs: MutableList<String>) {
     msgs.add("A shining lake shimmers ahead — only a")
     msgs.add("mirage. You waste $lost miles chasing water.")
 }
+
+/** A buffalo herd: a chance for a great haul, if you have ammunition. */
+internal fun Game.evBuffaloHerd(msgs: MutableList<String>) {
+    if (inventory.ammo >= 10) {
+        inventory.ammo -= 10
+        inventory.food += 60
+        msgs.add("A buffalo herd blocks the trail. You")
+        msgs.add("shoot one and dress 60 pounds of meat.")
+    } else {
+        msgs.add("A buffalo herd thunders past the wagon,")
+        msgs.add("too far to hunt without ammunition.")
+    }
+}
+
+/** An evening of music lifts the party's spirits. */
+internal fun Game.evFiddleNight(msgs: MutableList<String>) {
+    aliveMembers().forEach { it.heal(rng.nextInt(2, 5)) }
+    msgs.add("A fiddler plays in camp tonight. Heavy")
+    msgs.add("hearts lighten and feet start to tap.")
+}

@@ -10,6 +10,8 @@ internal fun Game.renderStats(screen: Screen) {
             "died ${stats.deaths}",
             "best ${stats.bestScore}",
             "miles ${stats.totalMiles}",
+            "landmarks ${stats.landmarksVisited}",
+            "postcards ${stats.postcardsSent}",
             "awards ${achievements.size}/${Achievements.all.size}"
         )
         lines.forEachIndexed { i, l ->
@@ -28,6 +30,8 @@ internal fun Game.renderStats(screen: Screen) {
     lines.add("Died on the trail: ${stats.deaths}")
     lines.add("Best score: ${stats.bestScore}")
     lines.add("Total miles travelled: ${stats.totalMiles}")
+    lines.add("Landmarks reached: ${stats.landmarksVisited}")
+    lines.add("Postcards sent: ${stats.postcardsSent}")
     lines.add("Achievements: ${achievements.size}/${Achievements.all.size}")
     lines.add("")
     lines.add("Oregon Top Ten:")

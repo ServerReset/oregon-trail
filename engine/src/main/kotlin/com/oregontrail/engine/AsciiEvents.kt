@@ -82,4 +82,16 @@ internal object AsciiEvents {
     // ------------------------------------------------------------------
     // Hunting field props (roguelike style)
     // ------------------------------------------------------------------
+
+    val buffalo: List<String> = listOf(
+        "   __       __",
+        "  (  )-----/  )",
+        "   \\/  \\/  \\/"
+    )
+
+    val fiddle: List<String> = listOf(
+        "   ,---.",
+        "  |  o  |====",
+        "   '---'"
+    )
 }

@@ -21,6 +21,8 @@ internal fun Game.advanceToLandmark(msgs: MutableList<String>) {
         msgs.clear()
         lines.forEach { msgs.add(it) }
         addJournal("Reached ${lm.name}.")
+        recordStats { it.copy(landmarksVisited = it.landmarksVisited + 1) }
+        if (landmarkIndex >= 10) unlock(Achievements.TRAILBLAZER)
         val next = if (lm.kind == LandmarkKind.RIVER) Phase.RIVER else Phase.LANDMARK
         showNotice("Landmark", lines, next)
         pendingSound = Sound.MILESTONE

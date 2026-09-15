@@ -30,7 +30,9 @@ data class GameStats(
     val arrivals: Int = 0,
     val deaths: Int = 0,
     val bestScore: Int = 0,
-    val totalMiles: Int = 0
+    val totalMiles: Int = 0,
+    val landmarksVisited: Int = 0,
+    val postcardsSent: Int = 0
 )
 
 /** A milestone the player can unlock. */

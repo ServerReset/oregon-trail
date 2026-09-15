@@ -20,6 +20,8 @@ object Achievements {
     const val HISTORIAN = "historian"
     const val BARGAINER = "bargainer"
     const val RAINBOW = "rainbow"
+    const val POSTMASTER = "postmaster"
+    const val TRAILBLAZER = "trailblazer"
 
     val all: List<Achievement> = listOf(
         Achievement(REACHED_OREGON, "Oregon or Bust", "Reach the Willamette Valley."),
@@ -37,7 +39,9 @@ object Achievements {
         Achievement(GOOD_SAMARITAN, "Good Samaritan", "Share your food with a stranded family."),
         Achievement(HISTORIAN, "Student of the Trail", "Read the history at five landmarks."),
         Achievement(BARGAINER, "Wheeler-Dealer", "Haggle a trader into a better deal."),
-        Achievement(RAINBOW, "Over the Rainbow", "See a rainbow on the trail.")
+        Achievement(RAINBOW, "Over the Rainbow", "See a rainbow on the trail."),
+        Achievement(POSTMASTER, "Postmaster", "Send a postcard from the trail."),
+        Achievement(TRAILBLAZER, "Trailblazer", "Reach ten landmarks in a single journey.")
     )
 
     fun name(id: String): String = all.firstOrNull { it.id == id }?.name ?: id

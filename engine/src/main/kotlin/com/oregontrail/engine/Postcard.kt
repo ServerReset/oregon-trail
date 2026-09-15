@@ -49,3 +49,10 @@ private fun center(s: String, width: Int): String {
 
 /** The postcard as a single string (for text sharing or tests). */
 fun Game.postcardText(): String = postcard().joinToString("\n")
+
+/** Records that the player sent a postcard and unlocks the Postmaster award. */
+fun Game.recordPostcardSent() {
+    recordStats { it.copy(postcardsSent = it.postcardsSent + 1) }
+    unlock(Achievements.POSTMASTER)
+    clearShareRequest()
+}

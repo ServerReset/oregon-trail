@@ -13,14 +13,14 @@ internal fun Game.eventPool(m: Int): List<String> {
             "child_arm", "unsafe_water", "heavy_rain", "hail", "bandits",
             "wild_animals", "fire", "fog", "indians", "thief", "fruit", "riders",
             "stranded", "berries", "prairie_dogs", "rainbow", "abandoned_wagon",
-            "wild_horses", "prairie_fire", "mirage"
+            "wild_horses", "prairie_fire", "mirage", "buffalo_herd", "fiddle_night"
         )
         val mountains = listOf(
             "breakdown", "ox_lame", "ox_wander", "unsafe_water", "heavy_rain",
             "hail", "bandits", "wild_animals", "fire", "fog", "snakebite",
             "cold", "blizzard", "indians", "riders", "stranded",
             "berries", "prairie_dogs", "rainbow", "hot_springs",
-            "wild_horses", "mirage"
+            "wild_horses", "mirage", "buffalo_herd", "fiddle_night"
         )
         return if (m > 900) mountains else plains
     }
@@ -56,6 +56,8 @@ internal fun Game.applyEvent(event: String, msgs: MutableList<String>) {
             "wild_horses" -> evWildHorses(msgs)
             "prairie_fire" -> evPrairieFire(msgs)
             "mirage" -> evMirage(msgs)
+            "buffalo_herd" -> evBuffaloHerd(msgs)
+            "fiddle_night" -> evFiddleNight(msgs)
             "stranded" -> startStrandedChoice()
             "riders" -> startRidersChoice()
         }
@@ -68,7 +70,7 @@ internal fun <T> List<T>.randomOrNull(rng: Rng): T? =
 /** The sound cue that best fits an event, before any handler override. */
 internal fun Game.eventCue(event: String): Sound = when (event) {
     "berries", "fruit", "indians", "hot_springs", "abandoned_wagon",
-    "wild_horses", "prairie_dogs" -> Sound.GOOD
+    "wild_horses", "prairie_dogs", "buffalo_herd", "fiddle_night" -> Sound.GOOD
     "snakebite" -> Sound.INJURY
     "riders", "stranded" -> Sound.SELECT
     "breakdown", "ox_lame", "ox_wander", "child_lost", "child_arm",

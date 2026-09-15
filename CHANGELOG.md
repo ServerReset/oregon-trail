@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.12.0] - 2026-09-15
+
+### Added
+- **Journey statistics**: lifetime "Landmarks reached" and "Postcards sent"
+  counters, persisted between runs and shown on the Statistics screen.
+- **Two new awards**: *Postmaster* (send a postcard) and *Trailblazer* (reach
+  ten landmarks in a single journey).
+- **Two new events**: a buffalo herd (a big catch if you have ammunition) and a
+  fiddle night in camp (lifts everyone's spirits).
+
 ## [2.11.0] - 2026-09-15
 
 ### Added
