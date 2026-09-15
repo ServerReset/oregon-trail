@@ -81,6 +81,18 @@ class TrailFlavorTest {
     }
 
     @Test
+    fun resting_tells_a_campfire_story() {
+        val g = travelGame()
+        g.onTap("travel:rest")
+        g.onTap("rest:2")
+        assertTrue(
+            g.noticeLines.any { it.contains("Around the fire:") },
+            "a rest should include a campfire story"
+        )
+        assertTrue(CampStories.templates.size >= 6)
+    }
+
+    @Test
     fun a_landmark_arrival_title_flourishes() {
         val g = travelGame()
         walkTo(g, Phase.NOTICE)

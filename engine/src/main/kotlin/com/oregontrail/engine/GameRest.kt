@@ -33,6 +33,11 @@ internal fun Game.rest(days: Int) {
         val healed = aliveMembers().joinToString(", ") { "${it.name} (${it.state.displayName})" }
         report += "\n\nRest helps. Your party's health: $healed."
         report += "\n\nTrail wisdom: ${TrailTips.list[rng.nextInt(TrailTips.list.size)]}"
+        val storyteller = aliveMembers().takeIf { it.isNotEmpty() }
+            ?.let { it[rng.nextInt(it.size)].name }
+        if (storyteller != null) {
+            report += "\n\nAround the fire: ${CampStories.forMember(storyteller, rng)}"
+        }
         addJournal("Rested for $days day(s) to recover.")
         showNotice("Resting", listOf(report), Phase.TRAVEL)
         pendingSound = Sound.REST

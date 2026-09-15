@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.9.0] - 2026-09-15
+
+### Added
+- **Campfire stories**: resting now includes a short tale told by a random
+  traveller, alongside the trail-wisdom tip.
+
 ## [2.8.0] - 2026-09-15
 
 ### Added
