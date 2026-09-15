@@ -46,7 +46,18 @@ internal fun Game.renderTravel(screen: Screen) {
         val base = (miles.toLong() * barW / Data.TOTAL_MILES).toInt().coerceIn(0, barW - 1)
         val pos = (base + (frame % 2)).coerceIn(0, barW - 1)
         val sb = StringBuilder("[")
-        for (i in 0 until barW) sb.append(if (i < pos) '=' else if (i == pos) '>' else '-')
+        for (i in 0 until barW) {
+            sb.append(
+                when {
+                    i < pos -> '='
+                    i == pos -> '>'
+                    // Kicked-up dust trails just behind the wagon.
+                    i == pos - 1 -> if (frame % 2 == 0) ':' else '-'
+                    i == pos - 2 -> if (frame % 4 == 0) '.' else '-'
+                    else -> '-'
+                }
+            )
+        }
         sb.append("]  $miles/${Data.TOTAL_MILES} mi")
         screen.text(marginX + 1, y, sb.toString().take(contentW - 1), Palette.CYAN)
         y++

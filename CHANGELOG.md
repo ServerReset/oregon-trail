@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.7.0] - 2026-09-15
+
+### Added
+- **Landmark postcards**: each of the 18 landmarks shows a one-line quote
+  beneath its blurb when there is room.
+- **Affordability hints**: river ferries and guides, and the Barlow Road toll,
+  are marked "can't afford" when your cash is short, so the choices are clearer.
+- **Milestone flourish**: the landmark arrival title blinks a ``*`` and the
+  travel progress bar now shows dust kicked up behind the wagon.
+
+### Fixed
+- `ot_smoke` no longer loops at The Dalles when the party cannot pay the
+  Barlow toll (a real dead-end the driver could hit).
+
 ## [2.6.0] - 2026-09-15
 
 ### Changed

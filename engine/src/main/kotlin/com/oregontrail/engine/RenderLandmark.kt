@@ -52,12 +52,25 @@ internal fun Game.renderLandmark(screen: Screen) {
         overlayWildlife(screen, artTop, artBottom)
     }
     y = screen.wrap(marginX + 1, y, contentW - 2, lm.blurb.joinToString(" "), Palette.GREEN)
+    // A little postcard for travellers who linger.
+    TrailQuotes.byLandmark[lm.id]?.let { quote ->
+        if (rows >= 30 && y + 3 < rows - 6) {
+            y++
+            y = screen.wrap(marginX + 1, y, contentW - 2, "\"$quote\"", Palette.DIM)
+        }
+    }
     y++
     if (lm.id == "dalles") {
         screen.text(marginX + 1, y, "The last decision of the trail:", Palette.BRIGHT_YELLOW)
         y++
+        val toll = 5.0
+        val barlow = if (inventory.cash < toll) {
+            "1. Take the Barlow Road (toll $5 - can't afford)"
+        } else {
+            "1. Take the Barlow Road (toll $5)"
+        }
         val options = listOf(
-            "1. Take the Barlow Road (toll $5)" to "dalles:barlow",
+            barlow to "dalles:barlow",
             "2. Raft down the Columbia River" to "dalles:raft",
             "3. Portage around the rapids" to "dalles:portage",
             "4. Wait for better weather" to "dalles:wait"

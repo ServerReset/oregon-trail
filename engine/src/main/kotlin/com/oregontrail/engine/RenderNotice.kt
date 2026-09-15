@@ -6,7 +6,7 @@ import kotlin.math.min
 
 internal fun Game.renderNotice(screen: Screen) {
     if (ultraCompact) {
-        screen.center(0, noticeTitle.uppercase().take(cols), Palette.BRIGHT_GREEN, bold = true)
+        screen.center(0, noticeHeading().take(cols), Palette.BRIGHT_GREEN, bold = true)
         // Wrap first, then draw only what fits above the [>] marker so long
         // prose never overlaps the continue prompt on a tiny screen.
         val wrapped = ArrayList<String>()
@@ -20,7 +20,7 @@ internal fun Game.renderNotice(screen: Screen) {
         screen.hotspot("notice:continue", 0, rows - 1, label.length)
         return
     }
-    screen.center(0, noticeTitle.uppercase(), Palette.BRIGHT_GREEN, bold = true)
+    screen.center(0, noticeHeading(), Palette.BRIGHT_GREEN, bold = true)
     var y = 2
     noticeArt?.let { art ->
         if (!ultraCompact && rows - 2 > art.size + 3) {
@@ -36,3 +36,8 @@ internal fun Game.renderNotice(screen: Screen) {
     screen.text(marginX + 1, rows - 2, "$marker $label", Palette.BRIGHT_GREEN, bold = true)
     screen.hotspot("notice:continue", marginX + 1, rows - 2, label.length + 2)
 }
+
+/** A landmark arrival gets a small blinking flourish. */
+internal fun Game.noticeHeading(): String =
+    if (noticeTitle == "Landmark" && blink()) "* ${noticeTitle.uppercase()}"
+    else noticeTitle.uppercase()

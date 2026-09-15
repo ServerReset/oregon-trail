@@ -40,8 +40,14 @@ internal fun Game.renderRiver(screen: Screen) {
     var n = 1
     options.add("${n++}. Ford the river" to "river:ford")
     options.add("${n++}. Caulk and float across" to "river:caulk")
-    if (river.ferryCost != null) options.add("${n++}. Take the ferry ($${"%.2f".format(river.ferryCost)})" to "river:ferry")
-    if (river.guideCost != null) options.add("${n++}. Hire a guide ($${"%.2f".format(river.guideCost)})" to "river:guide")
+    river.ferryCost?.let { cost ->
+        val note = if (inventory.cash < cost) " - can't afford" else ""
+        options.add("${n++}. Take the ferry ($${"%.2f".format(cost)})$note" to "river:ferry")
+    }
+    river.guideCost?.let { cost ->
+        val note = if (inventory.cash < cost) " - can't afford" else ""
+        options.add("${n++}. Hire a guide ($${"%.2f".format(cost)})$note" to "river:guide")
+    }
     options.add("${n++}. Wait a day" to "river:wait")
     screen.menuAt(marginX + 1, y, options)
 }
