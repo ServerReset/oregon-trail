@@ -65,6 +65,7 @@ open class GameSession {
 
     // ----- navigation returns and animation clock -----------------------
     internal var pauseReturn: Phase = Phase.TRAVEL
+    internal var postcardReturn: Phase = Phase.TRAVEL
     internal var managementReturn: Phase = Phase.TITLE
     internal var loadReturn: Phase = Phase.TITLE
     internal var factsRead = 0

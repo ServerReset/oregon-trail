@@ -84,6 +84,7 @@ class MainActivity : AppCompatActivity() {
             override fun handleOnBackPressed() {
                 when {
                     game.phase == Phase.TITLE -> finish()
+                    game.phase == Phase.POSTCARD -> { game.onTap("postcard:back"); render() }
                     game.phase == Phase.PAUSE -> { game.onTap("pause:resume"); render() }
                     game.canPause() -> { game.onTap("pause:open"); render() }
                     else -> finish()

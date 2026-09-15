@@ -52,7 +52,7 @@ class PostcardTest {
         assertEquals(Phase.PAUSE, g.phase)
         assertTrue(g.render().hotspots.any { it.id == "pause:postcard" }, "pause offers a postcard")
         g.onTap("pause:postcard")
-        assertTrue(g.requestedShare, "the postcard should ask the front-end to share")
+        assertEquals(Phase.POSTCARD, g.phase)
 
         val arrived = travelGame()
         arrived.phase = Phase.ARRIVED
@@ -61,5 +61,24 @@ class PostcardTest {
         val dead = travelGame()
         dead.phase = Phase.DEATH
         assertTrue(dead.render().hotspots.any { it.id == "death:postcard" })
+    }
+
+    @Test
+    fun the_preview_can_be_shared_or_left() {
+        val g = travelGame()
+        g.onTap("pause:open")
+        g.onTap("pause:postcard")
+        assertEquals(Phase.POSTCARD, g.phase)
+        val preview = g.render()
+        assertTrue(preview.hotspots.any { it.id == "postcard:share" })
+        assertTrue(preview.hotspots.any { it.id == "postcard:back" })
+        assertTrue(preview.toText().contains("YOUR POSTCARD"))
+
+        g.onTap("postcard:share")
+        assertTrue(g.requestedShare, "the Share button requests a share")
+        assertEquals(Phase.POSTCARD, g.phase, "sharing leaves the preview up")
+
+        g.onTap("postcard:back")
+        assertEquals(Phase.PAUSE, g.phase, "Back returns to where we came from")
     }
 }

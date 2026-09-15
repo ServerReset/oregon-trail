@@ -29,7 +29,7 @@ class Game(
 
     companion object {
         /** Bumped when the engine or its content changes. */
-        const val VERSION = "2.10.0"
+        const val VERSION = "2.11.0"
 
         /** Caps to keep save files and memory bounded on very long runs. */
         const val JOURNAL_LIMIT = 400
@@ -43,7 +43,7 @@ class Game(
             Phase.PROFESSION, Phase.MONTH, Phase.NAMES, Phase.DEATH,
             Phase.ARRIVED, Phase.CHOICE, Phase.HUNTING, Phase.RAFTING, Phase.BARLOW,
             Phase.JOURNAL, Phase.LOAD, Phase.ACHIEVEMENTS, Phase.STATS,
-            Phase.EPILOGUE, Phase.PAUSE, Phase.NOTICE
+            Phase.EPILOGUE, Phase.POSTCARD, Phase.PAUSE, Phase.NOTICE
         )
 
         /** Phases from which the pause menu can be opened. */

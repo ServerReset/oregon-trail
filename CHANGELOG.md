@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.11.0] - 2026-09-15
+
+### Added
+- **Postcard preview**: "Send a postcard" now opens a preview screen showing the
+  card exactly as it will be shared, with `[ Share ]` and `[ Back ]` actions.
+
 ## [2.10.0] - 2026-09-15
 
 ### Added

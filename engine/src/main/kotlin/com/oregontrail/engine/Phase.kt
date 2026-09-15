@@ -23,6 +23,7 @@ enum class Phase {
     ACHIEVEMENTS,
     STATS,
     EPILOGUE,
+    POSTCARD,
     PAUSE,
     NOTICE,
     DEATH,

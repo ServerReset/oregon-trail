@@ -96,9 +96,10 @@ fun Game.onTap(id: String) {
             id == "arrived:topten" -> phase = Phase.TOP_TEN
             id == "arrived:epilogue" -> phase = Phase.EPILOGUE
             id == "epilogue:back" -> phase = Phase.ARRIVED
-            id == "arrived:share" || id == "death:share" -> requestedShare = true
-            id == "pause:postcard" || id == "arrived:postcard" || id == "death:postcard" ->
-                requestedShare = true
+            id == "pause:postcard" || id == "arrived:postcard" || id == "death:postcard" ||
+                id == "arrived:share" || id == "death:share" -> openPostcard()
+            id == "postcard:share" -> requestedShare = true
+            id == "postcard:back" -> phase = postcardReturn
             id == "arrived:restart" -> { newRun(occupation, travelMonth); phase = Phase.PROFESSION }
             id.startsWith("dalles:") -> handleDalles(id.substringAfter("dalles:"))
         }

@@ -23,6 +23,7 @@ fun Game.render(): Screen {
             Phase.ACHIEVEMENTS -> renderAchievements(screen)
             Phase.STATS -> renderStats(screen)
             Phase.EPILOGUE -> renderEpilogue(screen)
+            Phase.POSTCARD -> renderPostcard(screen)
             Phase.PAUSE -> renderPause(screen)
             Phase.CHOICE -> renderChoice(screen)
             Phase.HUNTING -> renderHunting(screen)

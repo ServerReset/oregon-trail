@@ -10,7 +10,7 @@ fun Game.postcard(): List<String> {
     val inner = width - 4
     val art = AsciiScenery.wagonSmall
     val leader = party.firstOrNull()?.name ?: "Traveler"
-    val landmark = Data.landmarkAt(landmarkIndex).name
+    val landmark = shortLandmarkName(Data.landmarkAt(landmarkIndex))
     val outcome = when (phase) {
         Phase.DEATH -> "Died of $deathCause near $landmark."
         Phase.ARRIVED, Phase.EPILOGUE -> "Arrived in the Willamette Valley."
