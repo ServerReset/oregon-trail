@@ -1,6 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.max
 
 /** Covered wagons and the places they roll past. */
 internal object AsciiScenery {

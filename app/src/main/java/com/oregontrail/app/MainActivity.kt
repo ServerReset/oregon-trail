@@ -34,6 +34,7 @@ class MainActivity : AppCompatActivity() {
     internal val handler = Handler(Looper.getMainLooper())
     internal val sound = SoundPlayer()
     internal lateinit var saves: SaveFileHost
+    internal lateinit var share: ShareHost
     internal var lastDump: String? = null
 
     internal val animator = object : Runnable {
@@ -63,6 +64,7 @@ class MainActivity : AppCompatActivity() {
         terminal.requestFocus()
 
         saves = SaveFileHost(this)
+        share = ShareHost(this)
         game = Game(DefaultRng(), PrefsScoreStore(this).also { store = it })
         ui = AppUiSettings(this)
         game.uiSettings = ui

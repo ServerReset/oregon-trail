@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.abs
 
     /** The original let you choose how long to rest. */
 internal fun Game.startRest() {

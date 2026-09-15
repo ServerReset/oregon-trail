@@ -72,8 +72,13 @@ Debug and release APKs are also attached to each CI run as artifacts.
   travel and risking a collapse if you don't rest.
 - **Talk to people** — sixteen trail monologues plus useful rumors, and a
   "Learn the history" option at every landmark.
-- **Epilogue and sharing** — read what became of each traveler and share your
-  journey summary.
+- **Epilogue and postcards** — read what became of each traveler, then send a
+  shareable ASCII **postcard** (a PNG drawn from the game's art plus a text
+  summary) from the pause menu or the arrival/death screens.
+- **Landmark postcards** — each landmark shows a one-line quote, and river
+  ferries and tolls are flagged when you cannot afford them.
+- **Campfire stories and trail wisdom** — resting heals the party and settles
+  in for a story told by one of your travelers.
 - **Disease and death** — party members sicken and die; you get a gravestone
   and a full epitaph. Graves left by earlier journeys appear when you reach
   the same stretch of trail.

@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
     /** True when the Back button should open the pause menu. */
 fun Game.canPause(): Boolean = phase in Game.PAUSABLE_PHASES

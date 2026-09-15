@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
     /** Test hook: fires a named event and returns its messages. */
 internal fun Game.debugFireEvent(id: String): List<String> {

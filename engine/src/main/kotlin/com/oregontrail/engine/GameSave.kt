@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
     /** Serializes the whole run to a compact, line-based string. */
 fun Game.save(): String {

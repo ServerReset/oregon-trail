@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.abs
 
     /** Miles traveled can never fall behind the last landmark reached. */
 internal fun Game.clampMiles() {

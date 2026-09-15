@@ -2,7 +2,6 @@ package com.oregontrail.engine
 
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.abs
 
 internal fun Game.continueOnTrail() {
         if (aliveCount == 0) { dieOf("the trail"); return }

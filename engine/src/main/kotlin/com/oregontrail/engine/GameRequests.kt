@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 fun Game.setName(index: Int, name: String) {
         if (index in party.indices) {

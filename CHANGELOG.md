@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.10.0] - 2026-09-15
+
+### Added
+- **Shareable ASCII postcards**: at any point (pause menu) and at the end of
+  the journey, "Send a postcard" renders the game's ASCII art and your stats
+  into a themed PNG and hands it to the system share sheet, with the plain-text
+  journey summary attached as well. Sharing now works from the arrival and
+  death screens too.
+
+### Changed
+- Removed 131 unused imports left over from the module split (tidy-up only).
+
 ## [2.9.1] - 2026-09-15
 
 ### Changed

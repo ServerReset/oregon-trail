@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 internal fun Game.attemptTrade() {
         // A trader, mountain man or soldier offers a deal.

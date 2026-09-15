@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.abs
 
 internal fun Game.checkIllness(msgs: MutableList<String>): Boolean {
         var any = false

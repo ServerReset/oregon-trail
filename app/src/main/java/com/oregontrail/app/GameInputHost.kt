@@ -11,6 +11,7 @@ internal fun MainActivity.onHotspot(id: String) {
     // Save the current position before leaving the pause menu to the title.
     if (id == "pause:title") store.saveState(game.save())
     game.onTap(id)
+    if (game.requestedShare) share.sharePostcard()
     if (id == "manage:export") saves.export()
     if (id == "manage:import") saves.import()
     handleNameRequest()

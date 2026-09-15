@@ -1,7 +1,6 @@
 package com.oregontrail.engine
 
 import kotlin.math.max
-import kotlin.math.min
 
 internal fun Game.evBreakdown(msgs: MutableList<String>) {
         val part = Part.entries[rng.nextInt(Part.entries.size)]

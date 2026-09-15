@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 internal fun Game.renderAbout(screen: Screen) {
     val page = Game.ABOUT_PAGES[aboutPage.coerceIn(0, Game.ABOUT_PAGES.size - 1)]

@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 internal fun Game.renderRiver(screen: Screen) {
     val lm = Data.landmarkAt(landmarkIndex)

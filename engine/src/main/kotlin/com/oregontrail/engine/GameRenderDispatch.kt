@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
     /** Builds the current screen. Rendering itself lives in GameRender.kt. */
 fun Game.render(): Screen {

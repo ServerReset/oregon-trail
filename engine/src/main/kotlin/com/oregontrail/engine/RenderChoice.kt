@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 internal fun Game.renderChoice(screen: Screen) {
     screen.center(0, choiceTitle.uppercase().take(cols), Palette.BRIGHT_GREEN, bold = true)

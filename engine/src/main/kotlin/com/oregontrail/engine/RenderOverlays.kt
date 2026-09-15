@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 /** Rain, snow and hail drifting through a band of the screen. */
 internal fun Game.overlayWeather(screen: Screen, top: Int, bottom: Int) {

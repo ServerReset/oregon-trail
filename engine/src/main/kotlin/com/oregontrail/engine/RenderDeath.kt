@@ -1,8 +1,6 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 
 internal fun Game.renderDeath(screen: Screen) {
     if (ultraCompact) {
@@ -14,6 +12,7 @@ internal fun Game.renderDeath(screen: Screen) {
             screen, 4,
             listOf(
                 "Top Ten" to "death:topten",
+                "Postcard" to "death:postcard",
                 "Epitaph" to "death:epitaph",
                 "Again" to "death:restart"
             )
@@ -32,6 +31,7 @@ internal fun Game.renderDeath(screen: Screen) {
     y += 3
     val options = listOf(
         "See the Oregon Top Ten" to "death:topten",
+        "Send a postcard" to "death:postcard",
         "Write an epitaph" to "death:epitaph",
         "Try again" to "death:restart"
     )

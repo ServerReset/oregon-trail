@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 internal fun Game.renderArrived(screen: Screen) {
     screen.center(0, "OREGON!", Palette.BRIGHT_GREEN, bold = true)
@@ -18,7 +15,11 @@ internal fun Game.renderArrived(screen: Screen) {
         screen.center(1, "Score $lastScore".take(cols), Palette.BRIGHT_YELLOW, bold = true)
         renderMenuColumns(
             screen, 3,
-            listOf("Top Ten" to "arrived:topten", "Again" to "arrived:restart")
+            listOf(
+                "Top Ten" to "arrived:topten",
+                "Postcard" to "arrived:postcard",
+                "Again" to "arrived:restart"
+            )
         )
         return
     }
@@ -50,6 +51,7 @@ internal fun Game.renderArrived(screen: Screen) {
     y++
     val options = listOf(
         "See the Oregon Top Ten" to "arrived:topten",
+        "Send a postcard" to "arrived:postcard",
         "Travel the trail again" to "arrived:restart"
     )
     screen.menuAt(marginX + 1, y, options)

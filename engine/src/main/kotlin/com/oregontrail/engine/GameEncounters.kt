@@ -1,7 +1,6 @@
 package com.oregontrail.engine
 
 import kotlin.math.max
-import kotlin.math.min
 
 internal fun Game.startStrandedChoice() {
         choiceTitle = "Stranded Family"

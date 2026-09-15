@@ -1,7 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.min
 
 fun Game.onTap(id: String) {
@@ -99,6 +97,8 @@ fun Game.onTap(id: String) {
             id == "arrived:epilogue" -> phase = Phase.EPILOGUE
             id == "epilogue:back" -> phase = Phase.ARRIVED
             id == "arrived:share" || id == "death:share" -> requestedShare = true
+            id == "pause:postcard" || id == "arrived:postcard" || id == "death:postcard" ->
+                requestedShare = true
             id == "arrived:restart" -> { newRun(occupation, travelMonth); phase = Phase.PROFESSION }
             id.startsWith("dalles:") -> handleDalles(id.substringAfter("dalles:"))
         }

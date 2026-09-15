@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.abs
 
 internal fun Game.rollWeather() {
         val mountain = Data.landmarkAt(landmarkIndex).kind == LandmarkKind.MOUNTAINS || miles > 1150

@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 fun Game.huntTick() {
         if (phase == Phase.HUNTING) huntField?.tick()

@@ -1,8 +1,5 @@
 package com.oregontrail.engine
 
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 /** A camp-at-night pause screen with save-state actions. */
 internal fun Game.renderPause(screen: Screen) {
@@ -15,7 +12,8 @@ internal fun Game.renderPause(screen: Screen) {
         "5. Load a saved game" to "pause:load",
         "6. Management options" to "pause:manage",
         "7. Save and return to title" to "pause:title",
-        "8. Quit" to "pause:quit"
+        "8. Send a postcard" to "pause:postcard",
+        "9. Quit" to "pause:quit"
     )
     val short = listOf(
         "1. Resume" to "pause:resume",
@@ -25,7 +23,8 @@ internal fun Game.renderPause(screen: Screen) {
         "5. Load" to "pause:load",
         "6. Options" to "pause:manage",
         "7. Title" to "pause:title",
-        "8. Quit" to "pause:quit"
+        "8. Postcard" to "pause:postcard",
+        "9. Quit" to "pause:quit"
     )
     val camp = campArt(frame)
     val artFits = !ultraCompact && rows >= 2 + Ascii.height(camp) + 3
