@@ -228,6 +228,8 @@ def _drive(d):
 
     reached_landmark = False
     reached_river = False
+    last_text = None
+    stuck = 0
     for step in range(d.max_steps):
         s = d.last_screen()
         if not s:
@@ -236,6 +238,19 @@ def _drive(d):
         if d.trace:
             d.log("  step %d phase %s" % (step, phase))
         d.capture(phase)
+        # Detect a genuine dead-end loop (same screen over and over).
+        text = "\n".join(s["scr"])
+        if text == last_text:
+            stuck += 1
+        else:
+            stuck = 0
+            last_text = text
+        if stuck > 25:
+            d.log("  STUCK in %s; screen:" % phase)
+            for line in s["scr"]:
+                if line.strip():
+                    d.log("    " + line)
+            return False
         if phase == "LANDMARK":
             reached_landmark = True
         if phase == "RIVER":
@@ -262,13 +277,14 @@ def _drive(d):
             d.tap_text("Take the ferry", required=False) or d.tap_text("Caulk", required=False) \
                 or d.tap_text("Ford the river", required=False)
         elif phase == "LANDMARK":
-            # Try the ordinary continue first; at The Dalles fall through to
-            # the ending options (exercising the Barlow Road minigame).
+            # Ordinary landmarks just continue. At The Dalles "Continue" is
+            # absent, so prefer rafting/portage (always available) before the
+            # Barlow toll, which an out-of-cash party cannot pay.
             if not (d.tap_text("Continue on the trail", required=False)
                     or d.tap_text("Continue on trail", required=False)
-                    or d.tap_text("Barlow", required=False)
                     or d.tap_text("Raft down", required=False)
                     or d.tap_text("Portage", required=False)
+                    or d.tap_text("Barlow", required=False)
                     or d.tap_text("Wait for better", required=False)):
                 d.log("  LANDMARK: no option found in:")
                 for line in s["scr"]:
