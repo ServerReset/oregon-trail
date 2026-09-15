@@ -81,6 +81,17 @@ class TrailFlavorTest {
     }
 
     @Test
+    fun events_play_a_fitting_sound_cue() {
+        val g = travelGame()
+        g.debugFireEvent("wild_horses")
+        assertEquals(Sound.GOOD, g.pendingSound)
+        g.debugFireEvent("prairie_fire")
+        assertEquals(Sound.BAD, g.pendingSound)
+        g.debugFireEvent("snakebite")
+        assertTrue(g.pendingSound == Sound.INJURY || g.pendingSound == Sound.DEATH)
+    }
+
+    @Test
     fun resting_tells_a_campfire_story() {
         val g = travelGame()
         g.onTap("travel:rest")

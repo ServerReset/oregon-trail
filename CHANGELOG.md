@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.9.1] - 2026-09-15
+
+### Changed
+- Every random event now plays a fitting sound cue (supplies and good fortune
+  chime, hazards buzz, a snakebite rings as an injury) instead of the generic
+  click.
+
 ## [2.9.0] - 2026-09-15
 
 ### Added

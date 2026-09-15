@@ -26,6 +26,9 @@ internal fun Game.eventPool(m: Int): List<String> {
     }
 
 internal fun Game.applyEvent(event: String, msgs: MutableList<String>) {
+        // Give most events a fitting cue; handlers may override it (e.g. an
+        // achievement unlock or a death).
+        pendingSound = eventCue(event)
         when (event) {
             "breakdown" -> evBreakdown(msgs)
             "ox_lame" -> evOxLame(msgs)
@@ -61,3 +64,15 @@ internal fun Game.applyEvent(event: String, msgs: MutableList<String>) {
     /** A moral encounter: help a family in need, at a cost. */
 internal fun <T> List<T>.randomOrNull(rng: Rng): T? =
     if (isEmpty()) null else this[rng.nextInt(size)]
+
+/** The sound cue that best fits an event, before any handler override. */
+internal fun Game.eventCue(event: String): Sound = when (event) {
+    "berries", "fruit", "indians", "hot_springs", "abandoned_wagon",
+    "wild_horses", "prairie_dogs" -> Sound.GOOD
+    "snakebite" -> Sound.INJURY
+    "riders", "stranded" -> Sound.SELECT
+    "breakdown", "ox_lame", "ox_wander", "child_lost", "child_arm",
+    "unsafe_water", "heavy_rain", "hail", "bandits", "fire", "fog",
+    "cold", "blizzard", "thief", "mirage", "prairie_fire" -> Sound.BAD
+    else -> Sound.CLICK
+}
