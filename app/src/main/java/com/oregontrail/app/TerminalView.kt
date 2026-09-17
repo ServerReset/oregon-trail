@@ -9,11 +9,8 @@ import android.view.MotionEvent
 import android.view.View
 import com.oregontrail.engine.Screen
 
-/**
- * Renders an engine [Screen] as a grid of monospace characters and turns taps
- * into hotspot ids. The character grid is recalculated on every size change so
- * the game adapts to any screen size or orientation.
- */
+/** Renders an engine [Screen] as monospace glyphs and turns taps into hotspot
+ *  ids, recomputing the grid on every size change. */
 class TerminalView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -35,11 +32,7 @@ class TerminalView @JvmOverloads constructor(
     /** Called whenever the available character grid changes. */
     var viewportListener: ((cols: Int, rows: Int) -> Unit)? = null
 
-    /**
-     * Enables the watch-style selection cursor: the rotary bezel/crown and
-     * D-pad move a highlighted target, and a tap or the center button
-     * activates it. Off on phones so the existing direct-tap UX is unchanged.
-     */
+    /** Watch-style selection cursor (rotary/D-pad); off on phones. */
     var selectionEnabled: Boolean
         get() = input.selectionEnabled
         set(value) {
@@ -49,6 +42,14 @@ class TerminalView @JvmOverloads constructor(
         }
 
     var scanlinesEnabled = true
+
+    /** CRT filter strength: 0 = off, 1 = low, 2 = high. */
+    var crtMode: Int = 1
+        set(value) {
+            if (value.coerceIn(0, 2) == field) return
+            field = value.coerceIn(0, 2)
+            invalidate()
+        }
 
     /** Accessibility scale: <1 fits more columns, >1 makes glyphs larger. */
     var textScale: Float = 1f
@@ -121,7 +122,7 @@ class TerminalView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         painter.draw(
             canvas, width, height, screen, colors, highContrast,
-            scanlinesEnabled, input.selectionEnabled, input.selectedIndex, grid
+            scanlinesEnabled, input.selectionEnabled, input.selectedIndex, grid, crtMode
         )
         if (painter.isAnimating) postInvalidateOnAnimation()
     }

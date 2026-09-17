@@ -34,6 +34,7 @@ internal fun Game.renderManagement(screen: Screen) {
             short.add("Theme ${themeName(ui.themeIndex).take(6)}" to "manage:theme")
             short.add("Contr ${onOff(ui.highContrast)}" to "manage:contrast")
             short.add("Scan ${onOff(ui.scanlines)}" to "manage:scanlines")
+            short.add("CRT ${crtName(ui.crtMode)}" to "manage:crt")
         }
         short.add("Export" to "manage:export")
         short.add("Import" to "manage:import")
@@ -56,6 +57,7 @@ internal fun Game.renderManagement(screen: Screen) {
         options.add("Theme: ${themeName(ui.themeIndex)}" to "manage:theme")
         options.add("High contrast: ${onOff(ui.highContrast)}" to "manage:contrast")
         options.add("Scanlines: ${onOff(ui.scanlines)}" to "manage:scanlines")
+        options.add("CRT filter: ${crtName(ui.crtMode)}" to "manage:crt")
     }
     options.add("Export saves to a file" to "manage:export")
     options.add("Import saves from a file" to "manage:import")
@@ -69,6 +71,12 @@ internal fun Game.renderManagement(screen: Screen) {
         screen.hotspot(id, marginX + 1, y, label.length + 4)
         y += step
     }
+}
+
+internal fun Game.crtName(index: Int): String = when (index) {
+    0 -> "Off"
+    1 -> "Low"
+    else -> "High"
 }
 
 internal fun Game.textScaleName(index: Int): String = when (index) {

@@ -38,6 +38,12 @@ class AppUiSettings(context: Context) : UiSettings {
             prefs.edit().putBoolean(KEY_SOUND, value).apply()
         }
 
+    override var crtMode: Int
+        get() = prefs.getInt(KEY_CRT, 1)
+        set(value) {
+            prefs.edit().putInt(KEY_CRT, value.coerceIn(0, 2)).apply()
+        }
+
     override var themeIndex: Int
         get() = prefs.getInt(KEY_THEME, 1)
         set(value) {
@@ -51,5 +57,6 @@ class AppUiSettings(context: Context) : UiSettings {
         private const val KEY_HAPTICS = "haptics"
         private const val KEY_SOUND = "sound"
         private const val KEY_THEME = "theme"
+        private const val KEY_CRT = "crt_mode"
     }
 }

@@ -11,6 +11,7 @@ internal fun MainActivity.applyUi() {
         }
         terminal.highContrast = ui.highContrast
         terminal.scanlinesEnabled = ui.scanlines
+        terminal.crtMode = ui.crtMode
         terminal.hapticsEnabled = ui.haptics
         game.soundEnabled = ui.soundEnabled
         terminal.colors = when (ui.themeIndex) {

@@ -3,47 +3,33 @@ package com.oregontrail.app
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
-import android.graphics.RadialGradient
-import android.graphics.Shader
 import android.graphics.Typeface
 import com.oregontrail.engine.Palette
 import com.oregontrail.engine.Screen
 
-/** Draws a terminal [Screen] onto a canvas: glyphs, selection, scanlines, CRT glass. */
+/**
+ * Draws the glyphs of a terminal [Screen] (with phosphor glow, a bold bloom and
+ * subtle RGB fringing), then hands off to [CrtOverlay] for the glass effects.
+ */
 class TerminalPainter {
+
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        typeface = Typeface.MONOSPACE; isSubpixelText = true
+        typeface = Typeface.MONOSPACE
+        isSubpixelText = true
     }
     private val highlightPaint = Paint().apply { color = 0x887CFF7C.toInt() }
-    private val scanPaint = Paint().apply { color = Color.argb(30, 0, 0, 0) }
-    private val grillePaint = Paint().apply {
-        color = Color.argb(13, 0, 0, 0); strokeWidth = 1.5f
-    }
-    private val sweepPaint = Paint(); private val vignettePaint = Paint()
-    private val vignettePath = Path(); private val glyph = CharArray(1)
-    private var vignette: Shader? = null
-    private val glowRadius = 2.5f; private val bloomRadius = 5f; private val sweepFrames = 12
-    private var frameCounter = 0; private var sweepFrame = -1
+    private val fringeR = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(46, 255, 70, 70) }
+    private val fringeB = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(46, 70, 150, 255) }
+    private val glyph = CharArray(1)
+    private var frameCounter = 0
 
-    fun resize(w: Int, h: Int) {
-        vignette = RadialGradient(
-            w / 2f, h / 2f, maxOf(w, h) * 0.72f,
-            intArrayOf(0x00000000, 0x2B000000, 0x7A000000),
-            floatArrayOf(0f, 0.6f, 1f),
-            Shader.TileMode.CLAMP
-        )
-        // Rounded-rect vignette overlay: softens the bezel corners, never clips text.
-        val r = minOf(w, h) * 0.06f
-        vignettePath.reset()
-        vignettePath.addRoundRect(0f, 0f, w.toFloat(), h.toFloat(), r, r, Path.Direction.CW)
-    }
+    fun resize(w: Int, h: Int) = CrtOverlay.resize(w, h)
 
     /** Starts the short power-on scanline sweep. Content is never masked. */
-    fun powerOn() { sweepFrame = 0 }
+    fun powerOn() = CrtOverlay.powerOn()
 
     /** True while the power-on sweep still needs frames (caller should repaint). */
-    val isAnimating: Boolean get() = sweepFrame in 0 until sweepFrames
+    val isAnimating: Boolean get() = CrtOverlay.isAnimating
 
     fun draw(
         canvas: Canvas,
@@ -55,13 +41,19 @@ class TerminalPainter {
         scanlines: Boolean,
         selectionEnabled: Boolean,
         selectedIndex: Int,
-        grid: TerminalGrid
+        grid: TerminalGrid,
+        crtMode: Int
     ) {
         frameCounter++
+        val dark = colors.dark
+        val level = if (dark) crtMode.coerceIn(0, 2) else 0
         val bg = if (screen != null) colors.ambientBackground(screen.ambient, highContrast)
         else colors.defaultBackground
         canvas.drawColor(bg)
-        if (screen == null) { if (isAnimating) sweepFrame++; return }
+        if (screen == null) {
+            CrtOverlay.draw(canvas, width, height, dark, scanlines, level, frameCounter, grid, 0, 0)
+            return
+        }
 
         val highlight = if (selectionEnabled) screen.hotspots.getOrNull(selectedIndex) else null
         if (highlight != null) {
@@ -77,11 +69,17 @@ class TerminalPainter {
             )
         }
 
-        val dark = colors.dark
-        val rows = minOf(screen.height, grid.rows); val cols = minOf(screen.width, grid.cols)
+        val glowRadius = 2.2f + level * 0.5f
+        val bloomRadius = 4.5f + level * 0.6f
+        val rows = minOf(screen.height, grid.rows)
+        val cols = minOf(screen.width, grid.cols)
         for (y in 0 until rows) {
-            // Faint per-line brightness shimmer (0..7 alpha); glyphs stay >= 248/255.
+            // Faint per-line brightness shimmer; glyphs never drop below ~248/255.
             val jitter = (y * 7 + frameCounter) and 7
+            // Occasional one-pixel row wobble, as if the sync is drifting.
+            val wobble = if (level >= 2 && (y * 31 + frameCounter / 7) % 127 < 2) {
+                grid.cellW * 0.14f
+            } else 0f
             for (x in 0 until cols) {
                 val cell = screen.cell(x, y) ?: continue
                 if (cell.ch == ' ') continue
@@ -98,52 +96,25 @@ class TerminalPainter {
                     paint.clearShadowLayer()
                 }
                 glyph[0] = cell.ch
-                val tx = grid.marginX + x * grid.cellW
+                val tx = grid.marginX + x * grid.cellW + wobble
                 val ty = grid.marginY + y * grid.lineH + grid.baseline
+                // RGB fringing on high CRT, on bold glyphs only (keeps text crisp).
+                if (level >= 2 && cell.bold && !selected) {
+                    canvas.drawText(glyph, 0, 1, tx + 1.2f, ty, fringeR)
+                    canvas.drawText(glyph, 0, 1, tx - 1.2f, ty, fringeB)
+                }
                 canvas.drawText(glyph, 0, 1, tx, ty, paint)
-                // Extra phosphor bloom on bold glyphs only, so legibility is untouched.
                 if (dark && cell.bold && !selected) {
                     paint.alpha = 40
                     paint.setShadowLayer(
                         bloomRadius, 0f, 0f, (paint.color and 0x00FFFFFF) or 0x40000000
                     )
                     canvas.drawText(glyph, 0, 1, tx, ty, paint)
+                    paint.alpha = 255
                 }
             }
         }
 
-        if (dark) {
-            // Aperture-grille: a barely-visible dark line every third column.
-            if (scanlines) {
-                grillePaint.strokeWidth = (grid.cellW * 0.08f).coerceAtLeast(1f)
-                val gxEnd = grid.marginX + cols * grid.cellW
-                val gy1 = grid.marginY + rows * grid.lineH
-                var gx = grid.marginX
-                while (gx < gxEnd) {
-                    canvas.drawLine(gx, grid.marginY, gx, gy1, grillePaint)
-                    gx += grid.cellW * 3f
-                }
-            }
-            var yy = 0f
-            while (yy < height) {
-                canvas.drawRect(0f, yy, width.toFloat(), yy + 1f, scanPaint)
-                yy += 3f
-            }
-            vignette?.let {
-                vignettePaint.shader = it
-                canvas.drawPath(vignettePath, vignettePaint)
-            }
-        }
-
-        if (isAnimating) {
-            if (dark) {
-                val t = sweepFrame / sweepFrames.toFloat()
-                sweepPaint.color =
-                    Color.argb((150 * (1f - t)).toInt().coerceIn(0, 255), 190, 255, 210)
-                val y = t * height
-                canvas.drawRect(0f, y - 2f, width.toFloat(), y + 2f, sweepPaint)
-            }
-            sweepFrame++
-        }
+        CrtOverlay.draw(canvas, width, height, dark, scanlines, level, frameCounter, grid, cols, rows)
     }
 }

@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.20.0] - 2026-09-15
+
+### Added
+- **CRT filter setting** (Settings → "CRT filter: Off / Low / High", persisted):
+  - **Low**: scanlines + dark aperture grille + a slow rolling refresh bar.
+  - **High**: adds a coloured RGB triad mask, subtle screen flicker, a little
+    static, RGB fringing on bold glyphs, and occasional single-line sync wobble.
+  - Both levels keep the phosphor glow, rounded vignette and power-on sweep.
+  - Material You light mode ignores the filters (CRT only makes sense on dark).
+- 3 new engine tests (155 total) covering the CRT setting's cycle, labels and
+  persistence.
+
 ## [2.19.0] - 2026-09-15
 
 ### Added

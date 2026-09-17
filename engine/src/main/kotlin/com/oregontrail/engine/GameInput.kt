@@ -38,6 +38,7 @@ fun Game.onTap(id: String) {
             id == "manage:textsize" -> uiSettings?.let { it.textScaleIndex = (it.textScaleIndex + 1) % 3 }
             id == "manage:contrast" -> uiSettings?.let { it.highContrast = !it.highContrast }
             id == "manage:scanlines" -> uiSettings?.let { it.scanlines = !it.scanlines }
+            id == "manage:crt" -> uiSettings?.let { it.crtMode = (it.crtMode + 1) % 3 }
             id == "manage:theme" -> uiSettings?.let { it.themeIndex = (it.themeIndex + 1) % 3 }
             id == "manage:export" -> { /* handled by the front-end (file export) */ }
             id == "manage:import" -> { /* handled by the front-end (file import) */ }
