@@ -86,7 +86,9 @@ Debug and release APKs are also attached to each CI run as artifacts.
   bolt and a rainbow around storms; fog banks; racing wind streaks; heat
   shimmer on the plains; frost on snow; and campfire smoke and embers.
 - **CRT presentation** — a soft phosphor glow, an aperture grille, a faint
-  per-line shimmer, a rounded vignette and a short power-on sweep. Classic
+  per-line shimmer, a rounded vignette and a short power-on sweep. Settings →
+  **CRT filter: Off / Low / High** adds scanlines and a rolling bar (Low) or an
+  RGB triad mask, flicker, static, RGB fringing and sync wobble (High). Classic
   (full colour) is the default theme.
 - **Disease and death** — party members sicken and die; you get a gravestone
   and a full epitaph. Graves left by earlier journeys appear when you reach
