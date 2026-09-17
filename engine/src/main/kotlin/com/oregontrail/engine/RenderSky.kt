@@ -64,6 +64,26 @@ internal fun Game.overlaySky(screen: Screen, top: Int, bottom: Int) {
         screen.putIfBlank(sx + 1, top, '-', Palette.WHITE)
         screen.putIfBlank(sx + 2, top, '-', Palette.DIM)
     }
+    // A little flock of birds crosses the fair-weather sky now and then.
+    if (fair && !night && cols >= 16) {
+        val win = 220
+        val ph = frame % win
+        if (ph < 60) {
+            val n = 3 + (frame / win) % 3
+            val x0 = ph * (cols + 10) / 60 - 5
+            for (i in 0 until n) {
+                val bx = x0 + i * 2 + i % 2
+                val by = top + i % 2
+                if (by in top until bottom) {
+                    screen.putIfBlank(bx, by, if ((frame + i) % 2 == 0) 'v' else '^', Palette.DIM)
+                }
+            }
+        }
+    }
+    // A rainbow lingers for a few frames once the rain has moved off.
+    if (kind == WeatherKind.CLEAR && frame % 600 < 36) {
+        drawRainbow(screen, top, bottom)
+    }
 }
 
 /** The sun's disc and rays, placed along its daily arc. */
@@ -80,4 +100,23 @@ private fun Game.drawSun(screen: Screen, top: Int, bottom: Int, p: Double) {
     screen.putIfBlank(sx + 2, sy, '-', color)
     screen.putIfBlank(sx + 3, sy, 'o', color)
     screen.putIfBlank(sx + 4, sy, '-', color)
+}
+
+/** A shallow, many-hued arch that only fits when the band is tall enough. */
+private fun Game.drawRainbow(screen: Screen, top: Int, bottom: Int) {
+    if (bottom - top < 2 || cols < 12) return
+    val h = (bottom - top).coerceAtMost(3)
+    val w = (cols / 3).coerceIn(7, 15)
+    val x0 = ((cols - w) / 2).coerceAtLeast(1)
+    val baseY = bottom - 1
+    screen.putIfBlank(x0, baseY, '(', Palette.MAGENTA)
+    screen.putIfBlank(x0 + w - 1, baseY, ')', Palette.MAGENTA)
+    if (h >= 2) {
+        screen.putIfBlank(x0 + 1, baseY - 1, '/', Palette.MAGENTA)
+        screen.putIfBlank(x0 + w - 2, baseY - 1, '\\', Palette.YELLOW)
+    }
+    val topY = if (h >= 3) baseY - 2 else baseY - 1
+    for (i in 2 until w - 2) {
+        screen.putIfBlank(x0 + i, topY, if (i % 2 == 0) '_' else '-', Palette.CYAN)
+    }
 }

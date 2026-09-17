@@ -10,26 +10,30 @@ internal fun Game.renderStore(screen: Screen) {
     val title = if (storeAtFort) "FORT TRADING POST" else "MATT'S GENERAL STORE"
     screen.center(0, title, Palette.BRIGHT_GREEN, bold = true)
     pauseButton(screen)
-    screen.text(marginX + 1, 1, "Cash: $${"%.2f".format(inventory.cash)}", Palette.BRIGHT_YELLOW, bold = true)
+    screen.text(marginX + 1, 1, "You have $${"%.2f".format(inventory.cash)}", Palette.BRIGHT_YELLOW, bold = true)
     screen.hline(marginX, 2, contentW, '-', Palette.DIM)
-
     // Adaptive column layout that always fits the smallest supported width.
     val available = (contentW - 2).coerceAtLeast(20)
     val btnW = 7          // "[-][+]"
-    val qtyW = 6
-    val priceW = 6
-    val nameW = (available - btnW - qtyW - priceW).coerceIn(6, 16)
+    val qtyW = 5
+    val priceW = 7
+    val gap = 1
+    val nameW = (available - btnW - qtyW - priceW - gap).coerceIn(6, 16)
     val nameX = marginX + 1
     val priceX = nameX + nameW
     val qtyX = priceX + priceW
-    val btnX = qtyX + qtyW
+    val btnX = qtyX + qtyW + gap
+    screen.text(nameX, 3, "Item", Palette.GRAY)
+    screen.text(priceX, 3, "Price".padStart(priceW), Palette.GRAY)
+    screen.text(qtyX, 3, "Qty".padStart(qtyW), Palette.GRAY)
+    screen.text(btnX, 3, "Buy", Palette.GRAY)
 
-    var y = 3
+    var y = 4
     Item.entries.forEachIndexed { index, item ->
         val name = "$index ${shortItemName(item)}".padEnd(nameW).take(nameW)
         screen.text(nameX, y, name, Palette.GREEN)
-        screen.text(priceX, y, "$" + "%.2f".format(priceOf(item)), Palette.GRAY)
-        screen.text(qtyX, y, displayQty(item).toString().padStart(qtyW - 1), Palette.WHITE)
+        screen.text(priceX, y, ("$" + "%.2f".format(priceOf(item))).padStart(priceW), Palette.GRAY)
+        screen.text(qtyX, y, displayQty(item).toString().padStart(qtyW), Palette.WHITE)
         screen.text(btnX, y, "[-][+]", Palette.BRIGHT_GREEN)
         screen.hotspot("store:dec:${item.name}", btnX, y, 3)
         screen.hotspot("store:inc:${item.name}", btnX + 3, y, 4)
@@ -49,7 +53,7 @@ internal fun Game.renderStore(screen: Screen) {
  */
 internal fun Game.renderStoreCompact(screen: Screen) {
     screen.center(0, "STORE", Palette.BRIGHT_GREEN, bold = true)
-    screen.text(0, 1, "Cash \$${"%.0f".format(inventory.cash)}".take(cols), Palette.BRIGHT_YELLOW, bold = true)
+    screen.text(0, 1, "You have \$${"%.0f".format(inventory.cash)}".take(cols), Palette.BRIGHT_YELLOW, bold = true)
     var y = 2
     Item.entries.forEachIndexed { i, item ->
         if (y >= rows - 1) return@forEachIndexed
@@ -63,7 +67,8 @@ internal fun Game.renderStoreCompact(screen: Screen) {
     screen.hotspot("store:leave", 0, rows - 1, leave.length)
 }
 
-internal fun Game.shortItemName(item: Item): String = when (item) {    Item.OXEN -> "Oxen"
+internal fun Game.shortItemName(item: Item): String = when (item) {
+    Item.OXEN -> "Oxen"
     Item.FOOD -> "Food"
     Item.CLOTHING -> "Cloths"
     Item.AMMUNITION -> "Ammo"

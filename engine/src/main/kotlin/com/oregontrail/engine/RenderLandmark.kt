@@ -4,7 +4,7 @@ package com.oregontrail.engine
 internal fun Game.renderLandmark(screen: Screen) {
     val lm = Data.landmarkAt(landmarkIndex)
     if (ultraCompact) {
-        screen.center(0, shortLandmarkName(lm).uppercase(), Palette.BRIGHT_GREEN, bold = true)
+        screen.center(0, "= ${shortLandmarkName(lm).uppercase()} =", Palette.BRIGHT_GREEN, bold = true)
         if (lm.id == "dalles") {
             renderMenuColumns(
                 screen, 1,
@@ -35,8 +35,9 @@ internal fun Game.renderLandmark(screen: Screen) {
         renderMenuColumns(screen, 1, options)
         return
     }
-    screen.center(0, lm.name.uppercase(), Palette.BRIGHT_GREEN, bold = true)
+    screen.center(0, "=== ${lm.name.uppercase()} ===", Palette.BRIGHT_GREEN, bold = true)
     pauseButton(screen)
+    screen.hline(marginX, 1, contentW, '-', Palette.DIM)
     var y = 2
     if (rows >= 26) {
         val art = Landscape.forKind(lm.kind, miles)

@@ -1,28 +1,76 @@
 package com.oregontrail.engine
 
 
-/** Rain, snow and hail drifting through a band of the screen. */
+/** Rain, snow and hail drifting through a band, plus wind, fog and lightning. */
 internal fun Game.overlayWeather(screen: Screen, top: Int, bottom: Int) {
-    val ch: Char
-    val step: Int
-    val count: Int
-    val color: Palette
-    when (weather.kind) {
+    if (bottom <= top) return
+    val bandH = bottom - top
+    val kind = weather.kind
+    var ch = ' '
+    var step = 1
+    var count = 0
+    var color = Palette.DEFAULT
+    when (kind) {
         WeatherKind.SNOW -> { ch = '*'; step = 1; count = 26; color = Palette.BRIGHT_WHITE }
         WeatherKind.BLIZZARD -> { ch = '*'; step = 1; count = 46; color = Palette.WHITE }
         WeatherKind.HAIL -> { ch = 'o'; step = 2; count = 22; color = Palette.CYAN }
         WeatherKind.RAIN -> { ch = '/'; step = 2; count = 28; color = Palette.CYAN }
         WeatherKind.HEAVY_RAIN -> { ch = '/'; step = 2; count = 44; color = Palette.BLUE }
         WeatherKind.THUNDERSTORM -> { ch = '/'; step = 3; count = 38; color = Palette.YELLOW }
-        else -> return
+        else -> {}
     }
-    if (bottom <= top) return
+    if (count > 0 && cols > 0) {
+        for (i in 0 until count) {
+            val x = (i * 37 + frame / 2) % cols
+            val y = top + (i * 53 + frame * step) % bandH
+            val cell = screen.cell(x, y) ?: continue
+            if (cell.ch == ' ') screen.put(x, y, ch, color)
+        }
+    }
+    if (kind == WeatherKind.THUNDERSTORM) lightningBolt(screen, top, bottom)
+    if (kind == WeatherKind.WINDY) windStreaks(screen, top, bottom)
+    if (kind == WeatherKind.FOG) fogBanks(screen, top, bottom)
+}
+
+/** A short jagged bolt flickers down the band every couple of seconds. */
+private fun Game.lightningBolt(screen: Screen, top: Int, bottom: Int) {
     val bandH = bottom - top
-    for (i in 0 until count) {
-        val x = (i * 37 + frame / 2) % cols
-        val y = top + (i * 53 + frame * step) % bandH
-        val cell = screen.cell(x, y) ?: continue
-        if (cell.ch == ' ') screen.put(x, y, ch, color)
+    if (bandH < 3 || cols < 10 || frame % 90 >= 3) return
+    val x = (cols / 2 + frame % 5 - 2).coerceIn(1, cols - 2)
+    val len = (bandH - 1).coerceAtMost(6)
+    for (i in 0 until len) {
+        val dx = when (i % 4) { 1 -> 1; 3 -> -1; else -> 0 }
+        val bx = (x + dx).coerceIn(0, cols - 1)
+        screen.putIfBlank(bx, top + i, if (i % 2 == 0) '\\' else '/', Palette.BRIGHT_WHITE)
+    }
+    screen.putIfBlank(x, top, '-', Palette.WHITE)
+}
+
+/** Dashes of air racing sideways through the band. */
+private fun Game.windStreaks(screen: Screen, top: Int, bottom: Int) {
+    val bandH = bottom - top
+    if (bandH < 1 || cols < 12) return
+    val n = (cols / 14).coerceIn(2, 5)
+    for (i in 0 until n) {
+        val x = ((i * 17 + frame * 3) % (cols + 10)) - 5
+        val y = top + (i * 3) % bandH
+        val len = 3 + i % 2
+        val glyph = if (i % 2 == 0) '~' else '-'
+        for (j in 0 until len) screen.putIfBlank(x + j, y, glyph, Palette.GRAY)
+    }
+}
+
+/** Slow horizontal banks of haze that drift across the band. */
+private fun Game.fogBanks(screen: Screen, top: Int, bottom: Int) {
+    val bandH = bottom - top
+    if (bandH < 1 || cols < 8) return
+    for (i in 0 until bandH) {
+        if (i % 2 == 1) continue
+        val x = ((i * 11 + frame / 4) % (cols + 12)) - 6
+        for (j in 0 until 7) {
+            val g = if ((j + i) % 3 == 0) '-' else '.'
+            screen.putIfBlank(x + j, top + i, g, Palette.GRAY)
+        }
     }
 }
 
@@ -64,7 +112,7 @@ internal fun Game.overlayWildlife(screen: Screen, top: Int, bottom: Int) {
     if (bob == 1) screen.putIfBlank(x, y - 1, '.', color)
 }
 
-/** Sunlight sparkling on a calm river. */
+/** Sunlight sparkling on a calm river, with soft drifting wave crests. */
 internal fun Game.overlayWater(screen: Screen, top: Int, bottom: Int) {
     if (bottom - top < 2) return
     val kind = weather.kind
@@ -75,5 +123,15 @@ internal fun Game.overlayWater(screen: Screen, top: Int, bottom: Int) {
         val x = (i * 29 + frame / 3) % cols
         val y = top + (i * 17 + frame) % bandH
         if (screen.cell(x, y)?.ch == ' ') screen.put(x, y, '*', Palette.BRIGHT_WHITE)
+    }
+    if (cols < 10) return
+    // A gentle wave pattern on alternating rows, drifting a touch slower.
+    val rows = (bandH + 1) / 2
+    for (i in 0 until rows) {
+        val y = top + i * 2
+        val x = ((i * 13 + frame / 4) % (cols + 8)) - 4
+        screen.putIfBlank(x, y, '~', Palette.CYAN)
+        screen.putIfBlank(x + 1, y, '~', Palette.CYAN)
+        screen.putIfBlank(x + 5, y, '-', Palette.BLUE)
     }
 }

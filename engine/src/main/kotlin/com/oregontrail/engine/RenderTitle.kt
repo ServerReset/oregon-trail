@@ -23,7 +23,6 @@ internal fun Game.renderTitle(screen: Screen) {
         layers.add(Layer(Ascii.blockWord("OREGON"), Palette.BRIGHT_GREEN, true))
         layers.add(Layer(Ascii.blockWord("TRAIL"), Palette.BRIGHT_YELLOW, true))
         layers.add(Layer(listOf(""), Palette.DEFAULT))
-        layers.add(Layer(listOf(""), Palette.DEFAULT))
     } else {
         layers.add(Layer(AsciiScenery.wagonSmall, Palette.GREEN))
         layers.add(Layer(listOf(""), Palette.DEFAULT))
@@ -42,14 +41,17 @@ internal fun Game.renderTitle(screen: Screen) {
     menu.add("${n++}. Settings and options" to "title:manage")
     menu.add("${n++}. End" to "title:end")
     val artH = layers.sumOf { it.rows.size }
-    val totalH = artH + 2 + menu.size
+    val totalH = artH + 3 + menu.size
     var y = ((rows - totalH) / 2).coerceAtLeast(0)
     for (layer in layers) {
         val ax = ((cols - (layer.rows.maxOfOrNull { it.length } ?: 0)) / 2).coerceAtLeast(0)
         Ascii.draw(screen, ax, y, layer.rows, layer.fg, layer.bold)
         y += layer.rows.size
     }
-    y += 1
+    // A dim rule beneath the artwork separates it from the menu.
+    val ruleW = contentW.coerceAtMost(40).coerceAtLeast(8)
+    screen.hline(((cols - ruleW) / 2).coerceAtLeast(0), y, ruleW, '-', Palette.DIM)
+    y += 2
     val x = ((cols - (menu.maxOf { it.first.length } + 2)) / 2).coerceAtLeast(0)
     for ((label, id) in menu) {
         screen.text(x, y, ">", Palette.BRIGHT_YELLOW, bold = true)

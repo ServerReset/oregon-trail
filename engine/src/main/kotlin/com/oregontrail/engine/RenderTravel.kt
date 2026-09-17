@@ -9,10 +9,10 @@ internal fun Game.renderTravel(screen: Screen) {
         return
     }
     val compact = rows < 30
-    var y = 0
-    screen.center(y, "THE OREGON TRAIL", Palette.BRIGHT_GREEN, bold = true)
+    screen.center(0, "THE OREGON TRAIL", Palette.BRIGHT_GREEN, bold = true)
     pauseButton(screen)
-    y++
+    screen.hline(marginX, 1, contentW, '-', Palette.DIM)
+    var y = 2
     // Status box, wrapped to fit narrow screens.
     val boxW = min(contentW, 56).coerceAtLeast(24)
     val inner = boxW - 4
@@ -22,15 +22,15 @@ internal fun Game.renderTravel(screen: Screen) {
     }
     screen.box(marginX, y, boxW, wrapped.size + 2, Palette.CYAN, "Status")
     wrapped.forEachIndexed { i, line ->
-        val color = when {
+        val value = when {
             (line.startsWith("Food") || line.startsWith("fd")) && inventory.food <= 150 -> Palette.YELLOW
             (line.startsWith("Ammo") || line.contains("ammo")) && inventory.ammo <= 20 -> Palette.YELLOW
             line.contains("poor") || line.contains("failing") -> Palette.RED
             else -> Palette.GREEN
         }
-        screen.text(marginX + 2, y + 1 + i, line, color)
+        screen.paintStatusLine(marginX + 2, y + 1 + i, line, value)
     }
-    y += wrapped.size + 3
+    y += wrapped.size + 2
     if ((inventory.food <= 80 || oxHealth <= 25) && y < rows - 2) {
         screen.center(
             y,
@@ -41,7 +41,6 @@ internal fun Game.renderTravel(screen: Screen) {
     }
     // Animated trail progress bar with a bobbing wagon marker.
     y = drawProgressBar(screen, y)
-
     // Only draw as much scenery as leaves room for the menu below it.
     val options = travelOptions()
     if (!compact) {
@@ -61,12 +60,10 @@ internal fun Game.renderTravel(screen: Screen) {
             overlayGround(screen, sceneTop, sceneBottom)
         }
     }
-
     // A footer with the day count, when there is clearly spare room.
     if (rows >= 42) {
         screen.text(
-            marginX + 1, rows - 1,
-            "Day ${daysOnTrail()} on the trail  -  the sun crosses the sky as you go",
+            marginX + 1, rows - 1, "Day ${daysOnTrail()} on the trail  -  the sun crosses the sky as you go",
             Palette.DIM
         )
     }
@@ -76,17 +73,24 @@ internal fun Game.renderTravel(screen: Screen) {
         y++
         screen.menuAt(marginX + 1, y, options)
     } else {
-        // Compact: put the menu in two columns.
-        val half = (options.size + 1) / 2
-        val colX = marginX + 1
-        val colX2 = marginX + contentW / 2
-        options.forEachIndexed { i, (label, id) ->
-            val cx = if (i < half) colX else colX2
-            val cy = y + (i % half)
-            val short = label.substringBefore("  ").trim()
-            screen.text(cx, cy, short, Palette.GREEN)
-            screen.hotspot(id, cx, cy, short.length)
-        }
+        drawTravelMenuColumns(screen, y, options)
+    }
+}
+
+/** Two-column fallback that still draws the "> " marker and forgiving targets. */
+private fun Game.drawTravelMenuColumns(screen: Screen, y: Int, options: List<Pair<String, String>>) {
+    val half = (options.size + 1) / 2
+    val colX = marginX + 1
+    val colX2 = marginX + contentW / 2
+    options.forEachIndexed { i, (label, id) ->
+        val cx = if (i < half) colX else colX2
+        val cy = y + (i % half)
+        if (cy >= rows) return@forEachIndexed
+        screen.text(cx, cy, ">", Palette.BRIGHT_YELLOW, bold = true)
+        screen.text(cx + 2, cy, label, Palette.GREEN)
+        val sx = (cx - 1).coerceAtLeast(0)
+        val len = (label.length + 4).coerceAtMost(cols - sx)
+        screen.hotspot(id, sx, cy, len)
     }
 }
 
@@ -118,8 +122,18 @@ internal fun Game.renderTravelCompact(screen: Screen) {
         val barW = (cols - 2).coerceIn(6, 30)
         val base = (miles.toLong() * barW / Data.TOTAL_MILES).toInt().coerceIn(0, barW - 1)
         val pos = (base + (frame % 2)).coerceIn(0, barW - 1)
+        val ticks = intArrayOf(barW / 4, barW / 2, barW * 3 / 4)
         val sb = StringBuilder()
-        for (i in 0 until barW) sb.append(if (i < pos) '=' else if (i == pos) '>' else '-')
+        for (i in 0 until barW) {
+            sb.append(
+                when {
+                    i < pos -> '='
+                    i == pos -> '>'
+                    ticks.contains(i) -> '|'
+                    else -> '-'
+                }
+            )
+        }
         screen.text(0, y, sb.toString().take(cols), Palette.CYAN)
         y++
     }

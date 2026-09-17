@@ -91,6 +91,7 @@ class TerminalView @JvmOverloads constructor(
         super.onSizeChanged(w, h, oldw, oldh)
         if (w == 0 || h == 0) return
         painter.resize(w, h)
+        painter.powerOn()
         recomputeGrid(w, h)
         viewportListener?.invoke(grid.cols, grid.rows)
     }
@@ -122,7 +123,11 @@ class TerminalView @JvmOverloads constructor(
             canvas, width, height, screen, colors, highContrast,
             scanlinesEnabled, input.selectionEnabled, input.selectedIndex, grid
         )
+        if (painter.isAnimating) postInvalidateOnAnimation()
     }
+
+    /** Restarts the brief CRT power-on sweep. */
+    fun powerOn() = painter.powerOn()
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean =
         input.onGenericMotion(event) || super.onGenericMotionEvent(event)
