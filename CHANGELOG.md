@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning.
 
+## [2.19.0] - 2026-09-15
+
+### Added
+- **More scenery**: badlands bluffs, sage desert with buttes, snowy hills with
+  bare trees, and steep forested Cascades, each with a mile range so the trail
+  changes as you travel west. Existing plains/peaks/forest/river/town/fort art
+  redrawn with layered depth.
+- **More weather effects**: a jagged lightning bolt and a rainbow around
+  thunderstorms, drifting fog banks, racing wind streaks, heat shimmer on hot
+  days, and frost on snowy ground.
+- **CRT polish**: an aperture grille, a very faint per-line shimmer, a rounded
+  vignette, a faint bloom on bold glyphs, and a short power-on sweep.
+- **Layout polish**: heading rules, token-coloured status values, tick marks and
+  a percentage on the progress bar, a cleaner store table, decorated landmark
+  headings, and a title rule.
+
+### Testing
+- 10 new engine tests (152 total): scenery bounds/coverage/variation, a
+  no-crash sweep across every weather kind and viewport, rare-effect detection,
+  and store/landmark/title/progress layout with hotspot bounds.
+
 ## [2.18.0] - 2026-09-15
 
 ### Changed

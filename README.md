@@ -79,11 +79,15 @@ Debug and release APKs are also attached to each CI run as artifacts.
   ferries and tolls are flagged when you cannot afford them.
 - **Campfire stories and trail wisdom** — resting heals the party and settles
   in for a story told by one of your travelers.
-- **Layered ASCII scenery** — plains, snow-capped peaks, pine forest, rivers,
-  towns and forts are drawn in several colours with depth, and the sun crosses
-  the sky as the day passes (stars and shooting stars after dark). A soft
-  phosphor glow gives the whole display a CRT feel, and the default Classic
-  theme renders the art in full colour.
+- **Layered ASCII scenery** — plains, badlands, peaks, desert, forest, snow,
+  rivers, towns and forts are drawn in several colours with depth, and the sun
+  crosses the sky as the day passes (stars and shooting stars after dark).
+- **Weather and effects** — drifting rain, snow and hail; a jagged lightning
+  bolt and a rainbow around storms; fog banks; racing wind streaks; heat
+  shimmer on the plains; frost on snow; and campfire smoke and embers.
+- **CRT presentation** — a soft phosphor glow, an aperture grille, a faint
+  per-line shimmer, a rounded vignette and a short power-on sweep. Classic
+  (full colour) is the default theme.
 - **Disease and death** — party members sicken and die; you get a gravestone
   and a full epitaph. Graves left by earlier journeys appear when you reach
   the same stretch of trail.
